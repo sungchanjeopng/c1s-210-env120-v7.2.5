@@ -84,6 +84,7 @@ U16 lMsr_aTvg[MnMSR_TVG_IDX_MAX][60] = {
 #define AUTO_GAIN_MARGIN_LEFT	20		// Left range from echo position
 #define AUTO_GAIN_MARGIN_RIGHT	50		// Right range from echo position
 #define AUTO_GAIN_SEARCH_RANGE	9		// Search base gain -9 ~ +9
+#define AUTO_GAIN_VOLT_THR		106		// Valid signal threshold: 1.0V (255 = 2.4V)
 #define AUTO_GAIN_MIN			MnMSR_AMP_MIN
 #define AUTO_GAIN_MAX			MnMSR_AMP_MAX
 
@@ -722,6 +723,9 @@ static U08 MEAS_AutoGain_CalcSlope(void)
 
 	lAutoGain_MinVolt = min_volt;
 	lAutoGain_MaxVolt = max_volt;
+
+	if(max_volt <= AUTO_GAIN_VOLT_THR)
+		return 0;
 
 	if(max_volt > min_volt)
 		return (max_volt - min_volt);
