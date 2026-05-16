@@ -81,8 +81,10 @@ U16 lMsr_aTvg[MnMSR_TVG_IDX_MAX][60] = {
 		160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 224, 228, 232, 236,		},
 };
 
-#define AUTO_GAIN_MARGIN_LEFT	20		// Left range from echo position
-#define AUTO_GAIN_MARGIN_RIGHT	50		// Right range from echo position
+#define AUTO_GAIN_MARGIN_LEFT	20		// Smooth range left from echo position
+#define AUTO_GAIN_MARGIN_RIGHT	50		// Smooth range right from echo position
+#define AUTO_GAIN_SAMPLE_MAX	70		// -20 ~ +50 range length
+#define AUTO_GAIN_SLOPE_RANGE	20		// Find min/max in echo position -20 ~ +20
 #define AUTO_GAIN_SEARCH_RANGE	9		// Search base gain -9 ~ +9
 #define AUTO_GAIN_VOLT_THR		106		// Valid signal threshold: 1.0V (255 = 2.4V)
 #define AUTO_GAIN_MIN			MnMSR_AMP_MIN
@@ -93,6 +95,9 @@ static U08  lAutoGain_MinVolt;
 static U08  lAutoGain_MaxVolt;
 static U16  lAutoGain_RangeMin;
 static U16  lAutoGain_RangeMax;
+static U16  lAutoGain_EchoIdx;
+static U08  lAutoGain_Smooth[AUTO_GAIN_SAMPLE_MAX];
+static U08  lAutoGain_SmoothTmp[AUTO_GAIN_SAMPLE_MAX];
 
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -688,6 +693,9 @@ static void MEAS_AutoGain_SetRange(U16 echo_pos)
 	U16 deadzone = MnMSR_GetDead();
 	U16 empty = MnMSR_GetEmpty();
 
+	if(empty > ADC_DATA_MAX)
+		empty = ADC_DATA_MAX;
+
 	if(echo_pos < deadzone)
 		echo_pos = deadzone;
 	if(echo_pos > empty)
@@ -707,18 +715,96 @@ static void MEAS_AutoGain_SetRange(U16 echo_pos)
 		lAutoGain_RangeMax = ADC_DATA_MAX;
 	if(lAutoGain_RangeMin >= lAutoGain_RangeMax)
 		lAutoGain_RangeMin = deadzone;
+
+	lAutoGain_EchoIdx = echo_pos - lAutoGain_RangeMin;
+}
+
+static U16 MEAS_AutoGain_GetSmoothLen(void)
+{
+	U16 len = lAutoGain_RangeMax - lAutoGain_RangeMin;
+
+	if(len > AUTO_GAIN_SAMPLE_MAX)
+		len = AUTO_GAIN_SAMPLE_MAX;
+
+	return len;
+}
+
+static void MEAS_AutoGain_CopyToSmooth(void)
+{
+	U16 i;
+	U16 len = MEAS_AutoGain_GetSmoothLen();
+
+	for(i=0; i<len; i++)
+		lAutoGain_Smooth[i] = gAd_data[lAutoGain_RangeMin + i];
+}
+
+static void MEAS_AutoGain_Smooth(void)
+{
+	U16 i;
+	U16 j;
+	U16 k;
+	U16 sum;
+	U16 len = MEAS_AutoGain_GetSmoothLen();
+	U08 move;
+	U08 num  = MnEGN_GetSmthCnt();
+	U08 size = MnEGN_GetSmthRng();
+	U08 div  = (size * 2) + 1;
+
+	MEAS_AutoGain_CopyToSmooth();
+
+	if(len <= div)
+		return;
+
+	for(i=0; i<num; i++)
+	{
+		for(j=0; j<len; j++)
+			lAutoGain_SmoothTmp[j] = lAutoGain_Smooth[j];
+
+		for(j=size; j<(len-size); j++)
+		{
+			sum = lAutoGain_SmoothTmp[j];
+			move = 1;
+
+			for(k=0; k<size; k++)
+			{
+				sum += lAutoGain_SmoothTmp[j + move];
+				sum += lAutoGain_SmoothTmp[j - move];
+				move++;
+			}
+
+			lAutoGain_Smooth[j] = (U08)(sum / div);
+		}
+	}
 }
 
 static U08 MEAS_AutoGain_CalcSlope(void)
 {
 	U16 i;
+	U16 stt;
+	U16 end;
+	U16 len;
 	U08 min_volt = 255;
 	U08 max_volt = 0;
 
-	for(i=lAutoGain_RangeMin; i<lAutoGain_RangeMax; i++)
+	MEAS_AutoGain_Smooth();
+	len = MEAS_AutoGain_GetSmoothLen();
+
+	if(len == 0)
+		return 0;
+
+	if(lAutoGain_EchoIdx > AUTO_GAIN_SLOPE_RANGE)
+		stt = lAutoGain_EchoIdx - AUTO_GAIN_SLOPE_RANGE;
+	else
+		stt = 0;
+
+	end = lAutoGain_EchoIdx + AUTO_GAIN_SLOPE_RANGE;
+	if(end >= len)
+		end = len - 1;
+
+	for(i=stt; i<=end; i++)
 	{
-		if(gAd_data[i] < min_volt) min_volt = gAd_data[i];
-		if(gAd_data[i] > max_volt) max_volt = gAd_data[i];
+		if(lAutoGain_Smooth[i] < min_volt) min_volt = lAutoGain_Smooth[i];
+		if(lAutoGain_Smooth[i] > max_volt) max_volt = lAutoGain_Smooth[i];
 	}
 
 	lAutoGain_MinVolt = min_volt;
