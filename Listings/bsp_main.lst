@@ -1,0 +1,141 @@
+C51 COMPILER V9.55   BSP_MAIN                                                              04/29/2026 17:22:10 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE BSP_MAIN
+OBJECT MODULE PLACED IN .\Objects\bsp_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\bsp\bsp_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_We
+                    -ss\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\List
+                    -ings\bsp_main.lst) TABS(2) OBJECT(.\Objects\bsp_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------
+   2          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use,
+   5          //  copying, transfer or disclosure of such information is prohibited except by express written
+   6          //  agreement with WESS-Global Co.,LTD
+   7          //
+   8          //  $Date: 2020-07-13 12:00:00 +0900 $
+   9          //  $Author: eddie $
+  10          //  $Rev: 1.0 $
+  11          //--------------------------------------------------------------------------------------------------
+  12          
+  13          
+  14          //--------------------------------------------------------------------------------------------------
+  15          //  Includes
+  16          //--------------------------------------------------------------------------------------------------
+  17          // chipset
+  18          #include "compiler_defs.h"
+  19          #include "C8051F120_defs.h"
+  20          // sys
+  21          #include "sys_def.h"
+  22          // bsp
+  23          #include "bsp_main.h"
+  24          #include "bsp_rest.h"
+  25          #include "spi_main.h"
+  26          #include "lcd_main.h"
+  27          #include "lcd_data.h"
+  28          #include "mem_main.h"
+  29          #include "tmr_main.h"
+  30          #include "rtc_ds1302.h"
+  31          #include "prtc_main.h"
+  32          #include "uart_main.h"
+  33          #include "gpio_main.h"
+  34          #include "rly_main.h"
+  35          #include "pwm_main.h"
+  36          #include "adc_main.h"
+  37          #include "dac_main.h"
+  38          #include "flash_main.h"
+  39          #include "dly_main.h"
+  40          // app
+  41          #include "isr_main.h"
+  42          
+  43          
+  44          //--------------------------------------------------------------------------------------------------
+  45          //  Global variables
+  46          //--------------------------------------------------------------------------------------------------
+  47          
+  48          
+  49          //--------------------------------------------------------------------------------------------------
+  50          //  Local variables
+  51          //--------------------------------------------------------------------------------------------------
+  52          
+  53          
+C51 COMPILER V9.55   BSP_MAIN                                                              04/29/2026 17:22:10 PAGE 2   
+
+  54          //--------------------------------------------------------------------------------------------------
+  55          //  Local Funtions
+  56          //--------------------------------------------------------------------------------------------------
+  57          
+  58          
+  59          //--------------------------------------------------------------------------------------------------
+  60          //  Global APIs
+  61          //--------------------------------------------------------------------------------------------------
+  62          void BSP_InitBoot(void)
+  63          {
+  64   1        GIO_InitBoot();
+  65   1        //BSP_InitPort();
+  66   1        TMR_InitBoot();
+  67   1        PWM_InitPca();
+  68   1        UAT_InitBoot();
+  69   1        SPI_InitSPI0();
+  70   1        AD0_InitBoot();
+  71   1        DAC_InitBoot();
+  72   1        FLS_InitBoot();
+  73   1        ETC_InitVoltRef();
+  74   1        ETC_InitOsc();
+  75   1        ISR_InitBoot();
+  76   1      
+  77   1        LDT_InitScrn();
+  78   1      
+  79   1        MEM_InitMain(MEM_SRAM);
+  80   1      
+  81   1        UAT_Init2nd();
+  82   1        DA0_InitOut(0);
+  83   1      }
+  84          
+  85          void BSP_InitPort(void)
+  86          {
+  87   1        SFRPAGE = CONFIG_PAGE;
+  88   1        P7MDOUT = 0xff;
+  89   1      
+  90   1      
+  91   1        SBIT_MRAM_CS   = BIT_HI;
+  92   1        SBIT_SRAM_CS   = 1;
+  93   1        SBIT_RTC_CS    = 0;
+  94   1        SBIT_CURR_OUT1 = 1;
+  95   1      
+  96   1      
+  97   1      
+  98   1        GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+  99   1      
+ 100   1        SBIT_RLY1_OUT = RLY_STT_OFF;
+ 101   1        SBIT_RLY2_OUT = RLY_STT_OFF;
+ 102   1        SBIT_RLY3_OUT = RLY_STT_OFF;
+ 103   1        SBIT_PCD_OUT  = 0;        // State_PCD_UC_G = RLY_OFF;
+ 104   1        SBIT_TEST_PT  = 0;
+ 105   1        
+ 106   1        SBIT_RS485_TR = PRT_485_RX_ON; // mdb
+ 107   1      
+ 108   1        DLY_RunMsec(500);
+ 109   1      }
+ 110          
+ 111          // EOF
+ 112          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+C51 COMPILER V9.55   BSP_MAIN                                                              04/29/2026 17:22:10 PAGE 3   
+
+   CODE SIZE        =     86    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

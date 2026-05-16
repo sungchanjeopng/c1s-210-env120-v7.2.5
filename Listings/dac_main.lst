@@ -1,0 +1,262 @@
+C51 COMPILER V9.55   DAC_MAIN                                                              04/29/2026 17:22:08 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE DAC_MAIN
+OBJECT MODULE PLACED IN .\Objects\dac_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\bsp\dac_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_We
+                    -ss\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\List
+                    -ings\dac_main.lst) TABS(2) OBJECT(.\Objects\dac_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // chipset
+  15          #include "compiler_defs.h"
+  16          #include "C8051F120_defs.h"
+  17          // sys
+  18          #include "sys_def.h"
+  19          // self
+  20          #include "dac_main.h"
+  21          // lib
+  22          #include "dly_main.h"
+  23          // bsp
+  24          #include "bsp_main.h"
+  25          #include "spi_main.h"
+  26          #include "flash_main.h"
+  27          #include "gpio_main.h"
+  28          // app
+  29          #include "app_main.h"
+  30          // msr
+  31          #include "measure_main.h"
+  32          #include "measure_analyze.h"
+  33          // menu
+  34          #include "menu_measure.h"
+  35          #include "menu_output.h"
+  36          #include "menu_factory.h"
+  37          
+  38          
+  39          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  40          //  Global variables
+  41          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  42          
+  43          
+  44          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  45          //  Local variables
+C51 COMPILER V9.55   DAC_MAIN                                                              04/29/2026 17:22:08 PAGE 2   
+
+  46          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  47          
+  48          
+  49          
+  50          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  51          //  Local Funtions
+  52          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  53          
+  54          
+  55          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  56          //  Global APIs - Access Local Variables
+  57          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  58          // Get
+  59          // Set
+  60          
+  61          
+  62          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  63          //  Global APIs - Public
+  64          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  65          void DAC_InitBoot(void)
+  66          {
+  67   1        SFRPAGE = DAC0_PAGE;
+  68   1        DAC0CN  = 0x80;
+  69   1      
+  70   1        SFRPAGE = DAC1_PAGE;
+  71   1        DAC1CN  = 0x80;
+  72   1      }
+  73          
+  74          // OLD: void DAC0_InitOut(unsigned int dac0_value)
+  75          void DA0_InitOut(U16 dac0_value)
+  76          {
+  77   1        U08 old = SFRPAGE;
+  78   1      
+  79   1        SFRPAGE = DAC0_PAGE;
+  80   1      
+  81   1        DAC0L = dac0_value;
+  82   1        DAC0H = dac0_value >> 8;
+  83   1      
+  84   1        SFRPAGE = old;
+  85   1      }
+  86          
+  87          // OLD: void DAC0_out(unsigned int dac0_value)
+  88          void DAC_WriteVal(U16 val)
+  89          {
+  90   1        U08 old = SFRPAGE;
+  91   1      
+  92   1        SFRPAGE = DAC0_PAGE;
+  93   1      
+  94   1        DAC0L = val;
+  95   1        DAC0H = val >> 8;
+  96   1      
+  97   1        SFRPAGE = old;
+  98   1      }
+  99          
+ 100          // OLD: void Out_DAC_SPI(unsigned int DA_dat)
+C51 COMPILER V9.55   DAC_MAIN                                                              04/29/2026 17:22:08 PAGE 3   
+
+ 101          void DAC_OutSpi(U16 dat)
+ 102          {
+ 103   1        U08 out;
+ 104   1        U32 val;
+ 105   1        U08 old = SFRPAGE;
+ 106   1      
+ 107   1        SFRPAGE = SPI0_PAGE;    // Switch to the necessary SFRPAGE
+ 108   1        SPI0CFG = 0x50;         // CKPHA = '0', CKPOL = '1'
+ 109   1        SPI0CKR = 0x95;     // fspi = SYSCLK/(2*(SPI0CKR+1)) = 200kHz;
+ 110   1        DLY_002usec();
+ 111   1        DLY_002usec();
+ 112   1      
+ 113   1        SFRPAGE = CONFIG_PAGE;
+ 114   1        SBIT_CURR_OUT1 = 0;
+ 115   1        DLY_RunMsec(1);
+ 116   1      
+ 117   1        val = dat & 0x0000ffff;
+ 118   1      
+ 119   1        out = val >> 16;  SPI0_WriteByte(out);
+ 120   1        out = val >> 8;   SPI0_WriteByte(out);
+ 121   1        out = val;      SPI0_WriteByte(out);
+ 122   1      
+ 123   1        SFRPAGE = CONFIG_PAGE;
+ 124   1        SBIT_CURR_OUT1 = 1;
+ 125   1      
+ 126   1        SFRPAGE = SPI0_PAGE;  // Switch to the necessary SFRPAGE
+ 127   1        SPI0CFG = 0x40;     // CKPHA = '0', CKPOL = '0'
+ 128   1        DLY_002usec();
+ 129   1        DLY_002usec();
+ 130   1      
+ 131   1        SPI0CKR = 0x01;     // fspi = SYSCLK/(2*(SPI0CKR+1)) = 15MHz;
+ 132   1      
+ 133   1        SFRPAGE = old;
+ 134   1      }
+ 135          
+ 136          void DAC_OutCurr(U16 val, U08 sel)
+ 137          {
+ 138   1        U32 outp, max, min, mid;
+ 139   1        U32 cnt1, cnt2, range;
+ 140   1        U16 curr_20ma, curr_04ma;
+ 141   1        U16 set04mA   = MnOUT_GetSet04mA();
+ 142   1        U16 set20mA   = MnOUT_GetSet20mA();
+ 143   1        U08 trim_12mA = MnOUT_GetTrim12mA();
+ 144   1        U08 trim_20mA = MnOUT_GetTrim20mA();
+ 145   1        U08 echo_out  = MnOUT_GetEchoOut();
+ 146   1      #if 1
+ 147   1        U16 dac_04mA  = MnFTR_GetDac04mA();
+ 148   1        U16 dac_20mA  = MnFTR_GetDac20mA();
+ 149   1        U16 dac_21mA  = MnFTR_GetDac21mA();
+ 150   1        U16 dac_38mA  = MnFTR_GetDac38mA();
+ 151   1      #else
+                U16 dac_04mA  = MnOUT_GetDac04mA();
+                U16 dac_20mA  = MnOUT_GetDac20mA();
+                U16 dac_21mA  = MnOUT_GetDac21mA();
+                U16 dac_38mA  = MnOUT_GetDac38mA();
+              #endif
+ 157   1      
+ 158   1        switch(MnMSR_GetUnit())
+ 159   1        {
+ 160   2          case MnMSR_UNIT_METER:
+ 161   2            curr_04ma = set04mA;
+ 162   2            curr_20ma = set20mA;
+C51 COMPILER V9.55   DAC_MAIN                                                              04/29/2026 17:22:08 PAGE 4   
+
+ 163   2            break;
+ 164   2          case MnMSR_UNIT_FEET:
+ 165   2            curr_04ma = (U16)(set04mA * MSR_CALC_M2F_CONST); //+ 0.5;
+ 166   2            curr_20ma = (U16)(set20mA * MSR_CALC_M2F_CONST); //+ 0.5;
+ 167   2            break;
+ 168   2        }
+ 169   1      
+ 170   1        range = curr_20ma - curr_04ma;
+ 171   1      
+ 172   1        max =   dac_20mA + (trim_20mA - 50);
+ 173   1        mid = ((dac_20mA -  dac_04mA) / 2) + dac_04mA;
+ 174   1        min =   dac_04mA - (trim_20mA - 50);
+ 175   1        cnt2 = (max - min) * 1.0;
+ 176   1      
+ 177   1        switch(sel)
+ 178   1        {
+ 179   2          case DAC_CURR_IDX_NORMAL:
+ 180   2            if(val < curr_04ma)   cnt1 = 0;
+ 181   2            else          cnt1 = val - curr_04ma;
+ 182   2            outp = ((cnt1 * cnt2) / range) + min;
+ 183   2      
+ 184   2            if(outp >= max)     outp = max;
+ 185   2            if(outp <= min)     outp = min;
+ 186   2      
+ 187   2            if(MsANL_GetFgErr())
+ 188   2            {
+ 189   3              if(echo_out == MnOUT_ECHO_OUT_38mA)   outp = dac_38mA;
+ 190   3              if(echo_out == MnOUT_ECHO_OUT_HOLD)   goto DAEND;
+ 191   3              if(echo_out == MnOUT_ECHO_OUT_21mA)   outp = dac_21mA;
+ 192   3            }
+ 193   2            break;
+ 194   2      
+ 195   2          case DAC_CURR_IDX_04mA:   outp = min;   break;
+ 196   2          case DAC_CURR_IDX_12mA:   outp = mid;   break;
+ 197   2          case DAC_CURR_IDX_20mA:   outp = max;   break;
+ 198   2        }
+ 199   1        outp = outp + trim_12mA - 50;
+ 200   1        if (outp >= 65536)
+ 201   1          outp = 65535;
+ 202   1      
+ 203   1        DAC_OutSpi(outp);
+ 204   1      
+ 205   1        DAEND: ;
+ 206   1      }
+ 207          
+ 208          
+ 209          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 210          //  EOF
+ 211          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 212          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1059    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      57
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+C51 COMPILER V9.55   DAC_MAIN                                                              04/29/2026 17:22:08 PAGE 5   
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

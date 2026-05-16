@@ -1,0 +1,1199 @@
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MENU_OUTPUT
+OBJECT MODULE PLACED IN .\Objects\menu_output.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\menu\menu_output.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.
+                    -\_Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\
+                    -Listings\menu_output.lst) TABS(2) OBJECT(.\Objects\menu_output.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // chipset
+  15          #include "compiler_defs.h"
+  16          #include "C8051F120_defs.h"
+  17          // sys
+  18          #include "sys_def.h"
+  19          // self
+  20          #include "menu_output.h"
+  21          // bsp
+  22          #include "bsp_main.h"
+  23          #include "flash_main.h"
+  24          #include "gpio_main.h"
+  25          #include "prtc_main.h"
+  26          #include "uart_main.h"
+  27          #include "btn_main.h"
+  28          #include "lcd_main.h"
+  29          #include "lcd_data.h"
+  30          #include "dly_main.h"
+  31          #include "dac_main.h"
+  32          #include "rly_main.h"
+  33          #include "rf_main.h"
+  34          // msr
+  35          #include "measure_main.h"
+  36          #include "measure_analyze.h"
+  37          // menu
+  38          #include "menu_main.h"
+  39          #include "menu_system.h"
+  40          #include "menu_measure.h"
+  41          #include "menu_factory.h"
+  42          #include "menu_box.h"
+  43          #include "menu_quick.h"
+  44          // disp
+  45          #include "disp_main.h"
+  46          #include "disp_menu.h"
+  47          #include "disp_string.h"
+  48          // font
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 2   
+
+  49          #include "font_def.h"
+  50          #include "font_idx_kor.h"
+  51          
+  52          
+  53          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  54          //  Global variables
+  55          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  56          
+  57          
+  58          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  59          //  Local variables
+  60          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  61          LS_MnOUT lMnOut;
+  62          
+  63          
+  64          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  65          //  Local Funtions - List Item (Page 1)
+  66          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  67          void MnOut_SetCurr(U08 sel)
+  68          {
+  69   1        U16 mt;
+  70   1        S32 ft;
+  71   1        U08 *pStr = "    ";
+  72   1        U08 dist = MnFTR_GetDistMax();
+  73   1        U08 unit = MnMSR_GetUnit();
+  74   1        U32 ft_min = MnOUT_SET_CURR_FT_MIN;
+  75   1        U32 mt_min = MnOUT_SET_CURR_MT_MIN;
+  76   1      
+  77   1        switch(sel)
+  78   1        {
+  79   2          case MnOUT_L01_SET_04mA:  mt = lMnOut.set_04mA;   break;
+  80   2          case MnOUT_L02_SET_20mA:  mt = lMnOut.set_20mA;   break;
+  81   2          default:          return;
+  82   2        }
+  83   1      
+  84   1        ft = (S32)MEAS_CalcMeter2Feet(mt);
+  85   1      
+  86   1        switch(unit)
+  87   1        {
+  88   2          case MnMSR_UNIT_METER:    pStr = "(m)";   break;
+  89   2          case MnMSR_UNIT_FEET:   pStr = "(ft)";    break;
+  90   2          default:          return;
+  91   2        }
+  92   1      
+  93   1        MnBOX_DispBox();
+  94   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X10, MnBOX_Y01, F_F, "Level");
+  95   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X11, MnBOX_Y02, F_F, pStr);
+  96   1      
+  97   1        if(MnMSR_GetUnit() == MnMSR_UNIT_FEET)
+  98   1        {
+  99   2          switch(dist)
+ 100   2          {
+ 101   3            case MnFTR_DIST_MAX_10m:  ft = MnBOX_CfgNumb(ft, ft_min, MnOUT_SET_CURR_FT_10_MAX, 1, 1, F_F, "");  break
+             -;
+ 102   3            case MnFTR_DIST_MAX_20m:  ft = MnBOX_CfgNumb(ft, ft_min, MnOUT_SET_CURR_FT_20_MAX, 1, 1, F_F, "");  break
+             -;
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 3   
+
+ 103   3          }
+ 104   2      
+ 105   2          switch(sel)
+ 106   2          {
+ 107   3            case MnOUT_L01_SET_04mA:  lMnOut.set_04mA = MEAS_CalcFeet2Meter(ft);    break;
+ 108   3            case MnOUT_L02_SET_20mA:  lMnOut.set_20mA = MEAS_CalcFeet2Meter(ft);    break;
+ 109   3          }
+ 110   2        }
+ 111   1        else
+ 112   1        {
+ 113   2          switch(dist)
+ 114   2          {
+ 115   3            case MnFTR_DIST_MAX_10m:  mt = MnBOX_CfgNumb(mt, mt_min, MnOUT_SET_CURR_MT_10_MAX, 1, 2, F_F, "");  break
+             -;
+ 116   3            case MnFTR_DIST_MAX_20m:  mt = MnBOX_CfgNumb(mt, mt_min, MnOUT_SET_CURR_MT_20_MAX, 1, 2, F_F, "");  break
+             -;
+ 117   3          }
+ 118   2      
+ 119   2          switch(sel)
+ 120   2          {
+ 121   3            case MnOUT_L01_SET_04mA:  lMnOut.set_04mA = mt;   break;
+ 122   3            case MnOUT_L02_SET_20mA:  lMnOut.set_20mA = mt;   break;
+ 123   3          }
+ 124   2        }
+ 125   1      }
+ 126          
+ 127          void MnOut_TrimCurr(U08 lst)
+ 128          {
+ 129   1        U08 cnt = 0;
+ 130   1        S16 old, sel;
+ 131   1        U08 dac_opt;
+ 132   1      
+ 133   1        switch(lst)
+ 134   1        {
+ 135   2          case MnOUT_L03_TRIM_12mA: old = lMnOut.trim_12mA;   dac_opt = DAC_CURR_IDX_12mA;  break;
+ 136   2          case MnOUT_L04_TRIM_20mA: old = lMnOut.trim_20mA;   dac_opt = DAC_CURR_IDX_20mA;  break;
+ 137   2          default:          return;
+ 138   2        }
+ 139   1      
+ 140   1        sel = old;
+ 141   1      
+ 142   1        MnBOX_DispBox();
+ 143   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X10, MnBOX_Y01, F_F, "Trim");
+ 144   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X03, MnBOX_Y02, F_F, "(Center 50)");
+ 145   1      
+ 146   1        DAC_OutCurr(0, dac_opt);
+ 147   1        DpSTR_NumbUpd(MnBOX_Y03, sel, MnOUT_TRIM_CURR_MAX, 0, F_F, "");
+ 148   1        BTN_DelayMsec(BTN_WAIT_SET);
+ 149   1      
+ 150   1        do
+ 151   1        {
+ 152   2          if(!_SBIT_BTN_UP || !_SBIT_BTN_DOWN)
+ 153   2          {
+ 154   3            if(++cnt >= 30)
+ 155   3              cnt = 30;
+ 156   3      
+ 157   3            sel = BTN_GetValue_UpDn(sel, MnOUT_TRIM_CURR_MIN, MnOUT_TRIM_CURR_MAX, 1, cnt);
+ 158   3      
+ 159   3            DAC_OutCurr(0, dac_opt);
+ 160   3            DpSTR_NumbUpd(MnBOX_Y03, sel, MnOUT_TRIM_CURR_MAX, 0, F_F, "");
+ 161   3            BTN_DelayMsec(BTN_WAIT_UD);
+ 162   3          }
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 4   
+
+ 163   2          else
+ 164   2            cnt = 0;
+ 165   2        }
+ 166   1        while(_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+ 167   1      
+ 168   1        if(!_SBIT_BTN_SET && (sel != old))
+ 169   1        {
+ 170   2          switch(lst)
+ 171   2          {
+ 172   3            case MnOUT_L03_TRIM_12mA: lMnOut.trim_12mA = sel;   break;
+ 173   3            case MnOUT_L04_TRIM_20mA: lMnOut.trim_20mA = sel;   break;
+ 174   3          }
+ 175   2        }
+ 176   1        else
+ 177   1        {
+ 178   2          switch(lst)
+ 179   2          {
+ 180   3            case MnOUT_L03_TRIM_12mA: lMnOut.trim_12mA = old;   break;
+ 181   3            case MnOUT_L04_TRIM_20mA: lMnOut.trim_20mA = old;   break;
+ 182   3          }
+ 183   2        }
+ 184   1      
+ 185   1        DAC_OutCurr(MEAS_GetSgThick(), DAC_CURR_IDX_NORMAL);
+ 186   1      }
+ 187          
+ 188          void MnOut_Outp04mA(void)
+ 189          {
+ 190   1        U32 cnt = 0;
+ 191   1      
+ 192   1        MnBOX_DispBox();
+ 193   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X08, MnBOX_Y02, F_F, "4mA...");
+ 194   1        BTN_DelayMsec(BTN_WAIT_SET);
+ 195   1      
+ 196   1        DAC_OutCurr(0, DAC_CURR_IDX_04mA);
+ 197   1      
+ 198   1        do
+ 199   1        {
+ 200   2          cnt = 0;
+ 201   2      
+ 202   2          while(!_SBIT_BTN_RIGHT && !_SBIT_BTN_LEFT)
+ 203   2          {
+ 204   3            if(++cnt > 500000)
+ 205   3            {
+ 206   4              MnFTR_ProcMain();
+ 207   4            }
+ 208   3          }
+ 209   2        }
+ 210   1        while(_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+ 211   1      
+ 212   1        DAC_OutCurr(MEAS_GetSgThick(), DAC_CURR_IDX_NORMAL);
+ 213   1      }
+ 214          
+ 215          void MnOut_EchoDelay(void)
+ 216          {
+ 217   1        U16 sel = lMnOut.echo_dly;
+ 218   1        
+ 219   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y01, F_F, "Number");
+ 220   1        lMnOut.echo_dly = MnBOX_CfgNumb(sel, MnOUT_ECHO_DLY_MIN, MnOUT_ECHO_DLY_MAX, MnOUT_ECHO_DLY_STP, 0, F_F, 
+             -"");
+ 221   1      }
+ 222          
+ 223          void MnOut_EchoCurr(void)
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 5   
+
+ 224          {
+ 225   1        U08 sel = lMnOut.echo_out;
+ 226   1      
+ 227   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X07, MnBOX_Y01, F_F, "Current");
+ 228   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X10, MnBOX_Y02, F_F, "(mA)");
+ 229   1        lMnOut.echo_out = MnBOX_SelArg4(MnSYS_LANG_ENG, sel, MnBOX_X05, "  3.8mA  ",
+ 230   1                                   MnBOX_X06, "  HOLD  ", MnBOX_X08, "21.0mA", 0, "", 3);
+ 231   1      }
+ 232          
+ 233          
+ 234          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 235          //  Local Funtions - List Item (Page 2)
+ 236          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 237          void MnOut_RlyOper(U08 idx)
+ 238          {
+ 239   1        S16 feet;
+ 240   1        U16 meter;
+ 241   1        U08 maxRange  = MnFTR_GetDistMax();
+ 242   1      
+ 243   1        switch(idx)
+ 244   1        {
+ 245   2          case MnOUT_L08_R1_ACT:    meter = lMnOut.rly1_act;    break;
+ 246   2          case MnOUT_L09_R1_STOP:   meter = lMnOut.rly1_stp;    break;
+ 247   2          case MnOUT_L10_R2_ACT:    meter = lMnOut.rly2_act;    break;
+ 248   2          case MnOUT_L11_R2_STOP:   meter = lMnOut.rly2_stp;    break;
+ 249   2          default:          return;
+ 250   2        }
+ 251   1      
+ 252   1        MnBOX_DispBox();
+ 253   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y01, F_F, "Level");
+ 254   1      
+ 255   1        switch(MnMSR_GetUnit())
+ 256   1        {
+ 257   2          case MnMSR_UNIT_METER:    MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X11, MnBOX_Y02, F_F, "(m)");    break;
+ 258   2          case MnMSR_UNIT_FEET:   MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X10, MnBOX_Y02, F_F, "(ft)");   break;
+ 259   2        }
+ 260   1      
+ 261   1        switch(MnMSR_GetUnit())
+ 262   1        {
+ 263   2          case MnMSR_UNIT_METER:
+ 264   2            switch(maxRange)
+ 265   2            {
+ 266   3              case MnFTR_DIST_MAX_10m: meter = MnBOX_CfgNumb(meter, 0, MnMSR_EMPTY_MT_10_MAX, 1, 2, F_F, ""); break;
+ 267   3              case MnFTR_DIST_MAX_20m: meter = MnBOX_CfgNumb(meter, 0, MnMSR_EMPTY_MT_20_MAX, 1, 2, F_F, ""); break;
+ 268   3            }
+ 269   2            break;
+ 270   2          
+ 271   2          case MnMSR_UNIT_FEET:
+ 272   2            switch(maxRange)
+ 273   2            {
+ 274   3              case MnFTR_DIST_MAX_10m: feet  = MnBOX_CfgNumb((S32)MEAS_CalcMeter2Feet(meter), MnOUT_SET_CURR_FT_MIN,
+             - MnMSR_EMPTY_FT_10_MAX, 1, 1, F_F, ""); break;
+ 275   3              case MnFTR_DIST_MAX_20m: feet  = MnBOX_CfgNumb((S32)MEAS_CalcMeter2Feet(meter), MnOUT_SET_CURR_FT_MIN,
+             - MnMSR_EMPTY_FT_20_MAX, 1, 1, F_F, ""); break;
+ 276   3            }
+ 277   2            meter = MEAS_CalcFeet2Meter(feet);
+ 278   2            break;
+ 279   2        }
+ 280   1      
+ 281   1        switch(idx)
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 6   
+
+ 282   1        {
+ 283   2          case MnOUT_L08_R1_ACT:    lMnOut.rly1_act = meter;    break;
+ 284   2          case MnOUT_L09_R1_STOP:   lMnOut.rly1_stp = meter;    break;
+ 285   2          case MnOUT_L10_R2_ACT:    lMnOut.rly2_act = meter;    break;
+ 286   2          case MnOUT_L11_R2_STOP:   lMnOut.rly2_stp = meter;    break;
+ 287   2        }
+ 288   1      }
+ 289          
+ 290          void MnOut_RelayTest(void) 
+ 291          {
+ 292   1        U16 temp = 0;
+ 293   1        U08 cnt = 0;
+ 294   1        U08 maxRange = MnFTR_GetDistMax();
+ 295   1      
+ 296   1        MnBOX_DispBox();
+ 297   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y01, F_F, "Level");
+ 298   1      
+ 299   1        switch(MnMSR_GetUnit())
+ 300   1        {
+ 301   2          case MnMSR_UNIT_METER:    MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X11, MnBOX_Y02, F_F, "(m)");  DpSTR_NumbUpd(M
+             -nBOX_Y03, temp, 1000, 2, 0, "");    break;
+ 302   2          case MnMSR_UNIT_FEET:   MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X10, MnBOX_Y02, F_F, "(ft)"); DpSTR_NumbUpd(M
+             -nBOX_Y03, temp, MnMSR_DEAD_FT_10_MAX, 1, 2, "");  break;
+ 303   2        }
+ 304   1      
+ 305   1        BTN_DelayMsec(BTN_WAIT_SET);
+ 306   1      
+ 307   1        do 
+ 308   1        {
+ 309   2          if(!_SBIT_BTN_UP || !_SBIT_BTN_DOWN)
+ 310   2          {
+ 311   3            if(++cnt >= 30)
+ 312   3              cnt = 30;
+ 313   3      
+ 314   3      
+ 315   3            if(MnMSR_GetUnit()==MnMSR_UNIT_METER)
+ 316   3            {
+ 317   4              switch(maxRange)
+ 318   4              {
+ 319   5                case MnFTR_DIST_MAX_10m:
+ 320   5                  temp = BTN_GetValue_UpDn(temp, 0, MnMSR_EMPTY_MT_10_MAX, 1, cnt);
+ 321   5                  DpSTR_NumbUpd(64, temp, MnMSR_EMPTY_MT_10_MAX, 2, 0, "");
+ 322   5                  break;
+ 323   5      
+ 324   5                case MnFTR_DIST_MAX_20m:
+ 325   5                  temp = BTN_GetValue_UpDn(temp, 0, MnMSR_EMPTY_MT_20_MAX, 1, cnt);
+ 326   5                  DpSTR_NumbUpd(64, temp, MnMSR_EMPTY_MT_20_MAX, 2, 0, "");
+ 327   5                  break;
+ 328   5              }
+ 329   4            }
+ 330   3            else if(MnMSR_GetUnit()==MnMSR_UNIT_FEET)
+ 331   3            {
+ 332   4              switch(maxRange)
+ 333   4              {
+ 334   5                case MnFTR_DIST_MAX_10m:
+ 335   5                  temp = BTN_GetValue_UpDn(temp, 0, MnMSR_EMPTY_FT_10_MAX, 1, cnt);
+ 336   5                  DpSTR_NumbUpd(64, temp, MnMSR_EMPTY_FT_10_MAX, 1, 2, "");
+ 337   5                  break;
+ 338   5              
+ 339   5                case MnFTR_DIST_MAX_20m:
+ 340   5                  temp = BTN_GetValue_UpDn(temp, 0, MnMSR_EMPTY_FT_20_MAX, 1, cnt);
+ 341   5                  DpSTR_NumbUpd(64, temp, MnMSR_EMPTY_FT_20_MAX, 1, 2, "");
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 7   
+
+ 342   5                  break;
+ 343   5              }
+ 344   4            }
+ 345   3            
+ 346   3            RLY_ProcOut(temp);
+ 347   3      
+ 348   3            LDT_UpdBuff(LCD_Y_START, LCD_Y_END);
+ 349   3            BTN_DelayMsec(BTN_WAIT_UD);
+ 350   3          }
+ 351   2          else
+ 352   2            cnt = 0;
+ 353   2          
+ 354   2        }
+ 355   1        while(_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+ 356   1      
+ 357   1        SBIT_RLY1_OUT = RLY_STT_OFF;
+ 358   1        SBIT_RLY2_OUT = RLY_STT_OFF;
+ 359   1      }
+ 360          
+ 361          void MnOut_Protocol(void)
+ 362          {
+ 363   1        U08 ft = MnSYS_LANG_ENG;
+ 364   1        S16 old = lMnOut.protocol;
+ 365   1        S16 sel = old;
+ 366   1      
+ 367   1        MnBOX_DispBox();
+ 368   1        MnBOX_DispStr(ft, MnBOX_X10, MnBOX_Y01, F_F, "Type");
+ 369   1        sel = MnBOX_SelArg4(ft, sel, MnBOX_X06, "Standard", MnBOX_X06, "   RF   ", MnBOX_X06, " Modbus ", 0, "", 
+             -3);
+ 370   1      
+ 371   1        if(!_SBIT_BTN_SET && (sel != old))
+ 372   1          lMnOut.protocol = sel;
+ 373   1      
+ 374   1        if(lMnOut.protocol == MnOUT_PROT_RF)
+ 375   1        {
+ 376   2          MnBOX_DispBox();
+ 377   2          MnBOX_DispStr(ft, MnBOX_X09, MnBOX_Y01, F_F, "RF CH.");
+ 378   2          lMnOut.rf_ch = MnBOX_CfgNumb(lMnOut.rf_ch, MnOUT_RF_CH_MIN, MnOUT_RF_CH_MAX, 1, 0, F_F, "");
+ 379   2      
+ 380   2          UAT_SetBaudrate(1);
+ 381   2          DLY_RunMsec(1);
+ 382   2        }
+ 383   1        else if(lMnOut.protocol == MnOUT_PROT_MDBS)
+ 384   1        {
+ 385   2          MnBOX_DispStr(ft, MnBOX_X07, MnBOX_Y01, F_F, "Address");
+ 386   2          lMnOut.mdb_addr = MnBOX_CfgNumb(lMnOut.mdb_addr, MnOUT_MDB_ADDR_MIN, MnOUT_MDB_ADDR_MAX, 1, 0, F_F, "");
+ 387   2      
+ 388   2          MnBOX_DispStr(ft, MnBOX_X06, MnBOX_Y01, F_F, "  Baud  ");
+ 389   2          lMnOut.mdb_baud = MnBOX_SelArg4(ft, lMnOut.mdb_baud, MnBOX_X08, " 4800 ",
+ 390   2                                     MnBOX_X08, " 9600 ",
+ 391   2                                     MnBOX_X09, "19200", 0, "", 3);
+ 392   2          UAT_SetBaudrate(lMnOut.mdb_baud);
+ 393   2        }
+ 394   1      }
+ 395          
+ 396          
+ 397          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 398          //  Local Funtions - Disp. List
+ 399          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 400          void OutDp_ListCmmn(U08 *pSel, U08 c)
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 8   
+
+ 401          {
+ 402   1        DpSTR_DrawLin(FT_EN_08x16, pSel[c],  8, MnSTR_Y_HEIGHT*c++, "R1");
+ 403   1        DpSTR_DrawLin(FT_EN_08x16, pSel[c],  8, MnSTR_Y_HEIGHT*c++, "R1");
+ 404   1        DpSTR_DrawLin(FT_EN_08x16, pSel[c],  8, MnSTR_Y_HEIGHT*c++, "R2");
+ 405   1        DpSTR_DrawLin(FT_EN_08x16, pSel[c],  8, MnSTR_Y_HEIGHT*c++, "R2");
+ 406   1      }
+ 407          
+ 408          #if 1
+ 409          void OutDp_ListP1(U08 *pSel)
+ 410          {
+ 411   1        U08 c  = MnOUT_L00_IDLE + 1;
+ 412   1        U08 ft_eng = FT_EN_08x16;
+ 413   1        U08 ft_loc = FT_LC_16x16;
+ 414   1      
+ 415   1        switch(MnSYS_GetLang())
+ 416   1        {
+ 417   2          case MnSYS_LANG_LOC:
+ 418   2            #if defined (_FT_LANG_KR)     
+                    MnLST_DispClr(1);
+              
+                    DpSTR_DrawLin(ft_loc, FALSE, MnOUT_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(FKR_CHUL, FKR_LYEOG, 1,1,1,1,1
+             -,1,1,1,1,1,1,1,1));
+                    DpSTR_DrawLin(ft_eng, FALSE, MnOUT_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#1/2");
+              
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L01_SET_04mA+1,  _F_STR(1,        1,         1,        1,       
+             -  1,       FKR_SEOL, FKR_JEONG,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L02_SET_20mA+1,  _F_STR(1,        1,         1,        1,       
+             -  1,       FKR_SEOL, FKR_JEONG,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L03_TRIM_12mA+1, _F_STR(FKR_TEU,  FKR_LIM, 1,      1,     1,      
+             - 1,        1,        1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L04_TRIM_20mA+1, _F_STR(FKR_TEU,  FKR_LIM, 1,      1,     1,      
+             - 1,        1,        1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L05_OUTP_04mA+1, _F_STR(FKR_CHUL, FKR_LYEOG, 1,      1,     1,    
+             -   1,        1,        1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L06_ECHO_DLY+1,  _F_STR(FKR_E__,  FKR_LEO, FKR_JI_,  FKR_YEON,  
+             -FKR_SI_, FKR_GAN,  1,        1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L07_ECHO_CURR+1, _F_STR(FKR_E__,  FKR_LEO, FKR_CHUL, FKR_LYEOG, 
+             -1,       1,        1,        1,1,1,1,1,1,1,1));
+              
+                    DpSTR_DrawLin(ft_eng, pSel[MnOUT_L01_SET_04mA],   8, MnSTR_Y_HEIGHT*1, " 4mA");
+                    DpSTR_DrawLin(ft_eng, pSel[MnOUT_L02_SET_20mA],   8, MnSTR_Y_HEIGHT*2, "20mA");
+                    DpSTR_DrawLin(ft_eng, pSel[MnOUT_L03_TRIM_12mA], 50, MnSTR_Y_HEIGHT*3, "12mA");
+                    DpSTR_DrawLin(ft_eng, pSel[MnOUT_L04_TRIM_20mA], 50, MnSTR_Y_HEIGHT*4, "20mA");
+                    DpSTR_DrawLin(ft_eng, pSel[MnOUT_L05_OUTP_04mA], 50, MnSTR_Y_HEIGHT*5, "4mA");
+                    #elif defined (_FT_LANG_CN)
+                    MnLST_DispClr(1);
+                    DpSTR_DrawLin(ft_loc, FALSE, MnOUT_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(101, 12, 1,1,1,1,1,1,1,1,1,1,1
+             -,1,1));
+                    DpSTR_DrawLin(ft_eng, FALSE, MnOUT_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#1/2");
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L01_SET_04mA+1, _F_STR(1,  1,1,91,  131, 1, 1,   1,1,1,1,1,1,1,1
+             -));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L02_SET_20mA+1, _F_STR(1,  1,1,91,  131, 1, 1,   1,1,1,1,1,1,1,1
+             -));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L03_TRIM_12mA+1, _F_STR(1,  1,1,101,  12, 42, 94,    1,1,1,1,1,1,
+             -1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L04_TRIM_20mA+1, _F_STR(1,  1,1,101,  12, 42, 94,    1,1,1,1,1,1,
+             -1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L05_OUTP_04mA+1, _F_STR(101,  12, 1, 1,    1,  1,1,1,1,1,1,1,1,1,
+             -1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L06_ECHO_DLY+1,  _F_STR( 48, 114, 43, 89, 36,  182,1,1,1,1,1,1,1
+             -,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L07_ECHO_CURR+1, _F_STR( 48, 114, 43, 89, 101, 12,1,1,1,1,1,1,1,
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 9   
+
+             -1,1));
+              
+                    DpSTR_DrawLin(ft_eng, pSel[MnOUT_L01_SET_04mA], 10, MnSTR_Y_HEIGHT*1, "4mA");
+                    DpSTR_DrawLin(ft_eng, pSel[MnOUT_L02_SET_20mA], 10, MnSTR_Y_HEIGHT*2, "20mA");
+                    DpSTR_DrawLin(ft_eng, pSel[MnOUT_L03_TRIM_12mA], 10, MnSTR_Y_HEIGHT*3, "12mA");
+                    DpSTR_DrawLin(ft_eng, pSel[MnOUT_L04_TRIM_20mA], 10, MnSTR_Y_HEIGHT*4, "20mA");
+                    DpSTR_DrawLin(ft_eng, pSel[MnOUT_L05_OUTP_04mA], 58, MnSTR_Y_HEIGHT*5, "4mA");
+                    #elif defined (_FT_LANG_JP)
+ 455   2            MnLST_DispClr(1);
+ 456   2            DpSTR_DrawLin(ft_loc, FALSE, MnOUT_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(48, 51, 1,1,1,1,1,1,1,1,1,1,1,
+             -1,1));
+ 457   2            DpSTR_DrawLin(ft_eng, FALSE, MnOUT_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#1/2");
+ 458   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L01_SET_04mA+1,  _F_STR(1, 1, 1,  82, 61,1, 1,  1,   1,    1, 1,1
+             -,1,1,1));
+ 459   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L02_SET_20mA+1,  _F_STR(1, 1, 1, 82, 61, 1,1,  1,   1,   1, 1,1,
+             -1,1,1));
+ 460   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L03_TRIM_12mA+1, _F_STR(1, 1, 1, 22, 36, 31, 1, 1,   1,    1, 1,1
+             -,1,1,1));
+ 461   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L04_TRIM_20mA+1, _F_STR(1, 1, 1, 22, 36, 31, 1, 1,   1,    1, 1,1
+             -,1,1,1));
+ 462   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L05_OUTP_04mA+1, _F_STR(48, 51, 1,1, 1,1, 1,  1,   1,    1, 1,1,1
+             -,1,1));
+ 463   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L06_ECHO_DLY+1,  _F_STR( 6, 35, 42, 48,  51,  86, 64, 68,  87, 1
+             -, 1,1,1,1,1));
+ 464   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L07_ECHO_CURR+1, _F_STR( 6, 35, 42, 68, 48, 51, 1, 1, 1,  1, 1,1
+             -,1,1,1));
+ 465   2      
+ 466   2            DpSTR_DrawLin(ft_eng, pSel[MnOUT_L01_SET_04mA],  10, MnSTR_Y_HEIGHT*1, " 4mA");
+ 467   2            DpSTR_DrawLin(ft_eng, pSel[MnOUT_L02_SET_20mA],  10, MnSTR_Y_HEIGHT*2, "20mA");
+ 468   2            DpSTR_DrawLin(ft_eng, pSel[MnOUT_L03_TRIM_12mA], 10, MnSTR_Y_HEIGHT*3, "12mA");
+ 469   2            DpSTR_DrawLin(ft_eng, pSel[MnOUT_L04_TRIM_20mA], 10, MnSTR_Y_HEIGHT*4, "20mA");
+ 470   2            DpSTR_DrawLin(ft_eng, pSel[MnOUT_L05_OUTP_04mA], 58, MnSTR_Y_HEIGHT*5, "4mA");      
+ 471   2            #endif
+ 472   2            break;
+ 473   2          case MnSYS_LANG_ENG:
+ 474   2          default:
+ 475   2                                                                        // 0123456789abcdef0123456789abcde
+ 476   2            MnLST_DispStr(ft_eng, FALSE,     MnOUT_L00_IDLE+1,      "         OUTPUT #1/2           ");
+ 477   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L01_SET_04mA+1,  "Set 4mA                        ");
+ 478   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L02_SET_20mA+1,  "Set 20mA                       ");
+ 479   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L03_TRIM_12mA+1, "Trim 12mA                      ");
+ 480   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L04_TRIM_20mA+1, "Trim 20mA                      ");
+ 481   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L05_OUTP_04mA+1, "Output 4mA                     ");
+ 482   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L06_ECHO_DLY+1,  "Error Delay                     ");
+ 483   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L07_ECHO_CURR+1, "Error Output                    ");
+ 484   2            break;
+ 485   2        }
+ 486   1      }
+ 487          
+ 488          void OutDp_ListP2(U08 *pSel)
+ 489          {
+ 490   1        U08 c  = MnOUT_L00_IDLE + 1;
+ 491   1        U08 ft_eng = FT_EN_08x16;
+ 492   1        U08 ft_loc = FT_LC_16x16;
+ 493   1      
+ 494   1        switch(MnSYS_GetLang())
+ 495   1        {
+ 496   2          case MnSYS_LANG_LOC:
+ 497   2            #if defined (_FT_LANG_KR)     
+                    MnLST_DispClr(1);
+              
+                    DpSTR_DrawLin(ft_loc, FALSE, MnOUT_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(FKR_CHUL, FKR_LYEOG, 1,1,1,1,1
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 10  
+
+             -,1,1,1,1,1,1,1,1));
+                    DpSTR_DrawLin(ft_eng, FALSE, MnOUT_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#2/2");
+              
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L08_R1_ACT-6,   _F_STR(1,    1,       1,     FKR_JEOB, FKR_JEOM, FKR
+             -_DAD,  FKR_HIM,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L09_R1_STOP-6,  _F_STR(1,    1,       1,     FKR_JEOB, FKR_JEOM, FKR
+             -_YEOL, FKR_LIM,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L10_R2_ACT-6,   _F_STR(1,    1,       1,     FKR_JEOB, FKR_JEOM, FKR
+             -_DAD,  FKR_HIM,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L11_R2_STOP-6,  _F_STR(1,      1,       1,     FKR_JEOB, FKR_JEOM, 
+             -FKR_YEOL, FKR_LIM,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L12_RLY_TEST-6, _F_STR(FKR_LIL,  FKR_LE_, FKR_I__, 1,    FKR_JEOM,
+             - FKR_GEOM, 1,      1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L13_PROTOCOL-6, _F_STR(FKR_TONG, FKR_SIN, 1,     1,    1,      1,    1,
+             -      1,1,1,1,1,1,1,1));
+                    #elif defined (_FT_LANG_CN)
+                    MnLST_DispClr(1);
+                                               // 0123456789abcdef0123456789abcde
+                    DpSTR_DrawLin(ft_loc, FALSE, MnOUT_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(101, 12, 1,1,1,1,1,1,1,1,1,1,1
+             -,1,1));
+                    DpSTR_DrawLin(ft_eng, FALSE, MnOUT_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#2/2");
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L08_R1_ACT-6,   _F_STR(  1, 102, 86,  1,  1,1,1,1,1,1,1,1,1,1,1)
+             -);
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L09_R1_STOP-6,  _F_STR(  1,   8, 61,  1,  1,1,1,1,1,1,1,1,1,1,1)
+             -);
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L10_R2_ACT-6,   _F_STR(  1, 102, 86,  1,  1,1,1,1,1,1,1,1,1,1,1)
+             -);
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L11_R2_STOP-6,  _F_STR(  1,   8, 61,  1,  1,1,1,1,1,1,1,1,1,1,1)
+             -);
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L12_RLY_TEST-6, _F_STR( 81,  69, 24, 66, 92,1,1,1,1,1,1,1,1,1,1)
+             -);
+                    MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L13_PROTOCOL-6, _F_STR(103,   184,  185,  186,  1,1,1,1,1,1,1,1,
+             -1,1,1));
+                    #elif defined (_FT_LANG_JP)
+ 521   2            MnLST_DispClr(1);
+ 522   2                                       // 0123456789abcdef0123456789abcde
+ 523   2            DpSTR_DrawLin(ft_loc, FALSE, MnOUT_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(48, 51, 1,1,1,1,1,1,1,1,1,1,1,
+             -1,1));
+ 524   2            DpSTR_DrawLin(ft_eng, FALSE, MnOUT_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#2/2");
+ 525   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L08_R1_ACT-6,   _F_STR(1,36, 38, 42,   52, 45,74, 1, 1,1,1,1,1,1
+             -,1));
+ 526   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L09_R1_STOP-6, _F_STR(1, 36, 38, 42,   47, 70,74, 1, 1,1,1,1,1,1
+             -,1));
+ 527   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L10_R2_ACT-6,   _F_STR(1,  36, 38, 42,   52, 45,74, 1, 1,1,1,1,1
+             -,1,1));
+ 528   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L11_R2_STOP-6,  _F_STR(1, 36, 38, 42,   47, 70,74, 1, 1,1,1,1,1,
+             -1,1));
+ 529   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L12_RLY_TEST-6, _F_STR(36, 38, 42, 20, 15, 22, 1,1,1,1,1,1,1,1,1
+             -));
+ 530   2            MnLST_DispStr(ft_loc, pSel[c++], MnOUT_L13_PROTOCOL-6, _F_STR(29, 39, 22, 12, 37,   1, 1,1,1,1,1,1,1,1,
+             -1));
+ 531   2            #endif
+ 532   2      
+ 533   2            OutDp_ListCmmn(pSel, 1);
+ 534   2            break;
+ 535   2          case MnSYS_LANG_ENG:
+ 536   2          default:
+ 537   2                                                                       // 0123456789abcdef0123456789abcde
+ 538   2            MnLST_DispStr(ft_eng, FALSE,     MnOUT_L00_IDLE+1,     "         OUTPUT #2/2           ");
+ 539   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L08_R1_ACT-6,   "R1 Act                         ");
+ 540   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L09_R1_STOP-6,  "R1 Stop                        ");
+ 541   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L10_R2_ACT-6,   "R2 Act                         ");
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 11  
+
+ 542   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L11_R2_STOP-6,  "R2 Stop                        ");
+ 543   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L12_RLY_TEST-6, "Relay Test                     ");
+ 544   2            MnLST_DispStr(ft_eng, pSel[c++], MnOUT_L13_PROTOCOL-6, "Protocol                       ");
+ 545   2            break;
+ 546   2        } 
+ 547   1      }
+ 548          
+ 549          #else
+              void OutDp_ListEngP1(U08 *pSel)
+              {
+                U08 c  = MnOUT_L00_IDLE + 1;
+                U08 ft = FT_EN_08x16;
+                                        //   0123456789abcdef0123456789abcde
+                MnLST_DispStr(ft, FALSE,   MnOUT_L00_IDLE+1,    "         OUTPUT #1/2           ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L01_SET_04mA+1,  "Set 4mA                       ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L02_SET_20mA+1,  "Set 20mA                      ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L03_TRIM_12mA+1, "Trim 12mA                      ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L04_TRIM_20mA+1, "Trim 20mA                      ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L05_OUTP_04mA+1, "Output 4mA                     ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L06_ECHO_DLY+1,  "Echo Delay                     ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L07_ECHO_CURR+1, "Echo Output                    ");
+              }
+              
+              void OutDp_ListEngP2(U08 *pSel)
+              {
+                U08 c  = MnOUT_L00_IDLE + 1;
+                U08 ft = FT_EN_08x16;
+                                        //   0123456789abcdef0123456789abcde
+                MnLST_DispStr(ft, FALSE,   MnOUT_L00_IDLE+1,    "         OUTPUT #2/2           ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L08_R1_ACT-6,  "R1 Act                         ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L09_R1_STOP-6, "R1 Stop                        ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L10_R2_ACT-6,  "R2 Act                         ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L11_R2_STOP-6, "R2 Stop                        ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L12_RLY_TEST-6,  "Relay Test                     ");
+                MnLST_DispStr(ft, pSel[c++], MnOUT_L13_PROTOCOL-6,  "Protocol                       ");
+              }
+              
+              #if defined (_FT_LANG_KR)
+              void OutDp_ListKorP1(U08 *pSel)
+              {
+                U08 i;
+                U08 c = 1;
+                U08 height = MnSTR_Y_HEIGHT;
+                U08 ft_en = FT_EN_08x16;
+              
+                MnLST_DispClr(1);
+                _F_SS(FKR_CHUL, FKR_LYEOG, 1,1,1,1,1,1,1,1,1,1,1,1,1);
+                DpSTR_DrawLin(FT_LC_16x16, FALSE, MnOUT_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, gFt_str);
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, MnOUT_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#1/2");
+              
+                for(i=(MnOUT_L00_IDLE+1); i<MnOUT_LST_MAX; i++)
+                {
+                  switch(i)
+                  {
+                    case MnOUT_L01_SET_04mA:  _F_SS(1,1,1,1,1,FKR_SEOL, FKR_JEONG,  1,          1,1,1,1,1,1,1);   break;
+                    case MnOUT_L02_SET_20mA:  _F_SS(1,1,1,1,1,FKR_SEOL, FKR_JEONG,  1,          1,1,1,1,1,1,1);   break;
+                    case MnOUT_L03_TRIM_12mA: _F_SS(FKR_TEU,  FKR_LIM,  1,      1,      1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L04_TRIM_20mA:   _F_SS(FKR_TEU,  FKR_LIM,  1,      1,      1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L05_OUTP_04mA: _F_SS(FKR_CHUL, FKR_LYEOG,  1,      1,      1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L06_ECHO_DLY:  _F_SS(FKR_E__,  FKR_LEO,  FKR_JI_,  FKR_YEON, FKR_SI_,  FKR_GAN,  1,1,1,1,1,1,1,1,
+             -1);    break;
+                    case MnOUT_L07_ECHO_CURR: _F_SS(FKR_E__,  FKR_LEO,  FKR_CHUL, FKR_LYEOG,  1,1,1,1,1,1,1,1,1,1,1);   break
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 12  
+
+             -;
+                  }
+              
+                  switch(i)
+                  {
+                    case MnOUT_L01_SET_04mA:
+                    case MnOUT_L02_SET_20mA:
+                      if(pSel[i])   DpSTR_DrawLin(ft_en, pSel[i], 0, height*i,">");
+                      else      DpSTR_DrawLin(ft_en, pSel[i], 0, height*i," ");
+                      break;
+                  }
+              
+                  MnLST_DispStr(FT_LC_16x16, pSel[i], i+1, "");
+                }
+              
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L01_SET_04mA],   8, MnSTR_Y_HEIGHT*c++, " 4mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L02_SET_20mA],   8, MnSTR_Y_HEIGHT*c++, "20mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L03_TRIM_12mA], 50, MnSTR_Y_HEIGHT*c++, "12mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L04_TRIM_20mA], 50, MnSTR_Y_HEIGHT*c++, "20mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L05_OUTP_04mA], 50, MnSTR_Y_HEIGHT*c++, "4mA");
+              }
+              
+              void OutDp_ListKorP2(U08 *pSel)
+              {
+                U08 i;
+              
+                MnLST_DispClr(1);
+                _F_SS(FKR_CHUL, FKR_LYEOG, 1,1,1,1,1,1,1,1,1,1,1,1,1);
+                DpSTR_DrawLin(FT_LC_16x16, FALSE, MnOUT_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, gFt_str);
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, MnOUT_X0_PAGE_KO, MnSTR_Y_HEIGHT*0, "#2/2");
+              
+                for(i=(MNU_LIST_NUM+1); i<=(MNU_LIST_NUM*2); i++)
+                {
+                  switch(i)
+                  {
+                    case MnOUT_L08_R1_ACT:    _F_SS(1,1,1,  FKR_JEOB, FKR_JEOM, FKR_DAD,  FKR_HIM,  1,1,1,1,1,1,1,1); break;
+                    case MnOUT_L09_R1_STOP:   _F_SS(1,1,1,  FKR_JEOB, FKR_JEOM,   FKR_YEOL, FKR_LIM,  1,1,1,1,1,1,1,1); break;
+                    case MnOUT_L10_R2_ACT:    _F_SS(1,1,1,  FKR_JEOB, FKR_JEOM,   FKR_DAD,  FKR_HIM,  1,1,1,1,1,1,1,1); break;
+                    case MnOUT_L11_R2_STOP:   _F_SS(1,1,1,  FKR_JEOB, FKR_JEOM,   FKR_YEOL, FKR_LIM,  1,1,1,1,1,1,1,1); break;
+                    case MnOUT_L12_RLY_TEST:  _F_SS(FKR_LIL,  FKR_LE_,  FKR_I__,1,  FKR_JEOM, FKR_GEOM, 1,1,1,1,1,1,1,1,1); br
+             -eak;
+                    case MnOUT_L13_PROTOCOL:  _F_SS(FKR_TONG, FKR_SIN,  1,    1,  1,      1,      1,1,1,1,1,1,1,1,1); break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i-MNU_LIST_NUM], i-MNU_LIST_NUM+1, "");
+                }
+                OutDp_ListCmmn(pSel, 1);
+              }
+              
+              #elif defined (_FT_LANG_CN)
+              void OutDp_ListChnP1(U08 *pSel)
+              {
+                U08 i;
+                U08 c = 1;
+                U08 height = MnSTR_Y_HEIGHT;
+                U08 ft_en = FT_EN_08x16;
+                                  //   0123456789abcdef0123456789abcde
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 0, 0, "         OUTPUT #1/2           ");
+              
+                for(i=(MnOUT_L00_IDLE+1); i<MnOUT_LST_MAX; i++)
+                {
+                  switch(i)
+                  {
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 13  
+
+                    case MnOUT_L01_SET_04mA:  DpSTR_DrawLin(ft_en, pSel[i], 8, height*i," 4 mA                          ");
+             -  break;
+                    case MnOUT_L02_SET_20mA:  DpSTR_DrawLin(ft_en, pSel[i], 8, height*i,"20 mA                          ");
+             -  break;
+                    case MnOUT_L03_TRIM_12mA: _F_SS(101,    12,   66,   92,   1,    1,  1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L04_TRIM_20mA:   _F_SS(101,    12,   66,   92,   1,    1,  1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L05_OUTP_04mA: _F_SS(101,    12,   66,   92,   1,    1,  1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L06_ECHO_DLY:  _F_SS(48,   114,  36,   51,   110,  1,  1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L07_ECHO_CURR: _F_SS(48,   114,  43,   89,   101,  12, 1,1,1,1,1,1,1,1,1);   break;
+                  }
+              
+                  switch(i)
+                  {
+                    case MnOUT_L01_SET_04mA:
+                    case MnOUT_L02_SET_20mA:
+                      if(pSel[i])   DpSTR_DrawLin(ft_en, pSel[i], 0, height*i,">");
+                      else      DpSTR_DrawLin(ft_en, pSel[i], 0, height*i," ");
+                      break;
+              
+                    default:  MnLST_DispStr(FT_LC_16x16, pSel[i], i+1, "");   break;
+                  }
+                }
+              
+                #if 1
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L03_TRIM_12mA], 80, MnSTR_Y_HEIGHT*3, "12mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L04_TRIM_20mA], 80, MnSTR_Y_HEIGHT*4, "20mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L05_OUTP_04mA], 80, MnSTR_Y_HEIGHT*5, " 4mA");
+                #else
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L03_TRIM_12mA], 80, MnSTR_Y_HEIGHT*c++, "12mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L04_TRIM_20mA], 80, MnSTR_Y_HEIGHT*c++, "20mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L05_OUTP_04mA], 80, MnSTR_Y_HEIGHT*c++, " 4mA");
+                #endif
+              }
+              
+              void OutDp_ListChnP2(U08 *pSel)
+              {
+                U08 i;
+                                  //   0123456789abcdef0123456789abcde
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 0, 0, "         OUTPUT #2/2           ");
+              
+                for(i=(MNU_LIST_NUM+1); i<=(MNU_LIST_NUM*2); i++)
+                {
+                  switch(i)
+                  {
+                    case MnOUT_L08_R1_ACT:    _F_SS(1,    102,  86,   1,    1,    1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L09_R1_STOP:   _F_SS(1,    8,    61,   1,    1,    1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L10_R2_ACT:    _F_SS(1,    102,  86,   1,    1,    1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L11_R2_STOP:   _F_SS(1,    8,    61,   1,    1,    1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L12_RLY_TEST:  _F_SS(81,   69,   24,   66,   92,   1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L13_PROTOCOL:  _F_SS(103,    7,    1,    1,    1,    1,1,1,1,1,1,1,1,1,1);   break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i-MNU_LIST_NUM], i-MNU_LIST_NUM+1, "");
+                }
+                OutDp_ListCmmn(pSel, 1);
+              }
+              
+              #elif defined (_FT_LANG_JP)
+              void OutDp_ListJpnP1(U08 *pSel)
+              {
+                U08 i;
+                U08 c = 1;
+                                  //   0123456789abcdef0123456789abcde
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 14  
+
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 0, 0, "         OUTPUT #1/2           ");
+              
+                for(i=(MnOUT_L00_IDLE+1); i<MnOUT_LST_MAX; i++)
+                {
+                  switch(i)
+                  {
+                    case MnOUT_L01_SET_04mA:  _F_SS(171,  171,171,171,110,118,121,87, 0,  1,  1,1,1,1,1);   break;
+                    case MnOUT_L02_SET_20mA:  _F_SS(171,  171,171,171,110,118,121,87, 0,  1,  1,1,1,1,1);   break;
+                    case MnOUT_L03_TRIM_12mA: _F_SS(171,  171,171,171,121,108,123,0,  1,  1,  1,1,1,1,1);   break;
+                    case MnOUT_L04_TRIM_20mA:   _F_SS(171,  171,171,171,121,108,123,0,  1,  1,  1,1,1,1,1);   break;
+                    case MnOUT_L05_OUTP_04mA: _F_SS(171,  171,171,171,121,108,123,0,  1,  1,  1,1,1,1,1);   break;
+                    case MnOUT_L06_ECHO_DLY:  _F_SS(91, 156,170,171,93, 98, 159,107,94, 166,0,1,1,1,1);   break;
+                    case MnOUT_L07_ECHO_CURR: _F_SS(91, 156,170,171,106,152,119,157,154,98, 0,1,1,1,1);   break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i], i+1, "");
+                }
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L01_SET_04mA],  10, MnSTR_Y_HEIGHT*c++, " 4mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L02_SET_20mA],  10, MnSTR_Y_HEIGHT*c++, "20mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L03_TRIM_12mA], 10, MnSTR_Y_HEIGHT*c++, "12mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L04_TRIM_20mA], 10, MnSTR_Y_HEIGHT*c++, "20mA");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnOUT_L05_OUTP_04mA], 10, MnSTR_Y_HEIGHT*c++, "4mA");
+              }
+              
+              void OutDp_ListJpnP2(U08 *pSel)
+              {
+                U08 i;
+                U08 c = 1;
+                                  //   0123456789abcdef0123456789abcde
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 0, 0, "         OUTPUT #2/2           ");
+              
+                for(i=(MNU_LIST_NUM+1); i<=(MNU_LIST_NUM*2); i++)
+                {
+                  switch(i)
+                  {
+                    case MnOUT_L08_R1_ACT:    _F_SS(171,  171,110,118,123,0,  1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L09_R1_STOP:   _F_SS(171,  171,157,110,118,123,0,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L10_R2_ACT:    _F_SS(171,  171,110,118,123,0,  1,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L11_R2_STOP:   _F_SS(171,  171,157,110,118,123,0,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L12_RLY_TEST:  _F_SS(157,  159,170,121,108,123,0,1,1,1,1,1,1,1,1);   break;
+                    case MnOUT_L13_PROTOCOL:  _F_SS(138,  160,123,102,158,0,  1,1,1,1,1,1,1,1,1);   break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i-MNU_LIST_NUM], i-MNU_LIST_NUM+1, "");
+                }
+                OutDp_ListCmmn(pSel, c);
+              }
+              
+              #endif
+              #endif
+ 771          
+ 772          void OutDp_ProcList(U08 sel)
+ 773          {
+ 774   1        U08 i;
+ 775   1        U08 page = MNU_PAGE_01;
+ 776   1        U08 pSel[MnOUT_LST_MAX] = {0, };
+ 777   1      
+ 778   1        pSel[sel] = TRUE;
+ 779   1      
+ 780   1        if    (sel > (MNU_LIST_NUM*2))    page = MNU_PAGE_03;
+ 781   1        else if (sel > (MNU_LIST_NUM*1))    page = MNU_PAGE_02;
+ 782   1        else                  page = MNU_PAGE_01;
+ 783   1      
+ 784   1        if    (sel > (MNU_LIST_NUM*2))    pSel[sel-(MNU_LIST_NUM*2)] = TRUE;
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 15  
+
+ 785   1        else if (sel > (MNU_LIST_NUM*1))    pSel[sel-(MNU_LIST_NUM*1)] = TRUE;
+ 786   1        else                  pSel[sel-(MNU_LIST_NUM*0)] = TRUE;
+ 787   1      
+ 788   1        if    (sel > (MNU_LIST_NUM*2))    page = MNU_PAGE_03;
+ 789   1        else if (sel > (MNU_LIST_NUM*1))    page = MNU_PAGE_02;
+ 790   1        else                  page = MNU_PAGE_01;
+ 791   1      
+ 792   1      #if 1
+ 793   1        switch(page)
+ 794   1        {
+ 795   2          case MNU_PAGE_01:   OutDp_ListP1(pSel);   break;
+ 796   2          case MNU_PAGE_02:   OutDp_ListP2(pSel);   break;
+ 797   2          default:
+ 798   2            return;
+ 799   2        }
+ 800   1      #else
+                if(page > MNU_PAGE_02)
+                  return;
+              
+                switch(MnSYS_GetLang())
+                {
+                  case MnSYS_LANG_LOC:
+                    switch(page)
+                    {
+              #if defined (_FT_LANG_KR)
+                      case MNU_PAGE_01:   OutDp_ListKorP1(pSel);    break;
+                      case MNU_PAGE_02:   OutDp_ListKorP2(pSel);    break;
+              
+              #elif defined (_FT_LANG_CN)
+                      case MNU_PAGE_01:   OutDp_ListChnP1(pSel);    break;
+                      case MNU_PAGE_02:   OutDp_ListChnP2(pSel);    break;
+              
+              #elif defined (_FT_LANG_JP)
+                      case MNU_PAGE_01:   OutDp_ListJpnP1(pSel);    break;
+                      case MNU_PAGE_02:   OutDp_ListJpnP2(pSel);    break;
+              
+              #endif
+                    }
+              
+                    break;
+                  case MnSYS_LANG_ENG:
+                  default:
+                    switch(page)
+                    {
+                      case MNU_PAGE_01:   OutDp_ListEngP1(pSel);    break;
+                      case MNU_PAGE_02:   OutDp_ListEngP2(pSel);    break;
+                    }
+                    break;
+                }
+              #endif
+ 835   1        if(page == MNU_PAGE_02)
+ 836   1        {
+ 837   2          for(i=(MnOUT_LST_MAX+1-7); i<=(MNU_LIST_NUM+1); i++)
+ 838   2            MnLST_DispClr(i);
+ 839   2        }
+ 840   1      
+ 841   1          LDT_UpdBuff(LCD_Y_START,LCD_Y_END);
+ 842   1        DLY_RunMsec(100);
+ 843   1      }
+ 844          
+ 845          void OutChk_Vari(void)
+ 846          {
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 16  
+
+ 847   1        U08 maxRange  = MnFTR_GetDistMax();
+ 848   1        
+ 849   1        // Page 1
+ 850   1        switch(maxRange)
+ 851   1        {
+ 852   2          case MnFTR_DIST_MAX_10m:
+ 853   2            if(lMnOut.set_04mA  > MnOUT_SET_CURR_MT_10_MAX) lMnOut.set_04mA  = MnOUT_SET_04mA_MT_DFT;
+ 854   2            if(lMnOut.set_20mA  > MnOUT_SET_CURR_MT_20_MAX) lMnOut.set_20mA  = MnOUT_SET_20mA_MT_DFT;
+ 855   2            break;
+ 856   2          case MnFTR_DIST_MAX_20m:
+ 857   2            if(lMnOut.set_04mA  > MnOUT_SET_CURR_MT_10_MAX) lMnOut.set_04mA  = MnOUT_SET_04mA_MT_DFT;
+ 858   2            if(lMnOut.set_20mA  > MnOUT_SET_CURR_MT_20_MAX) lMnOut.set_20mA  = MnOUT_SET_20mA_MT_DFT;
+ 859   2            break;
+ 860   2        }
+ 861   1        
+ 862   1        if(lMnOut.trim_12mA > MnOUT_TRIM_CURR_MAX)    lMnOut.trim_12mA = MnOUT_TRIM_CURR_DFT;
+ 863   1        if(lMnOut.trim_20mA > MnOUT_TRIM_CURR_MAX)    lMnOut.trim_20mA = MnOUT_TRIM_CURR_DFT;
+ 864   1        if(lMnOut.echo_dly  < MnOUT_ECHO_DLY_MIN)   lMnOut.echo_dly  = MnOUT_ECHO_DLY_DFT;
+ 865   1        if(lMnOut.echo_dly  > MnOUT_ECHO_DLY_MAX)   lMnOut.echo_dly  = MnOUT_ECHO_DLY_DFT;
+ 866   1        if(lMnOut.echo_out >= MnOUT_ECHO_OUT_MAX)   lMnOut.echo_out  = MnOUT_ECHO_OUT_HOLD;
+ 867   1      
+ 868   1        // Page 2
+ 869   1        switch(maxRange)
+ 870   1        {
+ 871   2          case MnFTR_DIST_MAX_10m:
+ 872   2            if(lMnOut.rly1_act > MnOUT_RLY_OPER_MT_10_MAX)  lMnOut.rly1_act = MnOUT_RLY1_ACT_DFT;
+ 873   2            if(lMnOut.rly1_stp > MnOUT_RLY_OPER_MT_10_MAX)  lMnOut.rly1_stp = MnOUT_RLY1_STP_DFT;
+ 874   2            if(lMnOut.rly2_act > MnOUT_RLY_OPER_MT_10_MAX)  lMnOut.rly2_act = MnOUT_RLY2_ACT_DFT;
+ 875   2            if(lMnOut.rly2_stp > MnOUT_RLY_OPER_MT_10_MAX)  lMnOut.rly2_stp = MnOUT_RLY2_STP_DFT;
+ 876   2            break;
+ 877   2          case MnFTR_DIST_MAX_20m:
+ 878   2            if(lMnOut.rly1_act > MnOUT_RLY_OPER_MT_20_MAX)  lMnOut.rly1_act = MnOUT_RLY1_ACT_DFT;
+ 879   2            if(lMnOut.rly1_stp > MnOUT_RLY_OPER_MT_20_MAX)  lMnOut.rly1_stp = MnOUT_RLY1_STP_DFT;
+ 880   2            if(lMnOut.rly2_act > MnOUT_RLY_OPER_MT_20_MAX)  lMnOut.rly2_act = MnOUT_RLY2_ACT_DFT;
+ 881   2            if(lMnOut.rly2_stp > MnOUT_RLY_OPER_MT_20_MAX)  lMnOut.rly2_stp = MnOUT_RLY2_STP_DFT;
+ 882   2            break;
+ 883   2        }
+ 884   1        
+ 885   1        if(lMnOut.protocol >= MnOUT_PROT_MAX)     lMnOut.protocol = MnOUT_PROT_STD;
+ 886   1        if(lMnOut.mdb_addr >  MnOUT_MDB_ADDR_MAX)   lMnOut.mdb_addr = MnOUT_MDB_ADDR_DFT;
+ 887   1        if(lMnOut.mdb_baud >= MnOUT_MDB_BAUD_MAX)   lMnOut.mdb_baud = MnOUT_MDB_BAUD_09600;
+ 888   1        if(lMnOut.rf_ch    >  MnOUT_RF_CH_MAX)      lMnOut.rf_ch    = MnOUT_RF_CH_DFT;
+ 889   1      }
+ 890          
+ 891          
+ 892          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 893          //  Global APIs - Get Local Variables
+ 894          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 895          // Page 1
+ 896          U16 MnOUT_GetSet04mA(void)    { return lMnOut.set_04mA;   }
+ 897          U16 MnOUT_GetSet20mA(void)    { return lMnOut.set_20mA;   }
+ 898          U08 MnOUT_GetTrim12mA(void)   { return lMnOut.trim_12mA;  }
+ 899          U08 MnOUT_GetTrim20mA(void)   { return lMnOut.trim_20mA;  }
+ 900          U16 MnOUT_GetEchoDly(void)    { return lMnOut.echo_dly;   }
+ 901          U08 MnOUT_GetEchoOut(void)    { return lMnOut.echo_out;   }
+ 902          // Page 2
+ 903          U16 MnOUT_GetRly1Act(void)    { return lMnOut.rly1_act;   }
+ 904          U16 MnOUT_GetRly1Stp(void)    { return lMnOut.rly1_stp;   }
+ 905          U16 MnOUT_GetRly2Act(void)    { return lMnOut.rly2_act;   }
+ 906          U16 MnOUT_GetRly2Stp(void)    { return lMnOut.rly2_stp;   }
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 17  
+
+ 907          U08 MnOUT_GetProtocol(void)   { return lMnOut.protocol;   }
+ 908          U08 MnOUT_GetMdbAddr(void)    { return lMnOut.mdb_addr;   }
+ 909          U08 MnOUT_GetMdbBaud(void)    { return lMnOut.mdb_baud;   }
+ 910          U08 MnOUT_GetRfCh(void)     { return lMnOut.rf_ch;    }
+ 911          
+ 912          
+ 913          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 914          //  Global APIs - Get Local Variables
+ 915          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 916          void MnOUT_SetSet20mA(U16 val)    { lMnOut.set_20mA = val;    }
+ 917          
+ 918          
+ 919          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 920          //  Global APIs - Memory Access
+ 921          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 922          void MnOUT_MemLoad(void)
+ 923          {
+ 924   1        // Page 1
+ 925   1        lMnOut.set_04mA  = FLS_Rd2Byte(F006_OUT_SET_04mA_L);
+ 926   1        lMnOut.set_20mA  = FLS_Rd2Byte(F008_OUT_SET_20mA_L);
+ 927   1        lMnOut.trim_12mA = FLS_Rd1Byte(F045_OUT_TRIM_12mA);
+ 928   1        lMnOut.trim_20mA = FLS_Rd1Byte(F046_OUT_TRIM_20mA);
+ 929   1        lMnOut.echo_dly  = FLS_Rd2Byte(F022_OUT_ECHO_DLY_L);
+ 930   1        lMnOut.echo_out  = FLS_Rd1Byte(F024_OUT_ECHO_OUTP);
+ 931   1        // Page 2
+ 932   1        lMnOut.rly1_act = FLS_Rd2Byte(F014_OUT_RLY1_ACT_L);
+ 933   1        lMnOut.rly1_stp = FLS_Rd2Byte(F016_OUT_RLY1_STP_L);
+ 934   1        lMnOut.rly2_act = FLS_Rd2Byte(F018_OUT_RLY2_ACT_L);
+ 935   1        lMnOut.rly2_stp = FLS_Rd2Byte(F020_OUT_RLY2_STP_L);
+ 936   1        lMnOut.protocol = FLS_Rd1Byte(F011_OUT_PROTOCOL);
+ 937   1        lMnOut.mdb_addr = FLS_Rd1Byte(F099_OUT_MDB_ADDR);
+ 938   1        lMnOut.mdb_baud = FLS_Rd1Byte(F098_OUT_MDB_BAUD);
+ 939   1        lMnOut.rf_ch  = FLS_Rd1Byte(F012_OUT_RF_CH);
+ 940   1      }
+ 941          
+ 942          void MnOUT_MemSave(void)
+ 943          {
+ 944   1        // Page 1
+ 945   1        FLS_Wr2Byte(F006_OUT_SET_04mA_L, lMnOut.set_04mA);
+ 946   1        FLS_Wr2Byte(F008_OUT_SET_20mA_L, lMnOut.set_20mA);
+ 947   1        FLS_Wr1Byte(F045_OUT_TRIM_12mA,  lMnOut.trim_12mA);
+ 948   1        FLS_Wr1Byte(F046_OUT_TRIM_20mA,  lMnOut.trim_20mA);
+ 949   1        FLS_Wr2Byte(F022_OUT_ECHO_DLY_L, lMnOut.echo_dly);
+ 950   1        FLS_Wr1Byte(F024_OUT_ECHO_OUTP,  lMnOut.echo_out);
+ 951   1        // Page 2
+ 952   1        FLS_Wr2Byte(F014_OUT_RLY1_ACT_L, lMnOut.rly1_act);
+ 953   1        FLS_Wr2Byte(F016_OUT_RLY1_STP_L, lMnOut.rly1_stp);
+ 954   1        FLS_Wr2Byte(F018_OUT_RLY2_ACT_L, lMnOut.rly2_act);
+ 955   1        FLS_Wr2Byte(F020_OUT_RLY2_STP_L, lMnOut.rly2_stp);
+ 956   1        FLS_Wr1Byte(F011_OUT_PROTOCOL,   lMnOut.protocol);
+ 957   1        FLS_Wr1Byte(F099_OUT_MDB_ADDR,   lMnOut.mdb_addr);
+ 958   1        FLS_Wr1Byte(F098_OUT_MDB_BAUD,   lMnOut.mdb_baud);
+ 959   1        FLS_Wr1Byte(F012_OUT_RF_CH,    lMnOut.rf_ch);
+ 960   1      }
+ 961          
+ 962          void MnOUT_MemFtry(void)
+ 963          {
+ 964   1        // Page 1
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 18  
+
+ 965   1        FLS_Wr2Byte(F006_OUT_SET_04mA_L, MnOUT_SET_04mA_MT_DFT);
+ 966   1        FLS_Wr2Byte(F008_OUT_SET_20mA_L, MnOUT_SET_20mA_MT_DFT);
+ 967   1        FLS_Wr1Byte(F045_OUT_TRIM_12mA,  MnOUT_TRIM_CURR_DFT);
+ 968   1        FLS_Wr1Byte(F046_OUT_TRIM_20mA,  MnOUT_TRIM_CURR_DFT);
+ 969   1        FLS_Wr2Byte(F022_OUT_ECHO_DLY_L, MnOUT_ECHO_DLY_DFT);
+ 970   1        FLS_Wr1Byte(F024_OUT_ECHO_OUTP,  MnOUT_ECHO_OUT_HOLD);
+ 971   1        // Page 2
+ 972   1        FLS_Wr2Byte(F014_OUT_RLY1_ACT_L, MnOUT_RLY1_ACT_DFT);
+ 973   1        FLS_Wr2Byte(F016_OUT_RLY1_STP_L, MnOUT_RLY1_STP_DFT);
+ 974   1        FLS_Wr2Byte(F018_OUT_RLY2_ACT_L, MnOUT_RLY2_ACT_DFT);
+ 975   1        FLS_Wr2Byte(F020_OUT_RLY2_STP_L, MnOUT_RLY2_STP_DFT);
+ 976   1        FLS_Wr1Byte(F011_OUT_PROTOCOL,   MnOUT_PROT_STD);
+ 977   1        FLS_Wr1Byte(F099_OUT_MDB_ADDR,   MnOUT_MDB_ADDR_DFT);
+ 978   1        FLS_Wr1Byte(F098_OUT_MDB_BAUD,   MnOUT_MDB_BAUD_09600);
+ 979   1        FLS_Wr1Byte(F012_OUT_RF_CH,    MnOUT_RF_CH_DFT);
+ 980   1      }
+ 981          
+ 982          
+ 983          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 984          //  Global APIs - Public
+ 985          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 986          void MnOUT_InitVari(void)
+ 987          {
+ 988   1        MnOUT_MemLoad();
+ 989   1        OutChk_Vari();
+ 990   1      }
+ 991          
+ 992          void MnOUT_ProcMain(void)
+ 993          {
+ 994   1        U08 fDp = FALSE;
+ 995   1        U08 sel = MnOUT_L00_IDLE + 1;
+ 996   1      
+ 997   1        OutDp_ProcList(sel);
+ 998   1      
+ 999   1        do
+1000   1        {
+1001   2          if(!_SBIT_BTN_DOWN)
+1002   2          {
+1003   3            if(sel < (MnOUT_LST_MAX-1))   sel++;
+1004   3            else              sel = MnOUT_L00_IDLE + 1;
+1005   3            fDp = TRUE;
+1006   3          }
+1007   2      
+1008   2          if(!_SBIT_BTN_UP)
+1009   2          {
+1010   3            if(sel > (MnOUT_L00_IDLE+1))  sel--;
+1011   3            else              sel = (MnOUT_LST_MAX-1);
+1012   3            fDp = TRUE;
+1013   3          }
+1014   2      
+1015   2          if(!_SBIT_BTN_SET)
+1016   2            {
+1017   3            MnBOX_DispBox();
+1018   3      
+1019   3            switch(sel)
+1020   3            { // Page 1
+1021   4              case MnOUT_L01_SET_04mA:
+1022   4              case MnOUT_L02_SET_20mA:  MnOut_SetCurr(sel);   break;
+1023   4              case MnOUT_L03_TRIM_12mA:
+1024   4              case MnOUT_L04_TRIM_20mA: MnOut_TrimCurr(sel);  break;
+C51 COMPILER V9.55   MENU_OUTPUT                                                           04/29/2026 17:23:23 PAGE 19  
+
+1025   4              case MnOUT_L05_OUTP_04mA: MnOut_Outp04mA();   break;
+1026   4              case MnOUT_L06_ECHO_DLY:  MnOut_EchoDelay();    break;
+1027   4              case MnOUT_L07_ECHO_CURR: MnOut_EchoCurr();   break;
+1028   4              // Page 2
+1029   4              case MnOUT_L08_R1_ACT:    MnOut_RlyOper(sel);   break;    
+1030   4              case MnOUT_L09_R1_STOP:   MnOut_RlyOper(sel);   break;
+1031   4              case MnOUT_L10_R2_ACT:    MnOut_RlyOper(sel);   break;
+1032   4              case MnOUT_L11_R2_STOP:   MnOut_RlyOper(sel);   break;
+1033   4              case MnOUT_L12_RLY_TEST:  MnOut_RelayTest();    break;
+1034   4              case MnOUT_L13_PROTOCOL:  MnOut_Protocol();   break;
+1035   4            }
+1036   3            fDp = TRUE;
+1037   3          }
+1038   2      
+1039   2          if(fDp)
+1040   2          {
+1041   3            OutDp_ProcList(sel);
+1042   3            fDp = FALSE;
+1043   3          }
+1044   2      
+1045   2        }
+1046   1        while(_SBIT_BTN_EXIT);
+1047   1      }
+1048          
+1049          
+1050          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1051          //  EOF
+1052          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1053          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   7329    ----
+   CONSTANT SIZE    =    698    ----
+   XDATA SIZE       =     21      84
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

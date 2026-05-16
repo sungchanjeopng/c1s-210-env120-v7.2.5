@@ -1,0 +1,166 @@
+C51 COMPILER V9.55   PCD_MAIN                                                              04/29/2026 17:22:43 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE PCD_MAIN
+OBJECT MODULE PLACED IN .\Objects\pcd_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\bsp\pcd_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_We
+                    -ss\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\List
+                    -ings\pcd_main.lst) TABS(2) OBJECT(.\Objects\pcd_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------
+   2          //
+   3          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   4          //
+   5          //  The information contained herein is confidential property of
+   6          //  WESS-Global Inc. The use, copying, transfer or disclosure of
+   7          //  such information is prohibited except by express written agreement
+   8          //  with WESS-Global Co.,LTD
+   9          //
+  10          //  $Id: templet_format.c 1 2020-07-13 12:00:00Z eddie $
+  11          //  $Date: 2020-07-13 12:00:00 +0900 
+  12          //  $Author: eddie $
+  13          //  $Rev: 1.0 $
+  14          //
+  15          //--------------------------------------------------------------------
+  16          
+  17          
+  18          //--------------------------------------------------------------------
+  19          //  Includes
+  20          //--------------------------------------------------------------------
+  21          // lib
+  22          #include "compiler_defs.h"
+  23          #include "C8051F120_defs.h"
+  24          // sys
+  25          #include "sys_def.h"
+  26          // self
+  27          #include "pcd_main.h"
+  28          // bsp
+  29          #include "flash_main.h"
+  30          #include "gpio_main.h"
+  31          #include "bsp_main.h"
+  32          #include "rly_main.h"
+  33          // app
+  34          #include "app_main.h"
+  35          #include "isr_main.h"
+  36          // menu
+  37          #include "menu_measure.h"
+  38          
+  39          #include "modbus_main.h"
+  40          //--------------------------------------------------------------------
+  41          //  Local Macros
+  42          //--------------------------------------------------------------------
+  43          
+  44          
+  45          //--------------------------------------------------------------------
+  46          //  Global variables
+  47          //--------------------------------------------------------------------
+  48          
+  49          
+  50          //--------------------------------------------------------------------
+  51          //  Local Type definitions
+  52          //--------------------------------------------------------------------
+  53          // PCD: Probe Cleaning Device
+C51 COMPILER V9.55   PCD_MAIN                                                              04/29/2026 17:22:43 PAGE 2   
+
+  54          typedef struct {
+  55            U08 f_run;     // OLD: unsigned char Flag_PCD_run_UC_G;
+  56            U16 c_sec;     // OLD: unsigned int  Cnt_sec_UI_G;
+  57            U16 c_min;     // OLD: unsigned int  Cnt_min_UI_G;
+  58            U16 c_run;
+  59          } LV_PC;
+  60          
+  61          
+  62          //--------------------------------------------------------------------
+  63          //  Local variables
+  64          //--------------------------------------------------------------------
+  65          LV_PC lPc;      // Probe Cleaning
+  66          
+  67          
+  68          //--------------------------------------------------------------------
+  69          // Funtion Definitions
+  70          //--------------------------------------------------------------------
+  71          U08 PCD_GetFgRun(void)    { return lPc.f_run;   }
+  72          
+  73          // PCD: Probe Cleaning Device
+  74          void PCD_InitVari(void)
+  75          {
+  76   1        lPc.f_run = FALSE;
+  77   1        lPc.c_sec = 0;
+  78   1        lPc.c_min = 0;
+  79   1        lPc.c_run = 0;
+  80   1      }
+  81          
+  82          // OLD: void Out_PCD(void)
+  83          void PCD_Prc1Sec(void)    // PCD: Probe Cleaning Device
+  84          {
+  85   1        U16 pcd_intv = MnMSR_GetPcdIntv();
+  86   1      
+  87   1        if(pcd_intv < 1)
+  88   1          return;
+  89   1      
+  90   1        if(lPc.f_run==FALSE)
+  91   1        {
+  92   2          lPc.c_sec++;
+  93   2      
+  94   2          if(lPc.c_sec >= 60)
+  95   2          {
+  96   3            lPc.c_min++;
+  97   3            lPc.c_sec = 0;
+  98   3          }
+  99   2      
+ 100   2          if(pcd_intv < 60)
+ 101   2          {
+ 102   3            if(lPc.c_sec >= pcd_intv)
+ 103   3            {
+ 104   4              lPc.f_run = TRUE;
+ 105   4              lPc.c_sec = 0;
+ 106   4            }
+ 107   3          }
+ 108   2          else
+ 109   2          {
+ 110   3            if(lPc.c_min >= (pcd_intv / 60))
+ 111   3            {
+ 112   4              lPc.f_run = TRUE;
+ 113   4              lPc.c_min = 0;
+ 114   4              lPc.c_sec = 0;
+ 115   4            }
+C51 COMPILER V9.55   PCD_MAIN                                                              04/29/2026 17:22:43 PAGE 3   
+
+ 116   3          }
+ 117   2      
+ 118   2          if(lPc.f_run == FALSE)
+ 119   2            return;
+ 120   2      
+ 121   2          lPc.c_run =0;
+ 122   2          SBIT_PCD_OUT = RLY_STT_ON;
+ 123   2        }
+ 124   1        else
+ 125   1        {
+ 126   2          if(++lPc.c_run>=MnMSR_GetPcdTerm())
+ 127   2          {
+ 128   3            lPc.f_run = FALSE;
+ 129   3            lPc.c_run =0;
+ 130   3            SBIT_PCD_OUT = RLY_STT_OFF;
+ 131   3          }
+ 132   2        }
+ 133   1      }
+ 134          
+ 135          
+ 136          // EOF
+ 137          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    222    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      7    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

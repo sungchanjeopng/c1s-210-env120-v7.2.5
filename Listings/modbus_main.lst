@@ -1,0 +1,187 @@
+C51 COMPILER V9.55   MODBUS_MAIN                                                           04/29/2026 17:22:06 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MODBUS_MAIN
+OBJECT MODULE PLACED IN .\Objects\modbus_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\app\modbus_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\
+                    -_Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\L
+                    -istings\modbus_main.lst) TABS(2) OBJECT(.\Objects\modbus_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------
+   2          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use,
+   5          //  copying, transfer or disclosure of such information is prohibited except by express written
+   6          //  agreement with WESS-Global Co.,LTD
+   7          //
+   8          //  $Date: 2020-07-13 12:00:00 +0900 $
+   9          //  $Author: eddie $
+  10          //  $Rev: 1.0 $
+  11          //--------------------------------------------------------------------------------------------------
+  12          
+  13          
+  14          //--------------------------------------------------------------------------------------------------
+  15          //  Includes
+  16          //--------------------------------------------------------------------------------------------------
+  17          // chipset
+  18          #include "compiler_defs.h"
+  19          #include "C8051F120_defs.h"
+  20          // sys
+  21          #include "sys_def.h"
+  22          // self
+  23          #include "modbus_main.h"
+  24          // lib
+  25          #include "crc_main.h"
+  26          #include "dly_main.h"
+  27          // bsp
+  28          #include "bsp_main.h"
+  29          #include "flash_main.h"
+  30          #include "uart_main.h"
+  31          #include "gpio_main.h"
+  32          // app
+  33          #include "prtc_main.h"
+  34          #include "app_main.h"
+  35          #include "measure_temperature.h"
+  36          // isr
+  37          #include "isr_main.h"
+  38          // menu
+  39          #include "menu_output.h"
+  40          
+  41          
+  42          //--------------------------------------------------------------------------------------------------
+  43          //  Global variables
+  44          //--------------------------------------------------------------------------------------------------
+  45          
+  46          
+  47          //--------------------------------------------------------------------------------------------------
+  48          //  Local variables
+  49          //--------------------------------------------------------------------------------------------------
+  50          
+  51          
+  52          //--------------------------------------------------------------------------------------------------
+  53          //  Local Funtions
+C51 COMPILER V9.55   MODBUS_MAIN                                                           04/29/2026 17:22:06 PAGE 2   
+
+  54          //--------------------------------------------------------------------------------------------------
+  55          
+  56          
+  57          //--------------------------------------------------------------------------------------------------
+  58          //  Global APIs
+  59          //--------------------------------------------------------------------------------------------------
+  60          void MDB_SetLevel(void)
+  61          {
+  62   1          U08 cnt, i;
+  63   1      
+  64   1          cnt = (gUt.rx_pkt[MDB_PKT_05_SIZE] * 2) + 3;
+  65   1      
+  66   1          gUt.tx_pkt[0] = MnOUT_GetMdbAddr();
+  67   1          gUt.tx_pkt[1] = 0x03;
+  68   1          gUt.tx_pkt[2] = gUt.rx_pkt[MDB_PKT_05_SIZE] * 2;
+  69   1      
+  70   1          for(i=3; i<cnt; i++)
+  71   1            gUt.tx_pkt[i] = gUt_level[i + (gUt.rx_pkt[3]*2)];
+  72   1      
+  73   1          gCc_b16 = CRC_GetB16(gUt.tx_pkt, cnt);
+  74   1      
+  75   1          gUt.tx_pkt[cnt]   = (U08)((gCc_b16>>0) & 0x00ff);
+  76   1          gUt.tx_pkt[cnt+1] = (U08)((gCc_b16>>8) & 0x00ff);
+  77   1      }
+  78          
+  79          void MDB_SetTmprt(void)
+  80          {
+  81   1          U08 i;
+  82   1          U08 dmy_0 = (gUt.rx_pkt[MDB_PKT_05_SIZE] * 2) + 3;
+  83   1      
+  84   1          gUt.tx_pkt[0] = MnOUT_GetMdbAddr();
+  85   1          gUt.tx_pkt[1] = 0x03;
+  86   1          gUt.tx_pkt[2] = gUt.rx_pkt[MDB_PKT_05_SIZE] * 2;
+  87   1      
+  88   1          for(i=3; i<dmy_0; i++)
+  89   1              gUt.tx_pkt[i] = gUt_tmprt[i + ((gUt.rx_pkt[3] - 9) * 2)];
+  90   1      
+  91   1          gCc_b16 = CRC_GetB16(gUt.tx_pkt, dmy_0);
+  92   1      
+  93   1          gUt.tx_pkt[dmy_0]   = (U08)((gCc_b16>>0) & 0x00ff);
+  94   1          gUt.tx_pkt[dmy_0+1] = (U08)((gCc_b16>>8) & 0x00ff);
+  95   1      }
+  96          
+  97          void MDB_TxMsg(U08 *p_msg, U08 size)
+  98          {
+  99   1          U08 i = 0;
+ 100   1      
+ 101   1          while(size--)
+ 102   1          {
+ 103   2              UT0_TxByte(p_msg[i]);
+ 104   2              i++;
+ 105   2          }
+ 106   1      }
+ 107          
+ 108          void MDB_PrcMain(void)
+ 109          {
+ 110   1        U16 dly = 0;
+ 111   1        U08 old = SFRPAGE;
+ 112   1      
+ 113   1        if(!gUt.f_rx)
+ 114   1          return;
+ 115   1      
+C51 COMPILER V9.55   MODBUS_MAIN                                                           04/29/2026 17:22:06 PAGE 3   
+
+ 116   1        SFRPAGE = CONFIG_PAGE;
+ 117   1        EA    = ISR_ITR_DISABLE;
+ 118   1      
+ 119   1        switch(MnOUT_GetMdbBaud())
+ 120   1        {
+ 121   2            case MnOUT_MDB_BAUD_04800:     dly = 1682;    break;
+ 122   2            case MnOUT_MDB_BAUD_09600:     dly = 839;     break;
+ 123   2            case MnOUT_MDB_BAUD_19200:     dly = 418;     break;
+ 124   2        }
+ 125   1      
+ 126   1        while(dly--);
+ 127   1      
+ 128   1        SBIT_RS485_TR = PRT_485_TX_ON;
+ 129   1      
+ 130   1        if(gUt.rx_pkt[MDB_PKT_01_CMD] == MDB_CMD_03_REQ_READ)
+ 131   1        {
+ 132   2            if((gUt.rx_pkt[MDB_PKT_03_ADDR] < 3) && (gUt.rx_pkt[MDB_PKT_05_SIZE] < 4))
+ 133   2            {
+ 134   3            MDB_SetLevel();
+ 135   3            MDB_TxMsg(gUt.tx_pkt, (gUt.rx_pkt[MDB_PKT_05_SIZE]*2) + 5);
+ 136   3            }
+ 137   2            else if((gUt.rx_pkt[MDB_PKT_03_ADDR] > 8) && (gUt.rx_pkt[MDB_PKT_03_ADDR] < 11) &&
+ 138   2                (gUt.rx_pkt[MDB_PKT_05_SIZE] < 3))
+ 139   2            {
+ 140   3                MDB_SetTmprt();
+ 141   3                MDB_TxMsg(gUt.tx_pkt, (gUt.rx_pkt[MDB_PKT_05_SIZE]*2) + 5);
+ 142   3            }
+ 143   2        }
+ 144   1      
+ 145   1        DLY_RunMsec(5);
+ 146   1      
+ 147   1        SBIT_RS485_TR = PRT_485_RX_ON;
+ 148   1      
+ 149   1        gUt.f_rx = FALSE;
+ 150   1        gUt.rx_pkt[MDB_PKT_00_NULL] = 0;
+ 151   1      
+ 152   1        EA    = ISR_ITR_ENABLE;   // Interrupt Enable
+ 153   1        SFRPAGE = old;
+ 154   1      }
+ 155          
+ 156          
+ 157          // EOF
+ 158          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    547    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      10
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

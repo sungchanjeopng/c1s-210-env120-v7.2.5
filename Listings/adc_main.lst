@@ -1,0 +1,291 @@
+C51 COMPILER V9.55   ADC_MAIN                                                              04/29/2026 17:22:13 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE ADC_MAIN
+OBJECT MODULE PLACED IN .\Objects\adc_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\bsp\adc_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_We
+                    -ss\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\List
+                    -ings\adc_main.lst) TABS(2) OBJECT(.\Objects\adc_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------
+   2          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use,
+   5          //  copying, transfer or disclosure of such information is prohibited except by express written
+   6          //  agreement with WESS-Global Co.,LTD
+   7          //
+   8          //  $Date: 2020-07-13 12:00:00 +0900 $
+   9          //  $Author: eddie $
+  10          //  $Rev: 1.0 $
+  11          //--------------------------------------------------------------------------------------------------
+  12          
+  13          
+  14          //--------------------------------------------------------------------------------------------------
+  15          //  Includes
+  16          //--------------------------------------------------------------------------------------------------
+  17          // chipset
+  18          #include "compiler_defs.h"
+  19          #include "C8051F120_defs.h"
+  20          // sys
+  21          #include "sys_def.h"
+  22          // self
+  23          #include "adc_main.h"
+  24          // bsp
+  25          #include "bsp_main.h"
+  26          #include "mem_main.h"
+  27          #include "flash_main.h"
+  28          #include "gpio_main.h"
+  29          // app
+  30          #include "app_main.h"
+  31          #include "measure_main.h"
+  32          #include "measure_analyze.h"
+  33          // menu
+  34          #include "menu_engineer.h"
+  35          
+  36          #include "modbus_main.h"
+  37          
+  38          //--------------------------------------------------------------------------------------------------
+  39          //  Global variables
+  40          //--------------------------------------------------------------------------------------------------
+  41          U08 gAd_data[ADC_DATA_MAX];     // OLD: unsigned char Echo_data_array_UC_G[1100];
+  42          
+  43          
+  44          //--------------------------------------------------------------------------------------------------
+  45          //  Local variables
+  46          //--------------------------------------------------------------------------------------------------
+  47          
+  48          
+  49          //--------------------------------------------------------------------------------------------------
+  50          //  Global APIs
+  51          //--------------------------------------------------------------------------------------------------
+  52          // OLD: void Init_ADC0(void)
+  53          void AD0_InitBoot(void)
+C51 COMPILER V9.55   ADC_MAIN                                                              04/29/2026 17:22:13 PAGE 2   
+
+  54          {
+  55   1        SFRPAGE = ADC0_PAGE;
+  56   1        ADC0CN  = 0x80;
+  57   1      }
+  58          
+  59          void ADC_InitVari(void)
+  60          {
+  61   1        int i;
+  62   1      
+  63   1        for(i=0; i<ADC_DATA_MAX; i++)
+  64   1            gAd_data[i] = 0;
+  65   1      }
+  66          
+  67          // OLD: unsigned int ADC0_convert(unsigned char Sel_ch_UC_L)
+  68          U16 AD0_GetRegs(U08 idx)
+  69          {
+  70   1          U16 rtn = 0;
+  71   1          U08 old;
+  72   1      
+  73   1          old = SFRPAGE;
+  74   1      
+  75   1          SFRPAGE = ADC0_PAGE;
+  76   1      
+  77   1          AD0EN   = 0;
+  78   1          ADC0CF  = 0xF8;
+  79   1          ADC0CN  = 0xC0;   // 0x80;
+  80   1          AMX0SL  = idx;    // select AIN_chanel
+  81   1          AD0INT  = 0;    // Clear pending conversion complete indicator
+  82   1          AD0BUSY = 1;    // Start ADC conversion
+  83   1          while (!AD0INT);
+  84   1      
+  85   1          rtn = ADC0H;
+  86   1          rtn = (rtn << 8) | ADC0L;
+  87   1      
+  88   1          SFRPAGE = old;
+  89   1      
+  90   1          return rtn;
+  91   1      }
+  92          
+  93          // OLD: void AD_raw_data_Write(void) 
+  94          void ADC_WriteRaw(void)
+  95          {
+  96   1          U32 i;
+  97   1        U32 addr;
+  98   1          U08 old = SFRPAGE;
+  99   1      
+ 100   1        if(MsANL_GetCtEcho() == 0) return;
+ 101   1      
+ 102   1        for(i=0; i<ADC_DATA_MAX; i++)
+ 103   1        {
+ 104   2          //MDB_PrcMain();
+ 105   2      
+ 106   2          addr = (gMm_addr_raw-1) + (i*MnEGN_GetAdcNumb()) + MsANL_GetCtEcho(); 
+ 107   2      
+ 108   2          MEM_WriteByte(MEM_MRAM, addr, gAd_data[i]);    // Max : 250000 [220000(ADC Number_MAX*ADC_DATA_MAX)+30000
+             -]
+ 109   2          
+ 110   2        }
+ 111   1      
+ 112   1          SFRPAGE = old;
+ 113   1        //MDB_PrcMain();
+ 114   1      }
+C51 COMPILER V9.55   ADC_MAIN                                                              04/29/2026 17:22:13 PAGE 3   
+
+ 115          
+ 116          void ADC_AvrgRaw(void)
+ 117          {
+ 118   1          U08 i, avg;
+ 119   1          U16 dummy, sum, j;
+ 120   1          U08 old = SFRPAGE;
+ 121   1      
+ 122   1        if(MsANL_GetCtEcho() == 0) return;
+ 123   1      
+ 124   1        if(!MEAS_GetFgAdc())    avg = MsANL_GetCtEcho();
+ 125   1        else            avg = MEAS_GetCtAvrg();
+ 126   1      
+ 127   1          MEM_ReadSeq_StartAddr(MEM_MRAM, gMm_addr_raw);
+ 128   1      
+ 129   1          for(j=0; j<ADC_DATA_MAX; j++) 
+ 130   1          {
+ 131   2          //MDB_PrcMain();
+ 132   2      
+ 133   2              sum = 0;
+ 134   2      
+ 135   2              for(i=0; i<avg; i++)
+ 136   2                  sum += MEM_ReadSeq_ByteData(MEM_MRAM);
+ 137   2      
+ 138   2          //MDB_PrcMain();
+ 139   2              for (i=0; i<(MnEGN_GetAdcNumb()-avg); i++) 
+ 140   2                  dummy += MEM_ReadSeq_ByteData(MEM_MRAM);
+ 141   2      
+ 142   2              gAd_data[j] = sum / avg;
+ 143   2      
+ 144   2          }
+ 145   1          MEM_RwSeq_End(MEM_MRAM);                // Max : 250000 [220000(ADC Number_MAX*ADC_DATA_MAX)+30000]
+ 146   1      
+ 147   1          SFRPAGE = old;
+ 148   1        MDB_PrcMain();
+ 149   1      }
+ 150          
+ 151          void ADC_ProcSmooth(U16 num, U16 size) 
+ 152          {
+ 153   1          U16 sum;
+ 154   1          U16 i, j, k;
+ 155   1          U08 move, cnt;
+ 156   1      
+ 157   1          cnt = 3;
+ 158   1      
+ 159   1          for(i=0; i<num; i++) 
+ 160   1          {
+ 161   2              cnt = 3;
+ 162   2              for(j=1; j<size; j++) 
+ 163   2              {
+ 164   3             MDB_PrcMain();
+ 165   3                move = 1;
+ 166   3                
+ 167   3                for (k=0; k<j; k++) 
+ 168   3                {
+ 169   4                  sum += gAd_data[j+move];
+ 170   4                  sum += gAd_data[j-move];
+ 171   4                  move++;
+ 172   4                }
+ 173   3                
+ 174   3                sum += gAd_data[j];
+ 175   3                gAd_data[j] = (U08)(sum / cnt);
+ 176   3                cnt += 2;
+C51 COMPILER V9.55   ADC_MAIN                                                              04/29/2026 17:22:13 PAGE 4   
+
+ 177   3                sum = 0;
+ 178   3              }
+ 179   2      
+ 180   2              for(j= size; j<ADC_DATA_MAX-size; j++)
+ 181   2              {
+ 182   3                move = 1;
+ 183   3                
+ 184   3                for (k = 0; k < size; k++) 
+ 185   3                {
+ 186   4                  sum += gAd_data[j+move];
+ 187   4                  sum += gAd_data[j-move];
+ 188   4                  move++;
+ 189   4                }
+ 190   3                
+ 191   3                sum += gAd_data[j];
+ 192   3                gAd_data[j] = (U08)(sum / ((size * 2) + 1));
+ 193   3                sum = 0;
+ 194   3              }
+ 195   2      
+ 196   2              cnt = (size * 2) - 1;
+ 197   2      
+ 198   2              for(j=ADC_DATA_MAX-size; j<ADC_DATA_MAX; j++) 
+ 199   2              {
+ 200   3                move = 1;
+ 201   3                
+ 202   3                for(k=size; k>1; k--) 
+ 203   3                {
+ 204   4                  sum += gAd_data[j+move];
+ 205   4                  sum += gAd_data[j-move];
+ 206   4                  move++;
+ 207   4                }
+ 208   3                sum += gAd_data[j];
+ 209   3      
+ 210   3                if(cnt == 0)    gAd_data[j] = 0;
+ 211   3                else            gAd_data[j] = (U08)(sum / cnt);
+ 212   3      
+ 213   3                cnt -= 2;
+ 214   3                size--;
+ 215   3                sum = 0;
+ 216   3              }
+ 217   2          }
+ 218   1      }
+ 219          
+ 220          // OLD: void ADC_Echo(void) 
+ 221          void ADC_PrcEcho(void) 
+ 222          {
+ 223   1        U16 i;
+ 224   1        U08 old = SFRPAGE;
+ 225   1      
+ 226   1        SFRPAGE = CONFIG_PAGE;
+ 227   1        SBIT_P6_B6 = 1;
+ 228   1      
+ 229   1        SFRPAGE = ADC0_PAGE;        //ADC0_PAGE 0x00, TMR2_PAGE 0x00, LEGACY_PAGE 0x00
+ 230   1        AD0INT  = 0;
+ 231   1        SFRPAGE = TMR2_PAGE;
+ 232   1        TR2 = 1;
+ 233   1      
+ 234   1        for(i=10; i<ADC_DATA_MAX; i++) 
+ 235   1        {
+ 236   2          SFRPAGE = ADC0_PAGE;
+ 237   2          while(!AD0INT);
+ 238   2      
+C51 COMPILER V9.55   ADC_MAIN                                                              04/29/2026 17:22:13 PAGE 5   
+
+ 239   2          TF2 = 0;
+ 240   2          AD0INT = 0;
+ 241   2      
+ 242   2          gAd_data[i] = ADC0H;
+ 243   2      
+ 244   2          SFRPAGE = CONFIG_PAGE;
+ 245   2          SBIT_P6_B6 = ~SBIT_P6_B6;
+ 246   2        }
+ 247   1      
+ 248   1        SFRPAGE = TMR2_PAGE;
+ 249   1        TR2 = 0;
+ 250   1        TF2 = 0;
+ 251   1      
+ 252   1        SFRPAGE = old;
+ 253   1      }
+ 254          
+ 255          
+ 256          // EOF
+ 257          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1564    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   2200      32
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

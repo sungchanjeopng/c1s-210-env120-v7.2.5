@@ -1,0 +1,430 @@
+C51 COMPILER V9.55   MENU_MAIN                                                             04/29/2026 17:23:03 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MENU_MAIN
+OBJECT MODULE PLACED IN .\Objects\menu_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\menu\menu_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_
+                    -Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Li
+                    -stings\menu_main.lst) TABS(2) OBJECT(.\Objects\menu_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // std
+  15          #include <math.h>
+  16          #include <intrins.h>
+  17          #include <stdarg.h>
+  18          #include <string.h>
+  19          // chipset
+  20          #include "compiler_defs.h"
+  21          #include "C8051F120_defs.h"
+  22          // sys
+  23          #include "sys_def.h"
+  24          // self
+  25          #include "menu_main.h"
+  26          // bsp
+  27          #include "bsp_main.h"
+  28          #include "tmr_main.h"
+  29          #include "lcd_main.h"
+  30          #include "lcd_data.h"
+  31          #include "gpio_main.h"
+  32          #include "flash_main.h"
+  33          #include "data_main.h"
+  34          #include "rtc_ds1302.h"
+  35          // font
+  36          #include "font_def.h"
+  37          #include "font_idx_kor.h"
+  38          // app
+  39          #include "btn_main.h"
+  40          #include "dly_main.h"
+  41          #include "app_main.h"
+  42          #include "isr_main.h"
+  43          // disp
+  44          #include "disp_main.h"
+  45          #include "disp_menu.h"
+  46          #include "disp_string.h"
+  47          // menu
+  48          #include "menu_box.h"
+C51 COMPILER V9.55   MENU_MAIN                                                             04/29/2026 17:23:03 PAGE 2   
+
+  49          #include "menu_pass.h"
+  50          #include "menu_system.h"
+  51          #include "menu_measure.h"
+  52          #include "menu_output.h"
+  53          #include "menu_data.h"
+  54          #include "menu_engineer.h"
+  55          #include "menu_factory.h"
+  56          #include "menu_test.h"
+  57          // screen
+  58          #include "screen_main.h"
+  59          
+  60          
+  61          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  62          //  Global variables
+  63          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  64          
+  65          
+  66          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  67          //  Local variables
+  68          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  69          
+  70          
+  71          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  72          //  Local Funtions
+  73          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  74          void MnProc_ExitSection(void)
+  75          {
+  76   1        DISP_ClearScr();
+  77   1        DpSTR_LineUpd(FT_EN_08x16, 0, 60, 55,"Storing data...");
+  78   1        DLY_RunMsec(1000);
+  79   1      
+  80   1        FLS_WriteAll();
+  81   1      
+  82   1        TMR_CfgResume();
+  83   1        if(MnDAT_GetFgSave())
+  84   1        {
+  85   2          RTC_GetTime();
+  86   2          gLg_min=gRt.min;
+  87   2          gLg_hour=gRt.hour;
+  88   2        }
+  89   1        gIsr_tm3_cnt = 20;
+  90   1      } 
+  91          #if 0
+              void MnDp_ListEng(U08 sel)
+              {
+                U08 c  = MENU_S01_SYSTEM;
+                U08 ft = FT_EN_08x16;
+                U08 pSel[MENU_SCT_NUMB] = {0, };
+                pSel[sel] = TRUE;
+                #if 1
+                                          //0123456789abcdef0123456789abcde
+                MnLST_DispStr(ft, pSel[c++], MENU_S01_SYSTEM+1,  "System                         ");
+                MnLST_DispStr(ft, pSel[c++], MENU_S02_MEASURE+1, "Measurement                    ");
+                MnLST_DispStr(ft, pSel[c++], MENU_S03_OUTPUT+1,  "Output                         ");
+                MnLST_DispStr(ft, pSel[c++], MENU_S04_DATA+1,    "Data                           ");
+                #else
+C51 COMPILER V9.55   MENU_MAIN                                                             04/29/2026 17:23:03 PAGE 3   
+
+                                        //0123456789abcdef0123456789abcde
+                MnLST_DispStr(ft, pSel[c++], MENU_S01_SYSTEM+1,  "System                         ");
+                MnLST_DispStr(ft, pSel[c++], MENU_S02_MEASURE+1, "Measurement                    ");
+                MnLST_DispStr(ft, pSel[c++], MENU_S03_OUTPUT+1,  "Output                         ");
+                MnLST_DispStr(ft, pSel[c++], MENU_S04_DATA+1,  "Data                           ");
+                #endif
+              }
+              
+              #if defined (_FT_LANG_KR)
+              void MnDp_ListKor(U08 sel)
+              {
+              #if 1
+                U08 c  = MENU_S01_SYSTEM;
+                U08 ft = FT_LC_16x16;
+                U08 pSel[MENU_SCT_NUMB] = {0, };
+              
+                pSel[sel] = TRUE;
+              
+                MnLST_DispStr(ft, pSel[c++], MENU_S01_SYSTEM+1,  _F_STR(FKR_SI_,   FKR_SEU, FKR_TEM, 1,1,1,1,1,1,1,1,1,1,1
+             -,1));
+                MnLST_DispStr(ft, pSel[c++], MENU_S02_MEASURE+1, _F_STR(FKR_CHEUG, FKR_JEONG, 1,     1,1,1,1,1,1,1,1,1,1,1,
+             -1));
+                MnLST_DispStr(ft, pSel[c++], MENU_S03_OUTPUT+1,  _F_STR(FKR_CHUL,  FKR_LYEOG, 1,     1,1,1,1,1,1,1,1,1,1,1,
+             -1));
+                MnLST_DispStr(ft, pSel[c++], MENU_S04_DATA+1,    _F_STR(FKR_DE_,   FKR_I__, FKR_TEO, 1,1,1,1,1,1,1,1,1,1,1
+             -,1));
+              
+              #else
+                U08 i;
+                U08 pSel[MENU_SCT_NUMB] = {0, };
+              
+                pSel[sel] = TRUE;
+              
+                for(i=(MENU_S00_IDLE+1); i<MENU_SCT_NUMB; i++)
+                {
+                  switch(i)
+                  {
+                    case MENU_S01_SYSTEM:   _F_SS(FKR_SI_,  FKR_SEU,  FKR_TEM,  1,    1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MENU_S02_MEASURE:    _F_SS(FKR_CHEUG,FKR_JEONG,  1,      1,    1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MENU_S03_OUTPUT:   _F_SS(FKR_CHUL, FKR_LYEOG,  1,      1,    1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MENU_S04_DATA:     _F_SS(FKR_DE_,  FKR_I__,  FKR_TEO,  1,    1,1,1,1,1,1,1,1,1,1,1);   break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i], i+1, "");
+                }
+              #endif
+              }
+              
+              #elif defined (_FT_LANG_CN)
+              void MnDp_ListChn(U08 sel)
+              {
+                U08 i;
+                U08 pSel[MENU_SCT_NUMB] = {0, };
+              
+                pSel[sel] = TRUE;
+              
+                for(i=(MENU_S00_IDLE+1); i<MENU_SCT_NUMB; i++)
+                {
+                  switch(i)
+                  {
+                    case MENU_S01_SYSTEM:   _F_SS(106, 108, 121, 147,   1, 110, 118, 121, 87, 1,1,1,1,1,1);     break;
+                    case MENU_S02_MEASURE:    _F_SS(104, 170, 134, 108,   1, 110, 118, 121, 87, 1,1,1,1,1,1);     break;
+                    case MENU_S03_OUTPUT:   _F_SS(160,  95, 170,   1, 110, 118, 121, 87, 1,   1,1,1,1,1,1);     break;
+C51 COMPILER V9.55   MENU_MAIN                                                             04/29/2026 17:23:03 PAGE 4   
+
+                    case MENU_S04_DATA:     _F_SS(157, 159, 170,   1, 110, 118, 121, 87, 1,   1,1,1,1,1,1);     break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i], i+1, "");
+                }
+              }
+              
+              
+              #elif defined (_FT_LANG_JP)
+              void MnDp_ListJpn(U08 sel)
+              {
+                U08 i;
+                U08 pSel[MENU_SCT_NUMB] = {0, };
+              
+                pSel[sel] = TRUE;
+              
+                for(i=(MENU_S00_IDLE+1); i<MENU_SCT_NUMB; i++)
+                {
+                  switch(i)
+                  {
+                    case MENU_S01_SYSTEM:     _F_SS(79, 80, 91, 82, 0,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MENU_S02_MEASURE:    _F_SS(55, 16, 0,  1,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MENU_S03_OUTPUT:   _F_SS(49, 45, 90, 41, 0,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MENU_S04_DATA:     _F_SS(81, 69, 24, 0,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i], i+1, "");
+                }
+              }
+              
+              #endif
+              #endif
+ 193          void MnuMain_DspList(U08 idx)
+ 194          {
+ 195   1      #if 1
+ 196   1        U08 i;
+ 197   1        U08 c  = MENU_S01_SYSTEM;
+ 198   1        U08 ft_eng = FT_EN_08x16;
+ 199   1        U08 ft_loc = FT_LC_16x16;
+ 200   1        U08 pSel[MENU_SCT_NUMB] = {0, };
+ 201   1      
+ 202   1        if(idx > 8)
+ 203   1          return;
+ 204   1      
+ 205   1        pSel[idx] = TRUE;
+ 206   1      
+ 207   1      
+ 208   1        switch(MnSYS_GetLang())
+ 209   1        {
+ 210   2          case MnSYS_LANG_LOC:
+ 211   2            #if defined (_FT_LANG_KR)
+                    MnLST_DispClr(1);
+                    DpSTR_DrawLin(ft_loc, FALSE,   MNU_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(FKR_ME,  FKR_NYU, 1,1,1,1,1,1,1
+             -,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MENU_S01_SYSTEM+1,  _F_STR(FKR_SI_,   FKR_SEU,   FKR_TEM, 1,1,1,1,1,1,
+             -1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MENU_S02_MEASURE+1, _F_STR(FKR_CHEUG, FKR_JEONG, 1,     1,1,1,1,1,1,1,1
+             -,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MENU_S03_OUTPUT+1,  _F_STR(FKR_CHUL,  FKR_LYEOG, 1,     1,1,1,1,1,1,1,1
+             -,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MENU_S04_DATA+1,    _F_STR(FKR_DE_,   FKR_I__,   FKR_TEO, 1,1,1,1,1,1,
+             -1,1,1,1,1,1));
+                    #elif defined (_FT_LANG_CN)
+                    MnLST_DispClr(1);
+C51 COMPILER V9.55   MENU_MAIN                                                             04/29/2026 17:23:03 PAGE 5   
+
+                    DpSTR_DrawLin(ft_loc, FALSE,   MNU_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(180, 18, 1, 1,1,1,1,1,1,1,1,1,1
+             -,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MENU_S01_SYSTEM+1,  _F_STR(79,  80,  91,  82,   1, 1, 1, 1, 1,1,1,1,1,
+             -1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MENU_S02_MEASURE+1, _F_STR(66, 107,   187,   82,   1, 1, 1, 1, 1,1,1,1
+             -,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MENU_S03_OUTPUT+1,  _F_STR(101, 12,   1,   1,   1, 1, 1, 1, 1,1,1,1,1,
+             -1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MENU_S04_DATA+1,    _F_STR(49,  45,  90,  41,   1, 1, 1, 1, 1,1,1,1,1,
+             -1,1));
+                    #elif defined (_FT_LANG_JP)
+ 226   2            MnLST_DispClr(1);
+ 227   2                                                             //0123456789abcdef0123456789abcde
+ 228   2            DpSTR_DrawLin(ft_loc, FALSE,   MNU_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(95, 24, 33, 42,1,1,1,1,1,1,1,1,
+             -1,1,1));
+ 229   2            MnLST_DispStr(ft_loc, pSel[c++], MENU_S01_SYSTEM+1,  _F_STR(13, 15, 20, 31, 1,1,1,1,1,1,1,1,1,1,1));
+ 230   2            MnLST_DispStr(ft_loc, pSel[c++], MENU_S02_MEASURE+1, _F_STR(81, 73,  1,  1, 1,1,1,1,1,1,1,1,1,1,1));
+ 231   2            MnLST_DispStr(ft_loc, pSel[c++], MENU_S03_OUTPUT+1,  _F_STR(48, 51, 1, 1, 1,1,1,1,1,1,1,1,1,1,1));
+ 232   2            MnLST_DispStr(ft_loc, pSel[c++], MENU_S04_DATA+1,    _F_STR(21, 42, 17,  1, 1,1,1,1,1,1,1,1,1,1,1));
+ 233   2            #endif
+ 234   2            break;
+ 235   2          case MnSYS_LANG_ENG:
+ 236   2          default:
+ 237   2                                                           //0123456789abcdef0123456789abcde
+ 238   2            MnLST_DispStr(ft_eng, FALSE,   MENU_S00_IDLE+1, "            MENU               ");                                //
+             - 0123456789abcdef0123456789abcde
+ 239   2            MnLST_DispStr(ft_eng, pSel[c++], MENU_S01_SYSTEM+1,  "System                         ");
+ 240   2            MnLST_DispStr(ft_eng, pSel[c++], MENU_S02_MEASURE+1, "Measurement                    ");
+ 241   2            MnLST_DispStr(ft_eng, pSel[c++], MENU_S03_OUTPUT+1,  "Output                         ");
+ 242   2            MnLST_DispStr(ft_eng, pSel[c++], MENU_S04_DATA+1,    "Data                           ");
+ 243   2            break;
+ 244   2        }
+ 245   1      #else
+                U08 i;
+              
+                if(idx > 8)
+                  return;
+                                        // 0123456789abcdef0123456789abcde
+                DpSTR_DrawLin(FT_EN_08x16, F_F, 0, DpMNU_STR_Y01, "            MENU               ");
+                switch(MnSYS_GetLang())
+                {
+                  case MnSYS_LANG_LOC:
+              #if defined (_FT_LANG_KR)
+                    MnDp_ListKor(idx);
+              
+              #elif defined (_FT_LANG_CN)
+                    MnDp_ListChn(idx);
+              
+              #elif defined (_FT_LANG_JP)
+                    MnDp_ListJpn(idx);
+              
+              #endif
+                    break;
+              
+                  case MnSYS_LANG_ENG:
+                  default:
+                    MnDp_ListEng(idx);
+                    break;
+                }
+              #endif
+ 273   1      
+ 274   1        for(i=MENU_SCT_NUMB+1; i<=(MNU_LIST_NUM+1); i++)
+C51 COMPILER V9.55   MENU_MAIN                                                             04/29/2026 17:23:03 PAGE 6   
+
+ 275   1          MnLST_DispClr(i);
+ 276   1      
+ 277   1          LDT_UpdBuff(LCD_Y_START, LCD_Y_END);
+ 278   1      }
+ 279          
+ 280          
+ 281          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 282          //  Global APIs - Access Local Variables
+ 283          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 284          // Get
+ 285          // Set
+ 286          
+ 287          
+ 288          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 289          //  Global APIs - Public
+ 290          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 291          void MENU_InitVari(void)
+ 292          {
+ 293   1        MnSYS_InitVari();
+ 294   1        
+ 295   1        MnFTR_InitVari();
+ 296   1        
+ 297   1        MnMSR_InitVari();
+ 298   1        MnOUT_InitVari();
+ 299   1        MnDAT_InitVari();
+ 300   1      
+ 301   1        MnPAS_InitVari();
+ 302   1        MnEGN_InitVari();
+ 303   1        MnTST_InitVari();
+ 304   1      }
+ 305          
+ 306          void MENU_ProcMain(void)
+ 307          {
+ 308   1        U08 sel = 1;
+ 309   1        U08 fDp = FALSE;
+ 310   1      
+ 311   1        DISP_ClearScr();
+ 312   1        MnuMain_DspList(sel);
+ 313   1        BTN_DelayMsec(BTN_WAIT_SET);
+ 314   1      
+ 315   1        do
+ 316   1        {
+ 317   2          if(!_SBIT_BTN_DOWN)
+ 318   2          {
+ 319   3              if(sel < (MENU_SCT_NUMB-1))   sel++;
+ 320   3              else                            sel = MENU_S00_IDLE +1;
+ 321   3            fDp = TRUE;
+ 322   3          }
+ 323   2      
+ 324   2          if(!_SBIT_BTN_UP)
+ 325   2          {
+ 326   3              if(sel > (MENU_S00_IDLE+1))   sel--;
+ 327   3              else                            sel = MENU_SCT_NUMB - 1;
+ 328   3            fDp = TRUE;
+ 329   3          }
+ 330   2      
+ 331   2          if(!_SBIT_BTN_SET)
+ 332   2          {
+C51 COMPILER V9.55   MENU_MAIN                                                             04/29/2026 17:23:03 PAGE 7   
+
+ 333   3            switch(sel)
+ 334   3            {
+ 335   4              case MENU_S01_SYSTEM:   MnSYS_ProcMain();   break;
+ 336   4              case MENU_S02_MEASURE:      MnMSR_ProcMain();   break;
+ 337   4              case MENU_S03_OUTPUT:   MnOUT_ProcMain();   break;
+ 338   4              case MENU_S04_DATA:     MnDAT_ProcMain();   break;
+ 339   4            }
+ 340   3      
+ 341   3            fDp = TRUE;
+ 342   3          }
+ 343   2      
+ 344   2          if(fDp)
+ 345   2          {
+ 346   3            fDp = FALSE;
+ 347   3            MnuMain_DspList(sel);
+ 348   3            BTN_DelayMsec(BTN_WAIT_SET);
+ 349   3          }
+ 350   2        }
+ 351   1        while(_SBIT_BTN_EXIT);
+ 352   1      
+ 353   1        MnProc_ExitSection();
+ 354   1      }
+ 355          
+ 356          
+ 357          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 358          //  EOF
+ 359          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 360          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    954    ----
+   CONSTANT SIZE    =    181    ----
+   XDATA SIZE       =   ----      12
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

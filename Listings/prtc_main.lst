@@ -1,0 +1,115 @@
+C51 COMPILER V9.55   PRTC_MAIN                                                             04/29/2026 17:22:04 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE PRTC_MAIN
+OBJECT MODULE PLACED IN .\Objects\prtc_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\app\prtc_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_W
+                    -ess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Lis
+                    -tings\prtc_main.lst) TABS(2) OBJECT(.\Objects\prtc_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------
+   2          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use,
+   5          //  copying, transfer or disclosure of such information is prohibited except by express written
+   6          //  agreement with WESS-Global Co.,LTD
+   7          //
+   8          //  $Date: 2020-07-13 12:00:00 +0900 $
+   9          //  $Author: eddie $
+  10          //  $Rev: 1.0 $
+  11          //--------------------------------------------------------------------------------------------------
+  12          
+  13          
+  14          //--------------------------------------------------------------------------------------------------
+  15          //  Includes
+  16          //--------------------------------------------------------------------------------------------------
+  17          // chipset
+  18          #include "compiler_defs.h"
+  19          #include "C8051F120_defs.h"
+  20          // sys
+  21          #include "sys_def.h"
+  22          // self
+  23          #include "prtc_main.h"
+  24          // bsp
+  25          #include "flash_main.h"
+  26          #include "uart_main.h"
+  27          #include "gpio_main.h"
+  28          // app
+  29          #include "rf_main.h"
+  30          #include "dly_main.h"
+  31          // isr
+  32          #include "isr_main.h"
+  33          // menu
+  34          #include "menu_output.h"
+  35          
+  36          
+  37          //--------------------------------------------------------------------------------------------------
+  38          //  Global variables
+  39          //--------------------------------------------------------------------------------------------------
+  40          
+  41          
+  42          //--------------------------------------------------------------------------------------------------
+  43          //  Local variables
+  44          //--------------------------------------------------------------------------------------------------
+  45          
+  46          
+  47          //--------------------------------------------------------------------------------------------------
+  48          //  Local Funtions
+  49          //--------------------------------------------------------------------------------------------------
+  50          
+  51          
+  52          //--------------------------------------------------------------------------------------------------
+  53          //  Global APIs
+C51 COMPILER V9.55   PRTC_MAIN                                                             04/29/2026 17:22:04 PAGE 2   
+
+  54          //--------------------------------------------------------------------------------------------------
+  55          void PRT_InitBoot(void)
+  56          {
+  57   1        U08 mdb_baud = MnOUT_GetMdbBaud();
+  58   1      
+  59   1        switch(MnOUT_GetProtocol())
+  60   1        {
+  61   2          case MnOUT_PROT_MDBS: UAT_SetBaudrate(mdb_baud);      break;
+  62   2          case MnOUT_PROT_RF:   UAT_SetBaudrate(UAT_BAUD_09600);  DLY_RunMsec(1);   break;
+  63   2          default:              UAT_SetBaudrate(UAT_BAUD_09600);  break;
+  64   2        }
+  65   1      
+  66   1      }
+  67          
+  68          void PRT_ProcMain(void)
+  69          {
+  70   1        switch(MnOUT_GetProtocol())
+  71   1        {
+  72   2          case MnOUT_PROT_MDBS:
+  73   2            ES0 = ISR_ITR_ENABLE;
+  74   2            SBIT_RS485_TR = PRT_485_RX_ON;
+  75   2            
+  76   2            UAT_SetLevel();
+  77   2            UAT_SetTmprt();
+  78   2            break;
+  79   2      
+  80   2          default:
+  81   2            ES0 = ISR_ITR_DISABLE;
+  82   2            break;
+  83   2        }
+  84   1      }
+  85          
+  86          
+  87          // EOF
+  88          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     64    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

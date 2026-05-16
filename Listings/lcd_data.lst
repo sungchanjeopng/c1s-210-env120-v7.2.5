@@ -1,0 +1,509 @@
+C51 COMPILER V9.55   LCD_DATA                                                              04/29/2026 17:21:48 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE LCD_DATA
+OBJECT MODULE PLACED IN .\Objects\lcd_data.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\bsp\lcd_data.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_We
+                    -ss\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\List
+                    -ings\lcd_data.lst) TABS(2) OBJECT(.\Objects\lcd_data.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------
+   2          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use,
+   5          //  copying, transfer or disclosure of such information is prohibited except by express written
+   6          //  agreement with WESS-Global Co.,LTD
+   7          //
+   8          //  $Date: 2020-07-13 12:00:00 +0900 $
+   9          //  $Author: eddie $
+  10          //  $Rev: 1.0 $
+  11          //--------------------------------------------------------------------------------------------------
+  12          
+  13          
+  14          //--------------------------------------------------------------------------------------------------
+  15          //  Includes
+  16          //--------------------------------------------------------------------------------------------------
+  17          // lib
+  18          #include "compiler_defs.h"
+  19          #include "C8051F120_defs.h"
+  20          // sys
+  21          #include "sys_def.h"
+  22          #include "font_def.h"
+  23          // Self
+  24          #include "lcd_data.h"
+  25          // bsp
+  26          #include "lcd_main.h"
+  27          // app
+  28          #include "font_def.h"
+  29          #include "disp_main.h"
+  30          
+  31          
+  32          //--------------------------------------------------------------------------------------------------
+  33          //  Global variables
+  34          //--------------------------------------------------------------------------------------------------
+  35          const U08 code gLd_mask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+  36          
+  37          U08 gLd_buff[LDT_BUFF_SIZE_Y][LDT_BUFF_SIZE_X];   // OLD: unsigned char xdata l_display_array[Y_BYTES][X_BY
+             -TES];
+  38          
+  39          
+  40          //--------------------------------------------------------------------------------------------------
+  41          //  Local variables
+  42          //--------------------------------------------------------------------------------------------------
+  43          
+  44          
+  45          //--------------------------------------------------------------------------------------------------
+  46          //  Global APIs - with Local
+  47          //--------------------------------------------------------------------------------------------------
+  48          
+  49          
+  50          //--------------------------------------------------------------------------------------------------
+  51          //  Local Funtions
+  52          //--------------------------------------------------------------------------------------------------
+C51 COMPILER V9.55   LCD_DATA                                                              04/29/2026 17:21:48 PAGE 2   
+
+  53          
+  54          
+  55          //--------------------------------------------------------------------------------------------------
+  56          //  Global APIs - Ext. Call
+  57          //--------------------------------------------------------------------------------------------------
+  58          // OLD: void GLCD_Vert_Dot_line(unsigned char column_UC_L, unsigned char top_UC_L, unsigned char bottom_UC
+             -_L)
+  59          void LCD_DataDot_LineVert(U08 column_UC_L, U08 top_UC_L, U08 bottom_UC_L)
+  60          {
+  61   1          U08 bit_pos, byte_offset, mask, row_UC_L;
+  62   1      
+  63   1          bit_pos = column_UC_L & 0x07;   /* get the bit offset into a byte */
+  64   1          byte_offset = column_UC_L >> 3;   /* get the byte offset into x array */
+  65   1          mask = gLd_mask[bit_pos];           /* get the mask for this bit */
+  66   1      
+  67   1          for(row_UC_L = top_UC_L; row_UC_L <= bottom_UC_L; row_UC_L++)
+  68   1          {
+  69   2              if(row_UC_L%2 == 0)     gLd_buff[row_UC_L][byte_offset] |= mask;
+  70   2              else                    gLd_buff[row_UC_L][byte_offset] &= ~mask;
+  71   2          }
+  72   1      }
+  73          
+  74          // OLD: void GLCD_Dot(unsigned char column_UC_L, unsigned char row_UC_L)
+  75          void LCD_DataDot_Buff(unsigned char column_UC_L, unsigned char row_UC_L)
+  76          {
+  77   1        unsigned char bit_pos;
+  78   1        unsigned char byte_offset;
+  79   1        unsigned char mask;
+  80   1      
+  81   1          bit_pos = column_UC_L & 0x07;   /* get the bit offset into a byte */
+  82   1          byte_offset = column_UC_L >> 3;   /* get the byte offset into x array */
+  83   1          mask = gLd_mask[bit_pos];   /* get the mask for this bit */
+  84   1          gLd_buff[row_UC_L][byte_offset] |= mask;
+  85   1      }
+  86          
+  87          // OLD: void GLCD_Glyph(unsigned char left, unsigned char top, unsigned char width, unsigned char height, 
+             -unsigned char *glyph, unsigned char store_width, unsigned char Flag_invert_UC_L, unsigned char space_width_UC_L)
+  88          void LCD_WriteGlyph(U08 left, U08 top, U08 width, U08 height, U08 *glyph, U08 store_width, U08 Flag_invert
+             -_UC_L, U08 space_width_UC_L)
+  89          {
+  90   1        U08 bit_pos;
+  91   1        U08 byte_offset;
+  92   1        U08 x_bits;
+  93   1        U08 remaining_bits;
+  94   1        U08 mask;
+  95   1        U08 char_mask;
+  96   1        U08 y;
+  97   1        U08 *glyph_scan;
+  98   1        U08 glyph_offset;
+  99   1      
+ 100   1          bit_pos = left & 0x07;    /* get the bit offset into a byte */
+ 101   1      
+ 102   1          glyph_offset = 0;     /* start at top of the glyph rasters */
+ 103   1      
+ 104   1          for (y = top; y < (top + height); y++)
+ 105   1          {
+ 106   2              byte_offset = left >> 3;        /* get the byte offset into x direction,  left >> 3 = left / 8 */
+ 107   2              x_bits = width + space_width_UC_L + space_width_UC_L;         /* get length in y direction to write */
+ 108   2              remaining_bits = 8 - bit_pos; /* number of bits left in byte */
+ 109   2              mask = gLd_mask[bit_pos]; /* get mask for this bit */
+ 110   2      
+ 111   2              glyph_scan = glyph + glyph_offset;   /* point to start of glyph raster */
+C51 COMPILER V9.55   LCD_DATA                                                              04/29/2026 17:21:48 PAGE 3   
+
+ 112   2      
+ 113   2              char_mask = 0x80;     /* initial character glyph mask */
+ 114   2      
+ 115   2              /* boundary checking here to account for the possibility of  */
+ 116   2              /* write past the right of the screen.                        */
+ 117   2              while((x_bits) && (byte_offset < LDT_BUFF_SIZE_X)) /* while there are bits still to write */
+ 118   2              {
+ 119   3                  if(x_bits > (width + space_width_UC_L) || x_bits <= space_width_UC_L)
+ 120   3                  {
+ 121   4                      /* check if the character pixel is set or not */
+ 122   4                      if(Flag_invert_UC_L == 0)
+ 123   4                      {
+ 124   5                        gLd_buff[y][byte_offset] &= ~mask;  /* clear the image pixel */
+ 125   5                      }
+ 126   4                      else
+ 127   4                      {
+ 128   5                        gLd_buff[y][byte_offset] |= mask; /* set image pixel */
+ 129   5                      }
+ 130   4                  }
+ 131   3                  else
+ 132   3                  {
+ 133   4                      /* check if the character pixel is set or not */
+ 134   4                      if(Flag_invert_UC_L == 0)
+ 135   4                      {
+ 136   5                          if(*glyph_scan & char_mask)
+ 137   5                          {
+ 138   6                            gLd_buff[y][byte_offset] |= mask; /* set image pixel */
+ 139   6                          }
+ 140   5                          else
+ 141   5                          {
+ 142   6                            gLd_buff[y][byte_offset] &= ~mask;  /* clear the image pixel */
+ 143   6                          }
+ 144   5                      }
+ 145   4                      else
+ 146   4                      {
+ 147   5                          if(*glyph_scan & char_mask)
+ 148   5                          {
+ 149   6                            gLd_buff[y][byte_offset] &= ~mask;  /* clear the image pixel */
+ 150   6                          }
+ 151   5                          else
+ 152   5                          {
+ 153   6                            gLd_buff[y][byte_offset] |= mask; /* set image pixel */
+ 154   6                          }
+ 155   5                      }
+ 156   4      
+ 157   4                      /* shift over to next glyph bit */
+ 158   4                      char_mask >>= 1;
+ 159   4                      if(char_mask == 0)        /* reset for next byte in raster */
+ 160   4                      {
+ 161   5                          char_mask = 0x80;
+ 162   5                          glyph_scan++;
+ 163   5                      }
+ 164   4                  }
+ 165   3      
+ 166   3                  if(gLd_mask[0] & 0x80)
+ 167   3                  {
+ 168   4                    mask >>= 1;
+ 169   4                  }
+ 170   3                  else
+ 171   3                  {
+ 172   4                    mask <<= 1;
+ 173   4                  }
+C51 COMPILER V9.55   LCD_DATA                                                              04/29/2026 17:21:48 PAGE 4   
+
+ 174   3      
+ 175   3                  x_bits--;
+ 176   3                  remaining_bits--;
+ 177   3                  if(remaining_bits == 0)
+ 178   3                  {
+ 179   4                      /* just crossed over a byte boundry, reset byte counts */
+ 180   4                      remaining_bits = 8;
+ 181   4                      byte_offset++;
+ 182   4                      mask = gLd_mask[0];
+ 183   4                  }
+ 184   3              }
+ 185   2          /* bump the offset to next raster */
+ 186   2          glyph_offset += store_width;
+ 187   2          }
+ 188   1      }
+ 189          
+ 190          // OLD: void GLCD_Horz_line(unsigned char row_UC_L, unsigned char left_UC_L, unsigned char right_UC_L)
+ 191          void LCD_DataLine_Horz(unsigned char row_UC_L, unsigned char left_UC_L, unsigned char right_UC_L)
+ 192          {
+ 193   1          unsigned char bit_pos;
+ 194   1          unsigned char byte_offset;
+ 195   1          unsigned char x_bits;
+ 196   1          unsigned char remaining_bits;
+ 197   1          unsigned char mask;
+ 198   1      
+ 199   1          bit_pos = left_UC_L & 0x07;      /* get starting bit offset into byte */
+ 200   1      
+ 201   1          byte_offset = left_UC_L >> 3;      /* get byte offset into y direction */
+ 202   1          x_bits = (right_UC_L - left_UC_L) + 1;   /* get length in the x direction to write */
+ 203   1          remaining_bits = 8 - bit_pos;  /* number of bits left in byte */
+ 204   1          mask = gLd_mask[bit_pos];  /* get mask for this bit */
+ 205   1      
+ 206   1          while(x_bits)          /* while there are still bits to write */
+ 207   1          {
+ 208   2              if((remaining_bits == 8) && (x_bits > 7))
+ 209   2              {
+ 210   3                  /* here if we are byte aligned and have at least 1 byte to write */
+ 211   3                  /* do the entire byte at once instead of bit by bit */
+ 212   3                  while(x_bits > 7)     /* while there are at least 8 more bits to do */
+ 213   3                  {
+ 214   4                      gLd_buff[row_UC_L][byte_offset] = 0xFF;
+ 215   4                      byte_offset++;
+ 216   4                      x_bits -= 8;
+ 217   4                  }
+ 218   3              }
+ 219   2              else
+ 220   2              {
+ 221   3                  /* we are not byte aligned or an entire byte does not need written */
+ 222   3                  /* do each individual bit                                          */
+ 223   3                  gLd_buff[row_UC_L][byte_offset] |= mask;
+ 224   3                  if(gLd_mask[0] & 0x80)
+ 225   3                  {
+ 226   4                    mask >>= 1;
+ 227   4                  }
+ 228   3                  else
+ 229   3                  {
+ 230   4                    mask <<= 1;
+ 231   4                  }
+ 232   3      
+ 233   3                  x_bits--;
+ 234   3                  remaining_bits--;
+ 235   3      
+C51 COMPILER V9.55   LCD_DATA                                                              04/29/2026 17:21:48 PAGE 5   
+
+ 236   3                  if(remaining_bits == 0)
+ 237   3                  {
+ 238   4                      /* might have bust gotton byte aligned */
+ 239   4                      /* so reset for beginning of a byte */
+ 240   4                      remaining_bits = 8;
+ 241   4                      byte_offset++;
+ 242   4                      mask = gLd_mask[0];
+ 243   4                  }
+ 244   3              }
+ 245   2          }
+ 246   1      }
+ 247          
+ 248          // OLD: void GLCD_Box(unsigned char left, unsigned char top, unsigned char right, unsigned char bottom)
+ 249          void LDT_DrawBox(U08 left, U08 top, U08 right, U08 bottom)
+ 250          {
+ 251   1          /* to draw a box requires two vertical lines */
+ 252   1          LDT_LineVert(left,  top, bottom, LDT_LINE_DATA);
+ 253   1          LDT_LineVert(right, top, bottom, LDT_LINE_DATA);
+ 254   1          /* and two horizonal lines */
+ 255   1          LCD_DataLine_Horz(top, left, right);
+ 256   1          LCD_DataLine_Horz(bottom, left, right);
+ 257   1      }
+ 258          
+ 259          // OLD: void GLCD_Text(unsigned char left, unsigned char top, unsigned char font_UC_L, char *str, unsigned
+             - char Flag_invert_UC_L, unsigned char space_width_UC_L)
+ 260          void LCD_WrStrBuff(U08 left, U08 top, U08 font, char *str, U08 f_invert, U08 space)
+ 261          {
+ 262   1        U08 code *p_glyph;
+ 263   1        U08 x = left;
+ 264   1        U08 glyph, i;
+ 265   1        U08 width;
+ 266   1        U08 height;
+ 267   1        U08 w_store;    // width store
+ 268   1        U16 tmp0, tmp1;
+ 269   1      
+ 270   1        while(*str != 0x00)
+ 271   1        {
+ 272   2          glyph = (U08)*str;
+ 273   2      
+ 274   2          /* check to make sure the symbol is a legal one */
+ 275   2          /* if not then just replace it with the default character */
+ 276   2          if((glyph < gFnt[font].glyph_beg) || (glyph > gFnt[font].glyph_end))
+ 277   2            glyph = gFnt[font].glyph_def;
+ 278   2      
+ 279   2          /* make zero based index into the font data arrays */
+ 280   2          glyph -= gFnt[font].glyph_beg;
+ 281   2          width  = gFnt[font].fixed_width;  /* check if it is a fixed width */
+ 282   2      
+ 283   2          if(width == 0)
+ 284   2            width = gFnt[font].pixel_width_table[glyph];  /* get the variable width instead */
+ 285   2      
+ 286   2          height = gFnt[font].glyph_height;
+ 287   2      
+ 288   2          //if(font == F3_EN_24x26 || font == F4_EN_26x47)
+ 289   2          if(font == FT_EN_26x47)
+ 290   2          {
+ 291   3            w_store = gFnt[font].char_width_table[glyph];
+ 292   3      
+ 293   3            tmp0 = 0;
+ 294   3            for(i = 0; i < glyph; i++)
+ 295   3            {
+ 296   4              tmp1 = gFnt[font].char_width_table[i];
+C51 COMPILER V9.55   LCD_DATA                                                              04/29/2026 17:21:48 PAGE 6   
+
+ 297   4              tmp0 = tmp0 + (tmp1 * (U16)height);
+ 298   4            }
+ 299   3      
+ 300   3            p_glyph = gFnt[font].glyph_table + tmp0;
+ 301   3          }
+ 302   2          else
+ 303   2          {
+ 304   3            switch(font)
+ 305   3            {
+ 306   4              case FT_EN_06x07: w_store = 1;  break;
+ 307   4              //case F1_EN_05x08: w_store = 1;  break;
+ 308   4              case FT_EN_08x16: w_store = 1;  break;
+ 309   4              //case F5_KO_16x16: w_store = 2;  break;
+ 310   4              case FT_LC_16x16: w_store = 2;  break;
+ 311   4            }
+ 312   3      
+ 313   3            p_glyph = gFnt[font].glyph_table + ((U16)glyph * (U16)w_store * (U16)height);
+ 314   3          }
+ 315   2      
+ 316   2          /* range check / limit things here */
+ 317   2          if(x > LCD_X_END)               x = LCD_X_END;
+ 318   2          if((x + width + (space*2)) > (LCD_X_END + 1)) width = (LCD_X_END + 1) - x - (space*2);
+ 319   2      
+ 320   2          if(top > LCD_Y_END)               top = LCD_Y_END;
+ 321   2          if((top + height) > (LCD_Y_END + 1))      height = (LCD_Y_END + 1) - top;
+ 322   2      
+ 323   2          LCD_WriteGlyph(x, top, width, height, p_glyph, w_store, f_invert, space);  /* plug symbol into buffer */
+ 324   2      
+ 325   2          x = x + width + (space*2);      /* move right for next character */
+ 326   2          str++;                /* point to next character in string */
+ 327   2        }
+ 328   1      }
+ 329          
+ 330          void LDT_LineVert(U08 pos_x, U08 top, U08 btm, U08 opt)
+ 331          {
+ 332   1        U08 i;
+ 333   1        U08 b_pos;
+ 334   1        U08 offset;
+ 335   1        U08 mask;
+ 336   1      
+ 337   1          b_pos  = pos_x & 0x07;      /* get the bit offset into a byte */
+ 338   1          offset = pos_x >> 3;      /* get the byte offset into x array */
+ 339   1          mask   = gLd_mask[b_pos];     /* get the mask for this bit */
+ 340   1      
+ 341   1        switch(opt)
+ 342   1        {
+ 343   2          case LDT_LINE_CLEAR:  for(i=top; i<=btm; i++)   gLd_buff[i][offset] &= ~mask; break;
+ 344   2          case LDT_LINE_DATA:   for(i=top; i<=btm; i++)   gLd_buff[i][offset] |=  mask; break;
+ 345   2        }
+ 346   1      }
+ 347          
+ 348          // OLD: void GLCD_Clr_Dot(unsigned char column_UC_L, unsigned char row_UC_L)
+ 349          void LDT_ClearDot(U08 pos_x, U08 pos_y)
+ 350          {
+ 351   1        U08 bit_pos;
+ 352   1        U08 byte_offset;
+ 353   1        U08 mask;
+ 354   1      
+ 355   1          bit_pos     = pos_x & 0x07;     /* get the bit offset into a byte */
+ 356   1          byte_offset = pos_x >> 3;     /* get the byte offset into x array */
+ 357   1          mask        = gLd_mask[bit_pos];  /* get the mask for this bit */
+ 358   1      
+C51 COMPILER V9.55   LCD_DATA                                                              04/29/2026 17:21:48 PAGE 7   
+
+ 359   1          gLd_buff[pos_y][byte_offset] &= ~mask;
+ 360   1      }
+ 361          
+ 362          // OLD: void Init_GLCD_240(void)
+ 363          void LDT_InitScrn(void)
+ 364          {
+ 365   1        LCD_InitCfg();    // initialize LCD display
+ 366   1        LCD_InitErase();  // erase the display 
+ 367   1      
+ 368   1        DISP_ClearScr();
+ 369   1      }
+ 370          
+ 371          // OLD: void GLCD_Clear_area(unsigned char left,  unsigned char top, unsigned char right, unsigned char bo
+             -ttom)
+ 372          void LDT_ClrBuff(U08 left, U08 top, U08 right, U08 bottom)
+ 373          {
+ 374   1          U08 bit_pos;
+ 375   1          U08 y;
+ 376   1          U08 byte_offset;
+ 377   1          U08 x_bits;
+ 378   1          U08 remaining_bits;
+ 379   1          U08 mask;
+ 380   1      
+ 381   1          bit_pos = left & 0x07;          /* get starting bit offset into byte */
+ 382   1      
+ 383   1          for(y = top; y <= bottom; y++)
+ 384   1          {
+ 385   2              byte_offset = left >> 3;      /* get byte offset into x direction */
+ 386   2              x_bits = (right - left) + 1;    /* get length in the x direction to write */
+ 387   2              remaining_bits = 8 - bit_pos;   /* number of bits left in byte */
+ 388   2              mask = gLd_mask[bit_pos];   /* get mask for this bit */
+ 389   2      
+ 390   2              while(x_bits)           /* while there are still bits to write */
+ 391   2              {
+ 392   3                  if((remaining_bits == 8) && (x_bits > 7))
+ 393   3                  {
+ 394   4                      /* here if we are byte aligned and have at least 1 byte to write */
+ 395   4                      /* do the entire byte at once instead of bit by bit */
+ 396   4                      while(x_bits > 7)     /* while there are at least 8 more bits to do */
+ 397   4                      {
+ 398   5                          gLd_buff[y][byte_offset] = 0x00;
+ 399   5                          byte_offset++;
+ 400   5                          x_bits -= 8;
+ 401   5                      }
+ 402   4                  }
+ 403   3                  else
+ 404   3                  {
+ 405   4                      /* here if not byte aligned or an entire byte does not need written */
+ 406   4                      /* thus do bit by bit */
+ 407   4                      gLd_buff[y][byte_offset] &= ~mask;
+ 408   4      
+ 409   4                      if(gLd_mask[0] & 0x80)         mask >>= 1;
+ 410   4                      else                            mask <<= 1;
+ 411   4      
+ 412   4                      x_bits--;
+ 413   4                      remaining_bits--;
+ 414   4      
+ 415   4                      if(remaining_bits == 0)
+ 416   4                      {
+ 417   5                          /* might have bust gotton byte aligned */
+ 418   5                          /* so reset for beginning of a byte */
+ 419   5                          remaining_bits = 8;
+C51 COMPILER V9.55   LCD_DATA                                                              04/29/2026 17:21:48 PAGE 8   
+
+ 420   5                          byte_offset++;
+ 421   5      
+ 422   5                          mask = gLd_mask[0];
+ 423   5                      }
+ 424   4                  }
+ 425   3              }
+ 426   2          }
+ 427   1      }
+ 428          
+ 429          // OLD: void GLCD_Update(unsigned char top, unsigned char bottom)
+ 430          void LDT_UpdBuff(U08 top, U08 bottom)
+ 431          {
+ 432   1        U08 x;
+ 433   1        U08 y;
+ 434   1        U08 dat;
+ 435   1        U08 *p_col;
+ 436   1      
+ 437   1        for(y=top; y<=bottom; y++)
+ 438   1        {
+ 439   2          /* set addr ptr to start of line */
+ 440   2          LCD_TxCmd2(0x24, y*30);       /* scan the display up top to bottom */
+ 441   2          LCD_TxCmd0(0xB0);         /* send the auto write command */
+ 442   2      
+ 443   2          p_col = &gLd_buff[y][0];      /* point to row of data in buffer */
+ 444   2      
+ 445   2          for(x=0; x<LDT_BUFF_SIZE_X; x++)
+ 446   2          {
+ 447   3            do
+ 448   3              dat = LCD_GetData();
+ 449   3            while((dat & 0x08) != 0x08);  /* wait till STA3=1 */
+ 450   3      
+ 451   3            LCD_CfgData(*p_col++);
+ 452   3          }
+ 453   2      
+ 454   2          do                  /* poll loop for ready for auto reset command */
+ 455   2            dat = LCD_GetData();  
+ 456   2          while((dat & 0x08) != 0x08);    /* wait till STA2=1 */
+ 457   2      
+ 458   2          LCD_CfgCtrl(0xB2);          /* send the auto reset command */
+ 459   2        }
+ 460   1      }
+ 461          
+ 462          
+ 463          // EOF
+ 464          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2392    ----
+   CONSTANT SIZE    =      8    ----
+   XDATA SIZE       =   3840      69
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

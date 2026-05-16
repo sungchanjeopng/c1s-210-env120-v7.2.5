@@ -1,0 +1,202 @@
+C51 COMPILER V9.55   ISR_MAIN                                                              04/29/2026 17:21:51 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE ISR_MAIN
+OBJECT MODULE PLACED IN .\Objects\isr_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\app\isr_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_We
+                    -ss\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\List
+                    -ings\isr_main.lst) TABS(2) OBJECT(.\Objects\isr_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------
+   2          //
+   3          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   4          //
+   5          //  The information contained herein is confidential property of
+   6          //  WESS-Global Inc. The use, copying, transfer or disclosure of
+   7          //  such information is prohibited except by express written agreement
+   8          //  with WESS-Global Co.,LTD
+   9          //
+  10          //  $Id: templet_format.c 1 2020-07-13 12:00:00Z eddie $
+  11          //  $Date: 2020-07-13 12:00:00 +0900 
+  12          //  $Author: eddie $
+  13          //  $Rev: 1.0 $
+  14          //
+  15          //--------------------------------------------------------------------
+  16          
+  17          
+  18          //--------------------------------------------------------------------
+  19          //  Includes
+  20          //--------------------------------------------------------------------
+  21          // chipset
+  22          #include "compiler_defs.h"
+  23          #include "C8051F120_defs.h"
+  24          // sys
+  25          #include "sys_def.h"
+  26          // self
+  27          #include "isr_main.h"
+  28          // bsp
+  29          #include "flash_main.h"
+  30          #include "uart_main.h"
+  31          // app
+  32          #include "crc_main.h"
+  33          #include "prtc_main.h"
+  34          // msr
+  35          #include "measure_main.h"
+  36          // menu
+  37          #include "menu_output.h"
+  38          
+  39          
+  40          //--------------------------------------------------------------------
+  41          //  Local Macros
+  42          //--------------------------------------------------------------------
+  43          
+  44          
+  45          //--------------------------------------------------------------------
+  46          //  Local Type definitions
+  47          //--------------------------------------------------------------------
+  48          
+  49          
+  50          //--------------------------------------------------------------------
+  51          //  Global variables
+  52          //--------------------------------------------------------------------
+  53          U16 gIsr_tm3_cnt;     // OLD: unsigned int  Cnt_1sec_delay_UI_G;
+C51 COMPILER V9.55   ISR_MAIN                                                              04/29/2026 17:21:51 PAGE 2   
+
+  54          
+  55          
+  56          //--------------------------------------------------------------------
+  57          //  Local variables
+  58          //--------------------------------------------------------------------
+  59          U08 lIs_ut0_rx_cnt;     // OLD: unsigned char UART_Rx_data_num_UC_G;
+  60          
+  61          
+  62          //--------------------------------------------------------------------
+  63          // Funtion Definitions
+  64          //--------------------------------------------------------------------
+  65          // OLD: void Init_Interrupts(void)
+  66          void ISR_InitBoot(void)
+  67          {
+  68   1        IP = 0x10;        // UART0 interrupt priority high
+  69   1        IE = 0x82;        // EA = 1; ES0 = 0; ET0 = 1;
+  70   1        EIE2 = 0x01;      // ET3 = 1;
+  71   1        //EIE1 = 0x02;      // Enable the SMBus interrupt
+  72   1      }
+  73          
+  74          void ISR_InitVari(void)
+  75          {
+  76   1        gIsr_tm3_cnt = 0;
+  77   1      }
+  78          
+  79          void Interrupt_TIMER0(void)   // Interval: about 270 usec - 20cm
+  80          interrupt 1
+  81          {
+  82   1        U08 old = SFRPAGE;
+  83   1      
+  84   1        SFRPAGE = TIMER01_PAGE;
+  85   1      
+  86   1        TF0 = 0;
+  87   1        TH0 = 0xFE;
+  88   1        TL0 = 0xAD;
+  89   1        MEAS_SetDacTvg();
+  90   1      
+  91   1        SFRPAGE = old;
+  92   1      }
+  93          
+  94          void Interrupt_TIMER3(void)   // Interval: 10msec
+  95          interrupt 14
+  96          {
+  97   1        U08 old = SFRPAGE;
+  98   1        SFRPAGE = TMR3_PAGE;
+  99   1      
+ 100   1        TF3 = 0;
+ 101   1        gIsr_tm3_cnt++;
+ 102   1      
+ 103   1        SFRPAGE = old;
+ 104   1      }
+ 105          
+ 106          void Interrupt_UART0(void)
+ 107          interrupt 4
+ 108          {
+ 109   1        U08 old = SFRPAGE;
+ 110   1        U08 protocol = MnOUT_GetProtocol();
+ 111   1        U08 mdb_addr = MnOUT_GetMdbAddr();
+ 112   1      
+ 113   1        SFRPAGE = UART0_PAGE;
+ 114   1      
+ 115   1        if(RI0)
+C51 COMPILER V9.55   ISR_MAIN                                                              04/29/2026 17:21:51 PAGE 3   
+
+ 116   1        {
+ 117   2          EA = 0; ES0 = 0;// ET1 = 0;
+ 118   2          
+ 119   2          SFRPAGE = TMR3_PAGE;
+ 120   2          TMR3CN = 0x00;
+ 121   2          
+ 122   2          SFRPAGE = UART0_PAGE;
+ 123   2        
+ 124   2          if(lIs_ut0_rx_cnt > MDB_RX_PKT_SIZE)
+ 125   2            lIs_ut0_rx_cnt = 0;
+ 126   2          
+ 127   2          if(protocol == MnOUT_PROT_MDBS)
+ 128   2          {
+ 129   3            do
+ 130   3            {
+ 131   4              gUt.baud_cnt = gUt.baud_cfg;
+ 132   4              while(!RI0 && gUt.baud_cnt--);
+ 133   4              
+ 134   4              gUt.rx_pkt[lIs_ut0_rx_cnt] = SBUF0;
+ 135   4              RI0 = 0;
+ 136   4              lIs_ut0_rx_cnt++;
+ 137   4            }
+ 138   3            while((gUt.rx_pkt[MDB_PKT_00_NULL] == mdb_addr) && (lIs_ut0_rx_cnt < 8) && gUt.baud_cnt);
+ 139   3            
+ 140   3            if((gUt.rx_pkt[MDB_PKT_00_NULL] == mdb_addr) && gUt.baud_cnt != 0)
+ 141   3            {
+ 142   4              gCc_b16 = CRC_GetB16(gUt.rx_pkt, (lIs_ut0_rx_cnt-2));
+ 143   4      
+ 144   4              if(gUt.rx_pkt[lIs_ut0_rx_cnt-2] == (U08)((gCc_b16>>0) & 0x00ff) && 
+ 145   4                 gUt.rx_pkt[lIs_ut0_rx_cnt-1] == (U08)((gCc_b16>>8) & 0x00ff))
+ 146   4              {
+ 147   5                gUt.f_rx = TRUE;
+ 148   5              }
+ 149   4            }
+ 150   3            
+ 151   3            lIs_ut0_rx_cnt = 0;
+ 152   3            gUt.baud_cnt = gUt.baud_cfg;
+ 153   3          }
+ 154   2          
+ 155   2          SFRPAGE = TMR3_PAGE;
+ 156   2          TMR3CN = 0x04;
+ 157   2            
+ 158   2          EA = 1; 
+ 159   2            
+ 160   2          if(protocol == MnOUT_PROT_MDBS) 
+ 161   2            ES0 = 1;  // ET1 = 1;
+ 162   2          
+ 163   2          RI0 = 0;       
+ 164   2        }
+ 165   1      
+ 166   1        SFRPAGE = old;
+ 167   1      }
+ 168          
+ 169          
+ 170          // EOF
+ 171          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    471    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      3       3
+C51 COMPILER V9.55   ISR_MAIN                                                              04/29/2026 17:21:51 PAGE 4   
+
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

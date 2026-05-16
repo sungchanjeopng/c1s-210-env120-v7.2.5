@@ -1,0 +1,147 @@
+﻿<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MsANL Flowchart</title>
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --card: #ffffff;
+      --text: #1c2430;
+      --muted: #5c6a7c;
+      --line: #c9d3e1;
+      --accent: #0d6efd;
+      --ok: #198754;
+      --warn: #dc3545;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Segoe UI, Noto Sans KR, sans-serif;
+      background: linear-gradient(180deg, #eef3fb 0%, #f7f9fc 100%);
+      color: var(--text);
+      padding: 24px;
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    p.meta { margin: 0 0 24px; color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 8px 30px rgba(17, 32, 58, 0.06);
+    }
+    .title {
+      margin: 0 0 12px;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    .flow {
+      display: grid;
+      gap: 10px;
+    }
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fbfdff;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .decision { border-left: 4px solid var(--accent); }
+    .ok { border-left: 4px solid var(--ok); }
+    .warn { border-left: 4px solid var(--warn); }
+    .arrow {
+      text-align: center;
+      color: #7a8798;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .yesno {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .tag {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .foot {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>MsANL 에코 지연 로직 순서도</h1>
+  <p class="meta">30초 비차단(non-blocking) 대기 기준</p>
+
+  <div class="grid">
+    <section class="card">
+      <h2 class="title">1) APP_Proc1Sec → MsANL_Proc1Sec</h2>
+      <div class="flow">
+        <div class="step">APP_Proc1Sec(1초 주기) 진입 후 <code>MsANL_Proc1Sec()</code> 호출</div>
+        <div class="arrow">↓</div>
+        <div class="step decision">조건: <code>fEco_dly == 1</code> ?</div>
+        <div class="yesno">
+          <div class="step">아니오: <code>fEco_wt=0</code>, <code>cEco_wt=0</code> 후 종료</div>
+          <div class="step">예: 다음 조건으로 진행</div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="step decision">조건: <code>fEco_wt == 1</code> ?</div>
+        <div class="yesno">
+          <div class="step">아니오: 종료</div>
+          <div class="step">예: <code>cEco_wt++</code></div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="step decision">조건: <code>cEco_wt &lt; 30</code> ?</div>
+        <div class="yesno">
+          <div class="step">예: 종료 (대기 계속)</div>
+          <div class="step ok">아니오: <code>fEco_wt=0</code>, <code>cEco_wt=0</code>, <code>fEco_dly=0</code>, <code>cErr_eco0=0</code></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="title">2) MsANL_CheckErr</h2>
+      <div class="flow">
+        <div class="step">진입 후 에코 검사 플래그 확인</div>
+        <div class="arrow">↓</div>
+        <div class="step decision">조건: <code>fEco_chk == 1</code> ?</div>
+        <div class="yesno">
+          <div class="step">아니오: <code>cErr_eco0++</code></div>
+          <div class="step">예: <code>fEco_dly==1 && fEco_wt==0</code> 이면 대기 시작(<code>fEco_wt=1</code>, <code>cEco_wt=0</code>)</div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="step decision">조건: <code>gDp.f_err_tprt</code> ?</div>
+        <div class="yesno">
+          <div class="step warn">예: ER02 설정, <code>fErr=1</code>, 종료</div>
+          <div class="step">아니오: 다음 조건</div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="step decision">조건: <code>cErr_eco0 &gt; MnOUT_GetEchoDly()</code> ?</div>
+        <div class="yesno">
+          <div class="step warn">예: ER01 설정, <code>fErr=1</code>, <code>fEco_dly=1</code>, 종료</div>
+          <div class="step">아니오: 다음 조건</div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="step decision">조건: <code>cErr_eco0 &gt; (MnMSR_GetIntv()+3)</code> ?</div>
+        <div class="yesno">
+          <div class="step">예: <code>fEco_dly=1</code>, 종료</div>
+          <div class="step ok">아니오: <code>err_stat=NONE</code>, <code>fErr=0</code></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <p class="foot">파일: MsANL_Flowchart.html</p>
+</body>
+</html>

@@ -1,0 +1,236 @@
+C51 COMPILER V9.55   LCD_MAIN                                                              04/29/2026 17:21:46 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE LCD_MAIN
+OBJECT MODULE PLACED IN .\Objects\lcd_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\bsp\lcd_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_We
+                    -ss\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\List
+                    -ings\lcd_main.lst) TABS(2) OBJECT(.\Objects\lcd_main.obj)
+
+line level    source
+
+   1          //-------------------------------------------------------------------------------------------------
+   2          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use,
+   5          //  copying, transfer or disclosure of such information is prohibited except by express written
+   6          //  agreement with WESS-Global Co.,LTD
+   7          //
+   8          //  $Date: 2020-07-13 12:00:00 +0900 $
+   9          //  $Author: eddie $
+  10          //  $Rev: 1.0 $
+  11          //-------------------------------------------------------------------------------------------------
+  12          
+  13          
+  14          //-------------------------------------------------------------------------------------------------
+  15          //  Includes
+  16          //--------------------------------------------------------------------------------------------------
+  17          // chip
+  18          #include "compiler_defs.h"
+  19          #include "C8051F120_defs.h"
+  20          // lib
+  21          #include "dly_main.h"
+  22          // sys
+  23          #include "sys_def.h"
+  24          #include "font_def.h"
+  25          // app
+  26          #include "app_main.h"
+  27          #include "font_def.h"
+  28          #include "disp_main.h"
+  29          #include "lcd_data.h"
+  30          // bsp
+  31          #include "gpio_main.h"
+  32          // self
+  33          #include "lcd_main.h"
+  34          
+  35          
+  36          //--------------------------------------------------------------------------------------------------
+  37          //  Global variables
+  38          //--------------------------------------------------------------------------------------------------
+  39          
+  40          
+  41          //--------------------------------------------------------------------------------------------------
+  42          //  Local variables
+  43          //--------------------------------------------------------------------------------------------------
+  44          
+  45          
+  46          //--------------------------------------------------------------------------------------------------
+  47          //  Global APIs - with Local
+  48          //--------------------------------------------------------------------------------------------------
+  49          
+  50          
+  51          //--------------------------------------------------------------------------------------------------
+  52          //  Local Funtions
+  53          //--------------------------------------------------------------------------------------------------
+C51 COMPILER V9.55   LCD_MAIN                                                              04/29/2026 17:21:46 PAGE 2   
+
+  54          
+  55          
+  56          //--------------------------------------------------------------------------------------------------
+  57          //  Global APIs - Ext. Call
+  58          //--------------------------------------------------------------------------------------------------
+  59          // OLD: void GLCD_240_Out_dat(char dat)
+  60          void LCD_CfgData(char dat)
+  61          {
+  62   1          SFRPAGE = CONFIG_PAGE;
+  63   1          _SBIT_LCD_RD = 1;       /* make sure the RD/ line is high */
+  64   1          _SBIT_LCD_CD = 0;       /* clr the CD line low to data */
+  65   1          P3 = dat;           /* output the data to bus */
+  66   1          _SBIT_LCD_CE = 0;       /* enable chip select */
+  67   1          _SBIT_LCD_WR = 0;       /* set the WR/ line low */
+  68   1          _SBIT_LCD_WR = 0;       /* extra delay for pulse width */
+  69   1          _SBIT_LCD_WR = 1;       /* set the WR/ line back high */
+  70   1          _SBIT_LCD_CE = 1;       /* force the CE back high */
+  71   1          P3 = 0xFF;            /* put the I/O lines back as inputs */
+  72   1      }
+  73          
+  74          // OLD: void GLCD_240_Out_ctl(char dat)
+  75          void LCD_CfgCtrl(char dat)
+  76          {
+  77   1          SFRPAGE = CONFIG_PAGE;
+  78   1          _SBIT_LCD_RD = 1;       /* make sure the RD/ line is high */
+  79   1          _SBIT_LCD_CD = 1;       /* set the CD line high to cmd */
+  80   1          P3 = dat;           /* output the data to bus */
+  81   1          _SBIT_LCD_CE = 0;       /* enable chip select */
+  82   1          _SBIT_LCD_WR = 0;       /* set the WR/ line low */
+  83   1          _SBIT_LCD_WR = 0;       /* extra delay for pulse width */
+  84   1          _SBIT_LCD_WR = 1;       /* set the WR/ line back high */
+  85   1          _SBIT_LCD_CE = 1;       /* force the CE back high */
+  86   1          P3 = 0xFF;
+  87   1      }
+  88          
+  89          // OLD: char GLCD_240_In_sta(void)
+  90          U08 LCD_GetData(void)
+  91          {
+  92   1          U08 dat;
+  93   1      
+  94   1          SFRPAGE = CONFIG_PAGE;
+  95   1          P3MDOUT = 0x00;
+  96   1      
+  97   1          _SBIT_LCD_WR = 1;       /* make sure the WR/ line is high */
+  98   1          _SBIT_LCD_CD = 1;       /* set the CD line high for status */
+  99   1          P3 = 0xFF;            /* make port A input */
+ 100   1          _SBIT_LCD_CE = 0;       /* enable chip select */
+ 101   1          _SBIT_LCD_RD = 0;       /* set the RD/ line low */
+ 102   1          _SBIT_LCD_RD = 0;         /* extra read delay */
+ 103   1          _SBIT_LCD_RD = 0;       /* more extra read time */
+ 104   1          dat = P3;           /* fetch in the data */
+ 105   1          _SBIT_LCD_RD = 1;       /* set the RD/ line back high */
+ 106   1          _SBIT_LCD_CE = 1;       /* force the CE back high */
+ 107   1      
+ 108   1          P3MDOUT   = 0xff;
+ 109   1      
+ 110   1          return(dat);
+ 111   1      }
+ 112          
+ 113          // OLD: void GLCD_240_Busy_wait(void)
+ 114          void LCD_ChkBusy(void)
+ 115          {
+C51 COMPILER V9.55   LCD_MAIN                                                              04/29/2026 17:21:46 PAGE 3   
+
+ 116   1          char dat;
+ 117   1      
+ 118   1          do
+ 119   1          dat = LCD_GetData();    
+ 120   1          while((dat & 0x03) != 0x03);  // wait till STA1=1 && STA0=1
+ 121   1      }
+ 122          
+ 123          // OLD: void GLCD_240_Cmd(char cmd)
+ 124          void LCD_TxCmd0(char cmd)
+ 125          {
+ 126   1        SFRPAGE = CONFIG_PAGE;
+ 127   1        LCD_ChkBusy();          /* wait for status on command */
+ 128   1        LCD_CfgCtrl(cmd);       /* send out the command itself */
+ 129   1      }
+ 130          
+ 131          // OLD: void GLCD_240_Cmd_1(char cmd,unsigned char parm)
+ 132          void LCD_TxCmd1(char cmd, unsigned char parm)
+ 133          {
+ 134   1        SFRPAGE = CONFIG_PAGE;
+ 135   1        LCD_ChkBusy();          /* wait for the status */
+ 136   1        LCD_CfgData(parm);          /* send out the byte of the data */
+ 137   1        LCD_ChkBusy();          /* wait for status on command */
+ 138   1        LCD_CfgCtrl(cmd);         /* send out the command itself */
+ 139   1      }
+ 140          
+ 141          // OLD: void GLCD_240_Cmd_2(char cmd,unsigned int parm)
+ 142          void LCD_TxCmd2(char cmd,unsigned int parm)
+ 143          {
+ 144   1        SFRPAGE = CONFIG_PAGE;
+ 145   1        LCD_ChkBusy();          /* wait for the status */
+ 146   1        LCD_CfgData(parm&0xFF);       /* send out the low byte of the data */
+ 147   1        LCD_ChkBusy();          /* wait again for status */
+ 148   1        LCD_CfgData(parm>>8);       /* send out the high byte of the data */
+ 149   1        LCD_ChkBusy();          /* wait for status on command */
+ 150   1        LCD_CfgCtrl(cmd);         /* send out the command itself */
+ 151   1      }
+ 152          
+ 153          // OLD: void GLCD_240_Erase(void)
+ 154          void LCD_InitErase(void)
+ 155          {
+ 156   1        int x, y;
+ 157   1      
+ 158   1        /* loops to write whole LCD memory to a blank pattern */
+ 159   1        LCD_TxCmd2(0x24,0);     /* setup the AP to 0 */
+ 160   1      
+ 161   1        for(x=0; x<LDT_BUFF_SIZE_X; x++)
+ 162   1          for(y=0; y<LDT_BUFF_SIZE_Y; y++)
+ 163   1            LCD_TxCmd1(0xC0,0);
+ 164   1      }
+ 165          
+ 166          // OLD: void GLCD_240_Init(void)
+ 167          void LCD_InitCfg(void)
+ 168          {
+ 169   1        int err=0;
+ 170   1        
+ 171   1        SFRPAGE = CONFIG_PAGE;
+ 172   1        /* initialize the port control lines to the LCD module */
+ 173   1        _SBIT_LCD_CE = 1;   /* set chip select high off output */
+ 174   1        _SBIT_LCD_RS = 1;   /* set RST signal high off output */
+ 175   1        _SBIT_LCD_CD = 0;   /* set the CD line low as output */
+ 176   1        _SBIT_LCD_RD = 1;   /* set RD line high as output */
+ 177   1        _SBIT_LCD_WR = 1;   /* set WR line high as output */
+C51 COMPILER V9.55   LCD_MAIN                                                              04/29/2026 17:21:46 PAGE 4   
+
+ 178   1        _SBIT_LCD_FS = 0;   /* force font select line low */
+ 179   1      
+ 180   1        /* reset the LCD controller chip */
+ 181   1        _SBIT_LCD_RS = 0;   /* set the reset line low */
+ 182   1        DLY_002usec();
+ 183   1          DLY_002usec();
+ 184   1          DLY_002usec();
+ 185   1          DLY_002usec();
+ 186   1          DLY_002usec();      //delay_us(10);
+ 187   1        _SBIT_LCD_RS = 1;   /* release reset to back high */
+ 188   1      
+ 189   1        /* program the controller mode of operation to graphics only mode */
+ 190   1        
+ 191   1        LCD_TxCmd2(0x42,0);       // set graphics start at zero
+ 192   1        LCD_TxCmd2(0x43,30);      // set number of bytes in horz raster
+ 193   1        LCD_TxCmd2(0x40,30*64);     // set text area after the graphics memory
+ 194   1        LCD_TxCmd2(0x41,40);      // set number of text characters on row @6 bits
+ 195   1        LCD_TxCmd0(0x81);       // setup mode set for text / graphics XOR
+ 196   1        LCD_TxCmd0(0x98);       // enable graphics only mode / no text no cursor
+ 197   1        LCD_TxCmd2(0x24,0);       // setup the AP to 0
+ 198   1        
+ 199   1        DLY_020nsec();
+ 200   1        DLY_100nsec();
+ 201   1      }
+ 202          
+ 203          
+ 204          // EOF
+ 205          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    305    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

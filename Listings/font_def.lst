@@ -1,0 +1,198 @@
+C51 COMPILER V9.55   FONT_DEF                                                              04/29/2026 17:22:15 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE FONT_DEF
+OBJECT MODULE PLACED IN .\Objects\font_def.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\font\font_def.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_W
+                    -ess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Lis
+                    -tings\font_def.lst) TABS(2) OBJECT(.\Objects\font_def.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // lib
+  15          #include "compiler_defs.h"
+  16          #include "C8051F120_defs.h"
+  17          // sys
+  18          #include "sys_def.h"
+  19          // font
+  20          #include "font_def.h"
+  21          #include "font_en_6x7.h"
+  22          #include "font_en_8x16.h"
+  23          #include "font_en_26x47.h"
+  24          
+  25          #if defined (_FT_LANG_KR)
+              #include "font_kr_16x16.h"
+              
+              #elif defined (_FT_LANG_CN)
+              #include "font_cn_16x16.h"
+              
+              #elif defined (_FT_LANG_JP)
+  32          #include "font_jp_12x16.h"
+  33          
+  34          #else
+              #include "font_kr_16x16.h"
+              
+              #endif
+  38          
+  39          
+  40          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  41          //  Global variables
+  42          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  43          #if defined (_FT_LANG_KR)
+              GV_FONT code gFnt[FT_IDX_MAX] = {
+                  { 7, font_en_06x07,  0, en_06x07_width, NULL,           '0', '~', '.'},
+                  {16, font_en_08x16,  8, NULL,           NULL,           ' ', '~', '.'},
+C51 COMPILER V9.55   FONT_DEF                                                              04/29/2026 17:22:15 PAGE 2   
+
+                  {47, font_en_26x47,  0, en_26x47_width, en_26x47_wbyte, ' ', '<', '.'},
+                  {16, font_kr_16x16,  0, kr_16x16_width, NULL,             1, 140,   1},
+              };
+              
+              #elif defined (_FT_LANG_CN)
+              GV_FONT code gFnt[FT_IDX_MAX] = {
+                  { 7, font_en_06x07,  0, en_06x07_width, NULL,           '0', '~', '.'},
+                  {16, font_en_08x16,  8, NULL,           NULL,           ' ', '~', '.'},
+                  {47, font_en_26x47,  0, en_26x47_width, en_26x47_wbyte, ' ', '<', '.'},
+                  {16, font_cn_16x16, 16, NULL,           NULL,             1, 188,   1},
+              };
+              
+              #elif defined (_FT_LANG_JP)
+  60          GV_FONT code gFnt[FT_IDX_MAX] = {
+  61              { 7, font_en_06x07,  0, en_06x07_width, NULL,           '0', '~', '.'},
+  62              {16, font_en_08x16,  8, NULL,           NULL,           ' ', '~', '.'},
+  63              {47, font_en_26x47,  0, en_26x47_width, en_26x47_wbyte, ' ', '<', '.'},
+  64              {16, font_jp_16x16, 16, NULL,           NULL,             1, 95, 1},
+  65          };
+  66          
+  67          #else
+              GV_FONT code gFnt[FT_IDX_MAX] = {
+                  { 7, font_en_06x07,  0, en_06x07_width, NULL,           '0', '~', '.'},
+                  {16, font_en_08x16,  8, NULL,           NULL,           ' ', '~', '.'},
+                  {47, font_en_26x47,  0, en_26x47_width, en_26x47_wbyte, ' ', '<', '.'},
+                  {16, font_kr_16x16,  0, kr_16x16_width, NULL,             1, 135,   1},
+              };
+              
+              #endif
+  76          
+  77          U08 gFt_str[16];    // OLD: unsigned char Array_Lang_0_UC_G[16];
+  78          
+  79          
+  80          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  81          //  Local variables
+  82          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  83          
+  84          
+  85          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  86          //  Local Funtions
+  87          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  88          
+  89          
+  90          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  91          //  Global APIs - Access Local Variables
+  92          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  93          // Get
+  94          // Set
+  95          
+  96          
+  97          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  98          //  Global APIs - Public
+  99          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 100          void FNT_SetStr(U08 d01, U08 d02, U08 d03, U08 d04, U08 d05, U08 d06, U08 d07, U08 d08,
+C51 COMPILER V9.55   FONT_DEF                                                              04/29/2026 17:22:15 PAGE 3   
+
+ 101                  U08 d09, U08 d10, U08 d11, U08 d12, U08 d13, U08 d14, U08 d15)
+ 102          {
+ 103   1          gFt_str[0]  = d01;
+ 104   1          gFt_str[1]  = d02;
+ 105   1          gFt_str[2]  = d03;
+ 106   1          gFt_str[3]  = d04;
+ 107   1          gFt_str[4]  = d05;
+ 108   1          gFt_str[5]  = d06;
+ 109   1          gFt_str[6]  = d07;
+ 110   1          gFt_str[7]  = d08;
+ 111   1          gFt_str[8]  = d09;
+ 112   1          gFt_str[9]  = d10;
+ 113   1          gFt_str[10] = d11;
+ 114   1          gFt_str[11] = d12;
+ 115   1          gFt_str[12] = d13;
+ 116   1          gFt_str[13] = d14;
+ 117   1          gFt_str[14] = d15;
+ 118   1          gFt_str[15] = 0x00;
+ 119   1      }
+ 120          
+ 121          U08* FNT_GetStr_2(U08 d01, U08 d02, U08 d03, U08 d04, U08 d05, U08 d06, U08 d07, U08 d08,
+ 122                  U08 d09, U08 d10, U08 d11, U08 d12, U08 d13, U08 d14, U08 d15)
+ 123          {
+ 124   1        U08 str[16] = {1, };
+ 125   1        
+ 126   1          str[0]  = d01;
+ 127   1          str[1]  = d02;
+ 128   1          str[2]  = d03;
+ 129   1          str[3]  = d04;
+ 130   1          str[4]  = d05;
+ 131   1          str[5]  = d06;
+ 132   1          str[6]  = d07;
+ 133   1          str[7]  = d08;
+ 134   1          str[8]  = d09;
+ 135   1          str[9]  = d10;
+ 136   1          str[10] = d11;
+ 137   1          str[11] = d12;
+ 138   1          str[12] = d13;
+ 139   1          str[13] = d14;
+ 140   1          str[14] = d15;  
+ 141   1          str[15] = 0x00;
+ 142   1      
+ 143   1        return str;
+ 144   1      }
+ 145          
+ 146          
+ 147          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 148          //  EOF
+ 149          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 150          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    271    ----
+   CONSTANT SIZE    =   9258    ----
+   XDATA SIZE       =     16      46
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+C51 COMPILER V9.55   FONT_DEF                                                              04/29/2026 17:22:15 PAGE 4   
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

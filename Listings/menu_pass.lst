@@ -1,0 +1,222 @@
+C51 COMPILER V9.55   MENU_PASS                                                             04/29/2026 17:23:01 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MENU_PASS
+OBJECT MODULE PLACED IN .\Objects\menu_pass.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\menu\menu_pass.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_
+                    -Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Li
+                    -stings\menu_pass.lst) TABS(2) OBJECT(.\Objects\menu_pass.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // chipset
+  15          #include "compiler_defs.h"
+  16          #include "C8051F120_defs.h"
+  17          // sys
+  18          #include "sys_def.h"
+  19          // self
+  20          #include "menu_pass.h"
+  21          // bsp
+  22          #include "flash_main.h"
+  23          #include "gpio_main.h"
+  24          #include "bsp_main.h"
+  25          #include "btn_main.h"
+  26          // app
+  27          #include "app_main.h"
+  28          #include "lcd_main.h"
+  29          #include "lcd_data.h"
+  30          #include "dly_main.h"
+  31          // disp
+  32          #include "disp_main.h"
+  33          #include "disp_string.h"
+  34          // menu
+  35          #include "menu_main.h"
+  36          #include "menu_system.h"
+  37          // font
+  38          #include "font_def.h"
+  39          
+  40          
+  41          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  42          //  Global variables
+  43          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  44          U08 gPas_fChk;        // OLD: unsigned char Flag_Pass_CHK_UC_G;
+  45          
+  46          
+C51 COMPILER V9.55   MENU_PASS                                                             04/29/2026 17:23:01 PAGE 2   
+
+  47          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  48          //  Local variables
+  49          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  50          
+  51          
+  52          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  53          //  Local Funtions
+  54          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  55          U16 MnuPs_UdPass(S16 ud_aux, U08 ud_cnt)
+  56          {
+  57   1        U08 p_str[APP_STR_LENGTH] = {0, };
+  58   1      
+  59   1          if(ud_cnt < 10)
+  60   1          {
+  61   2              if(_SBIT_BTN_UP   == BTN_STT_PRESS)    ud_aux++;
+  62   2              if(_SBIT_BTN_DOWN == BTN_STT_PRESS)    ud_aux--;
+  63   2          }
+  64   1      
+  65   1          if((ud_cnt >= 10) && (ud_cnt < 20))
+  66   1          {
+  67   2              if(_SBIT_BTN_UP   == BTN_STT_PRESS)    ud_aux += 10;
+  68   2              if(_SBIT_BTN_DOWN == BTN_STT_PRESS)    ud_aux -= 10;
+  69   2          }
+  70   1      
+  71   1          if((ud_cnt >= 20) && (ud_cnt < 30))
+  72   1          {
+  73   2      
+  74   2              if(_SBIT_BTN_UP   == BTN_STT_PRESS)    ud_aux += 100;
+  75   2              if(_SBIT_BTN_DOWN == BTN_STT_PRESS)    ud_aux -= 100;
+  76   2          }
+  77   1        if(ud_cnt>= 30)
+  78   1        {
+  79   2              ud_cnt = 30;
+  80   2      
+  81   2              if(_SBIT_BTN_UP   == BTN_STT_PRESS)    ud_aux += 1000;
+  82   2              if(_SBIT_BTN_DOWN == BTN_STT_PRESS)    ud_aux -= 1000;
+  83   2      
+  84   2        }
+  85   1        
+  86   1        
+  87   1      
+  88   1          if(ud_aux >= 9999)      ud_aux = 9999;
+  89   1          if(ud_aux <= 0)         ud_aux = 0;
+  90   1      
+  91   1        APP_Num2Str(ud_aux, p_str, 4, 0, TRUE);
+  92   1        DpSTR_LineUpd(FT_EN_08x16, 0, 104, 56, p_str);
+  93   1          BTN_DelayMsec(BTN_WAIT_UD);
+  94   1      
+  95   1          return ud_aux;
+  96   1      }
+  97          
+  98          
+  99          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 100          //  Global APIs - Operation
+ 101          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 102          void MnPAS_InitVari(void)
+C51 COMPILER V9.55   MENU_PASS                                                             04/29/2026 17:23:01 PAGE 3   
+
+ 103          {
+ 104   1      
+ 105   1      }
+ 106          
+ 107          void MnPAS_ProcMain(void)
+ 108          {
+ 109   1          U08 cnt_ud = 0;
+ 110   1        U16 sel = 0;
+ 111   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 112   1        U16 pass = MnSYS_GetPass();
+ 113   1      
+ 114   1        gPas_fChk = FALSE;
+ 115   1      
+ 116   1          DISP_ClearScr();
+ 117   1      
+ 118   1      
+ 119   1      
+ 120   1        switch(MnSYS_GetLang())
+ 121   1        {
+ 122   2          case MnSYS_LANG_LOC:
+ 123   2      #if defined (_FT_LANG_KR)     
+                    DpSTR_LineUpd(FT_LC_16x16, FALSE, 80, 40,_F_STR(44, 35, 38, 105, 0, 0, 0,0,0,0,0,0,0,0,0));
+                    DpSTR_LineUpd(FT_EN_08x16, FALSE, 80+70, 40, "?");
+                    break;
+              
+              #elif defined (_FT_LANG_CN)
+                    DpSTR_LineUpd(FT_LC_16x16, FALSE, 100, 40,_F_STR(29, 71, 0, 0, 0, 0, 0,0,0,0,0,0,0,0,0));
+                    DpSTR_LineUpd(FT_EN_08x16, FALSE, 100+35, 40, "?");
+                    break;
+              
+              #elif defined (_FT_LANG_JP)
+ 134   2            DpSTR_LineUpd(FT_LC_16x16, FALSE, 80, 40,_F_STR(26, 15, 40, 42, 23, 0, 0,0,0,0,0,0,0,0,0));
+ 135   2            DpSTR_LineUpd(FT_EN_08x16, FALSE, 80+85, 40, "?");
+ 136   2            break;
+ 137   2      #endif
+ 138   2          case MnSYS_LANG_ENG:
+ 139   2          default:
+ 140   2            DpSTR_LineUpd(FT_EN_08x16, FALSE, 80, 40, "Passcode?");
+ 141   2            break;
+ 142   2        }
+ 143   1        APP_Num2Str(0, p_str, 4, 0, TRUE);
+ 144   1        DpSTR_LineUpd(FT_EN_08x16, FALSE, 104, 56, p_str);
+ 145   1          DLY_RunMsec(300);
+ 146   1      
+ 147   1          do
+ 148   1          {
+ 149   2              while(!_SBIT_BTN_UP || !_SBIT_BTN_DOWN)
+ 150   2          {
+ 151   3              sel = MnuPs_UdPass(sel, cnt_ud);
+ 152   3              cnt_ud++;
+ 153   3          }
+ 154   2              cnt_ud = 0;
+ 155   2      
+ 156   2          }
+ 157   1        while(_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+ 158   1      
+ 159   1          if(!_SBIT_BTN_SET)
+ 160   1          {
+ 161   2              if((sel == pass) || (sel == MnSYS_PASS_GOLD_KEY))   gPas_fChk = TRUE;
+ 162   2              else                          gPas_fChk = FALSE;
+ 163   2      
+ 164   2              LDT_ClrBuff(LCD_X_START, LCD_Y_START, LCD_X_END, LCD_Y_END);
+C51 COMPILER V9.55   MENU_PASS                                                             04/29/2026 17:23:01 PAGE 4   
+
+ 165   2      
+ 166   2              if(gPas_fChk)   DpSTR_LineUpd(FT_EN_08x16, 0, 100, 55, "Okay !"); 
+ 167   2          else        DpSTR_LineUpd(FT_EN_08x16, 0, 80,  55, "Invalid !!");
+ 168   2          DLY_RunMsec(1000);
+ 169   2          }
+ 170   1      }
+ 171          
+ 172          
+ 173          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 174          //  EOF
+ 175          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 176          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    743    ----
+   CONSTANT SIZE    =     62    ----
+   XDATA SIZE       =      1      40
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

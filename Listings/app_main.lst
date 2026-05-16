@@ -1,0 +1,376 @@
+C51 COMPILER V9.55   APP_MAIN                                                              04/29/2026 17:22:23 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE APP_MAIN
+OBJECT MODULE PLACED IN .\Objects\app_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\app\app_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_We
+                    -ss\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\List
+                    -ings\app_main.lst) TABS(2) OBJECT(.\Objects\app_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // std
+  15          #include <string.h>
+  16          // lib
+  17          #include "compiler_defs.h"
+  18          #include "C8051F120_defs.h"
+  19          // sys
+  20          #include "sys_def.h"
+  21          // bsp
+  22          #include "bsp_main.h"
+  23          #include "flash_main.h"
+  24          #include "uart_main.h"
+  25          #include "gpio_main.h"
+  26          #include "adc_main.h"
+  27          #include "mem_main.h"
+  28          #include "btn_main.h"
+  29          #include "rtc_ds1302.h"
+  30          #include "dac_main.h"
+  31          #include "dly_main.h"
+  32          #include "tmr_main.h"
+  33          // app
+  34          #include "disp_main.h"
+  35          #include "rly_main.h"
+  36          #include "pcd_main.h"
+  37          #include "isr_main.h"
+  38          #include "prtc_main.h"
+  39          #include "modbus_main.h"
+  40          #include "data_main.h"
+  41          // menu
+  42          #include "menu_main.h"
+  43          #include "menu_measure.h"
+  44          #include "menu_output.h"
+  45          #include "menu_pass.h"
+  46          #include "menu_quick.h"
+  47          #include "menu_engineer.h"
+  48          #include "menu_test.h"
+C51 COMPILER V9.55   APP_MAIN                                                              04/29/2026 17:22:23 PAGE 2   
+
+  49          // msr
+  50          #include "measure_main.h"
+  51          #include "measure_temperature.h"
+  52          #include "measure_analyze.h"
+  53          // screen
+  54          #include "screen_main.h"
+  55          // self
+  56          #include "app_main.h"
+  57          
+  58          
+  59          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  60          //  Global variables
+  61          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  62          
+  63          
+  64          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  65          //  Local variables
+  66          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  67          U08 lApp_pStr[APP_STR_LENGTH];
+  68          U32 test_global_cnt;  
+  69          
+  70          
+  71          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  72          //  Local Funtions
+  73          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  74          void AppProc_EnterMenu(void)
+  75          {
+  76   1        if(!BTN_ChkLong(BTN_IDX_PROG, 200)) 
+  77   1          return;
+  78   1      
+  79   1        ES0     = 0;
+  80   1        SFRPAGE = TMR3_PAGE;
+  81   1        TMR3CN  = 0x00;
+  82   1        SFRPAGE = CONFIG_PAGE;
+  83   1      
+  84   1        gPas_fChk = FALSE;
+  85   1      
+  86   1        MnPAS_ProcMain();
+  87   1      
+  88   1        if(!gPas_fChk)
+  89   1        {
+  90   2          DISP_ClearScr();
+  91   2          SCRN_ProcDisp();
+  92   2          TMR_CfgResume();
+  93   2            gIsr_tm3_cnt = 0;
+  94   2          return;
+  95   2        }
+  96   1        MENU_ProcMain();
+  97   1      }
+  98          
+  99          void AppProc_EnterQuick(void)
+ 100          {
+ 101   1        if(!BTN_ChkLong(BTN_IDX_EXIT, BTN_WAIT_SET)) 
+ 102   1          return;
+ 103   1      
+ 104   1        ES0 = 0;
+C51 COMPILER V9.55   APP_MAIN                                                              04/29/2026 17:22:23 PAGE 3   
+
+ 105   1        MnQUI_ProcMain();
+ 106   1      }
+ 107          
+ 108          void AppProc_MoveScrn(U08 key)
+ 109          {
+ 110   1        SCRN_ProcKey(key);
+ 111   1        SCRN_ProcDisp();
+ 112   1        BTN_DelayMsec(500);
+ 113   1      }
+ 114          
+ 115          void AppInit_Vari(void)
+ 116          {
+ 117   1        // BSP
+ 118   1        UAT_InitVari();
+ 119   1        RLY_InitVari();
+ 120   1        PCD_InitVari();
+ 121   1        ADC_InitVari();
+ 122   1        // ISR
+ 123   1        ISR_InitVari();
+ 124   1        // MSR
+ 125   1        MEAS_InitVari();
+ 126   1        MsTPR_InitVari();
+ 127   1        MsANL_InitVari();
+ 128   1      
+ 129   1        DISP_InitVari();
+ 130   1        MENU_InitVari();
+ 131   1        SCRN_InitVari();
+ 132   1        
+ 133   1        test_global_cnt = 0;
+ 134   1      
+ 135   1        
+ 136   1      }
+ 137          
+ 138          
+ 139          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 140          //  Global APIs - Operation
+ 141          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 142          U08* APP_NumTest2Str(U32 num, U08* p_dst, U16 digit, U08 decimal, U08 f_fill_zero)
+ 143          {
+ 144   1        U08 i, cnt;
+ 145   1        U32 pow = 1;
+ 146   1      
+ 147   1        for(i=0; i<(digit-1); i++)
+ 148   1          pow *= 10;
+ 149   1      
+ 150   1        if(decimal == 0)    cnt = digit;
+ 151   1        else          cnt = digit + 1;
+ 152   1      
+ 153   1        for(i=0; i<cnt; i++)
+ 154   1        {
+ 155   2          if(i == (digit-decimal))
+ 156   2            lApp_pStr[i] = '.';
+ 157   2          else
+ 158   2          {
+ 159   3            if(num < pow)
+ 160   3            {
+ 161   4              if(f_fill_zero == TRUE)
+ 162   4                lApp_pStr[i] = '0';
+ 163   4              else
+ 164   4              {
+C51 COMPILER V9.55   APP_MAIN                                                              04/29/2026 17:22:23 PAGE 4   
+
+ 165   5                if(i >= (digit-decimal-1))    lApp_pStr[i] = '0';
+ 166   5                else              lApp_pStr[i] = ' ';
+ 167   5              }
+ 168   4            }
+ 169   3            else
+ 170   3              lApp_pStr[i] = (num / pow) % 10 + '0';
+ 171   3      
+ 172   3            pow /= 10;
+ 173   3          }
+ 174   2        }
+ 175   1      
+ 176   1        lApp_pStr[i] = 0;
+ 177   1      
+ 178   1        strncpy(p_dst, lApp_pStr, APP_STR_LENGTH);
+ 179   1      
+ 180   1        return lApp_pStr;
+ 181   1      }
+ 182          
+ 183          
+ 184          
+ 185          
+ 186          
+ 187          
+ 188          U08* APP_Num2Str(S32 num, U08* p_dst, U16 digit, U08 decimal, U08 f_fill_zero)
+ 189          {
+ 190   1        U08 i, cnt;
+ 191   1        U32 pow = 1;
+ 192   1      
+ 193   1        for(i=0; i<(digit-1); i++)
+ 194   1          pow *= 10;
+ 195   1      
+ 196   1        if(decimal == 0)    cnt = digit;
+ 197   1        else          cnt = digit + 1;
+ 198   1      
+ 199   1        for(i=0; i<cnt; i++)
+ 200   1        {
+ 201   2          if(i == (digit-decimal))
+ 202   2            lApp_pStr[i] = '.';
+ 203   2          else
+ 204   2          {
+ 205   3            if(num < pow)
+ 206   3            {
+ 207   4              if(f_fill_zero == TRUE)
+ 208   4                lApp_pStr[i] = '0';
+ 209   4              else
+ 210   4              {
+ 211   5                if(i >= (digit-decimal-1))    lApp_pStr[i] = '0';
+ 212   5                else              lApp_pStr[i] = ' ';
+ 213   5              }
+ 214   4            }
+ 215   3            else
+ 216   3              lApp_pStr[i] = (num / pow) % 10 + '0';
+ 217   3      
+ 218   3            pow /= 10;
+ 219   3          }
+ 220   2        }
+ 221   1      
+ 222   1        lApp_pStr[i] = 0;
+ 223   1      
+ 224   1        strncpy(p_dst, lApp_pStr, APP_STR_LENGTH);
+ 225   1      
+ 226   1        return lApp_pStr;
+C51 COMPILER V9.55   APP_MAIN                                                              04/29/2026 17:22:23 PAGE 5   
+
+ 227   1      }
+ 228          
+ 229          void APP_InitBoot(void)
+ 230          {
+ 231   1        int i;
+ 232   1      
+ 233   1        if(BTN_GetStatus(BTN_IDX_SET) && BTN_GetStatus(BTN_IDX_EXIT))
+ 234   1        {
+ 235   2          FLS_ResetFactory();
+ 236   2        }
+ 237   1      
+ 238   1        DISP_IntroScr();
+ 239   1      
+ 240   1        MEM_EraseMram();
+ 241   1        FLS_InitMain();
+ 242   1        PRT_InitBoot();
+ 243   1        BSP_InitPort();
+ 244   1      
+ 245   1        AppInit_Vari();
+ 246   1      
+ 247   1        RTC_GetTime();
+ 248   1        LOG_InitAddr();
+ 249   1      
+ 250   1        for(i=0; i<4; i++)
+ 251   1          MsTPR_CalcVal();
+ 252   1      
+ 253   1        ANZ_SetEmptyPct(110);
+ 254   1      }
+ 255          
+ 256          void APP_ProcEvery(void)
+ 257          {
+ 258   1        PRT_ProcMain();
+ 259   1        MDB_PrcMain();
+ 260   1      
+ 261   1        if(!BTN_ChkPush())
+ 262   1          return;
+ 263   1      
+ 264   1        ScTRD_ProcMain();
+ 265   1      
+ 266   1        switch(BTN_GetIdx())
+ 267   1        {
+ 268   2          case BTN_IDX_PROG:      AppProc_EnterMenu();        break;
+ 269   2          case BTN_IDX_EXIT:      AppProc_EnterQuick();       break;
+ 270   2          case BTN_IDX_SET:     ScTRD_ProcEnter();          break;
+ 271   2          case BTN_IDX_RIGHT:     AppProc_MoveScrn(BTN_IDX_RIGHT);  break;
+ 272   2          case BTN_IDX_LEFT:      AppProc_MoveScrn(BTN_IDX_LEFT);   break;
+ 273   2          default:          break;
+ 274   2        }
+ 275   1      
+ 276   1        switch(SCRN_GetScrnIdx())
+ 277   1        {
+ 278   2          case SCR_I02_GRP_LIVE:    BTN_DelayMsec(200);     break;
+ 279   2          case SCR_I03_GRP_AVRG:    MEAS_CfgThreshold();    break;
+ 280   2          default:          break;
+ 281   2        }
+ 282   1      }
+ 283          
+ 284          void APP_Proc1Sec(void)
+ 285          {
+ 286   1        S16 sg_thick = MEAS_GetSgThick();
+ 287   1      
+ 288   1        if(gIsr_tm3_cnt < 100)    // 100 = 1sec
+C51 COMPILER V9.55   APP_MAIN                                                              04/29/2026 17:22:23 PAGE 6   
+
+ 289   1          return;
+ 290   1        gIsr_tm3_cnt = 0;
+ 291   1        if(MnTST_GetGloval_fCnt())
+ 292   1        {
+ 293   2          test_global_cnt++;
+ 294   2          if(test_global_cnt==0xFFFFFFFF) //4294967295 
+ 295   2            test_global_cnt=0;
+ 296   2        }
+ 297   1        else
+ 298   1          test_global_cnt=0;
+ 299   1        
+ 300   1        MEM_Reset_Status();
+ 301   1        MsANL_Proc1Sec();
+ 302   1        
+ 303   1        MEAS_ProcMain();
+ 304   1        MEAS_SetOpr();
+ 305   1      
+ 306   1        PCD_Prc1Sec();
+ 307   1        MDB_PrcMain();
+ 308   1        DAT_ProcSave();
+ 309   1        MDB_PrcMain();
+ 310   1      
+ 311   1        DAC_OutCurr(sg_thick, DAC_CURR_IDX_NORMAL);
+ 312   1        RLY_ProcOut(sg_thick);
+ 313   1        UT0_PrcTx(MnOUT_GetProtocol());
+ 314   1        MDB_PrcMain();
+ 315   1      
+ 316   1        RTC_GetTime();
+ 317   1        MDB_PrcMain();
+ 318   1        SCRN_ProcDisp();
+ 319   1        MDB_PrcMain();
+ 320   1      }
+ 321          
+ 322          
+ 323          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 324          //  EOF
+ 325          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 326          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1408    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     20      38
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

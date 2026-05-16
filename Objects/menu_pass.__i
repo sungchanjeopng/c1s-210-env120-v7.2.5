@@ -1,0 +1,1 @@
+"_Wess\menu\menu_pass.c" LARGE OPTIMIZE (8,SPEED) INCDIR(.\_src\b0_comm;.\_Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Listings\menu_pass.lst) TABS (2) OBJECT(.\Objects\menu_pass.obj)

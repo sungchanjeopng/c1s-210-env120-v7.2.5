@@ -1,0 +1,95 @@
+C51 COMPILER V9.55   RF_MAIN                                                               04/29/2026 17:22:52 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE RF_MAIN
+OBJECT MODULE PLACED IN .\Objects\rf_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\bsp\rf_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_Wes
+                    -s\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Listi
+                    -ngs\rf_main.lst) TABS(2) OBJECT(.\Objects\rf_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------
+   2          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use,
+   5          //  copying, transfer or disclosure of such information is prohibited except by express written
+   6          //  agreement with WESS-Global Co.,LTD
+   7          //
+   8          //  $Date: 2020-07-13 12:00:00 +0900 $
+   9          //  $Author: eddie $
+  10          //  $Rev: 1.0 $
+  11          //--------------------------------------------------------------------------------------------------
+  12          
+  13          
+  14          //--------------------------------------------------------------------------------------------------
+  15          //  Includes
+  16          //--------------------------------------------------------------------------------------------------
+  17          // chipset
+  18          #include "compiler_defs.h"
+  19          #include "C8051F120_defs.h"
+  20          // sys
+  21          #include "sys_def.h"
+  22          // self
+  23          #include "rf_main.h"
+  24          // lib
+  25          #include "dly_main.h"
+  26          // bsp
+  27          #include "uart_main.h"
+  28          #include "flash_main.h"
+  29          #include "lcd_main.h"
+  30          #include "lcd_data.h"
+  31          // menu
+  32          #include "menu_box.h"
+  33          #include "menu_main.h"
+  34          #include "menu_system.h"
+  35          // disp
+  36          #include "disp_main.h"
+  37          #include "disp_menu.h"
+  38          #include "disp_string.h"
+  39          // font
+  40          #include "font_def.h"
+  41          
+  42          
+  43          //--------------------------------------------------------------------------------------------------
+  44          //  Global variables
+  45          //--------------------------------------------------------------------------------------------------
+  46          
+  47          
+  48          //--------------------------------------------------------------------------------------------------
+  49          //  Local variables
+  50          //--------------------------------------------------------------------------------------------------
+  51          
+  52          
+  53          //--------------------------------------------------------------------------------------------------
+C51 COMPILER V9.55   RF_MAIN                                                               04/29/2026 17:22:52 PAGE 2   
+
+  54          //  Global APIs - with Local
+  55          //--------------------------------------------------------------------------------------------------
+  56          
+  57          
+  58          //--------------------------------------------------------------------------------------------------
+  59          //  Local Funtions
+  60          //--------------------------------------------------------------------------------------------------
+  61          
+  62          
+  63          //--------------------------------------------------------------------------------------------------
+  64          //  Global APIs - Ext. Call
+  65          //--------------------------------------------------------------------------------------------------
+  66          
+  67          // EOF
+  68          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

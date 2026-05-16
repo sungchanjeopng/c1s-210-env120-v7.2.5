@@ -1,0 +1,2122 @@
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MENU_MEASURE
+OBJECT MODULE PLACED IN .\Objects\menu_measure.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\menu\menu_measure.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;
+                    -.\_Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.
+                    -\Listings\menu_measure.lst) TABS(2) OBJECT(.\Objects\menu_measure.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // chipset
+  15          #include "compiler_defs.h"
+  16          #include "C8051F120_defs.h"
+  17          // sys
+  18          #include "sys_def.h"
+  19          // self
+  20          #include "menu_measure.h"
+  21          // bsp
+  22          #include "bsp_main.h"
+  23          #include "flash_main.h"
+  24          #include "gpio_main.h"
+  25          #include "lcd_main.h"
+  26          #include "lcd_data.h"
+  27          #include "btn_main.h"
+  28          #include "adc_main.h"
+  29          #include "dac_main.h"
+  30          #include "dly_main.h"
+  31          #include "tmr_main.h"
+  32          // app
+  33          #include "app_main.h"
+  34          #include "rly_main.h"
+  35          #include "isr_main.h"
+  36          // disp
+  37          #include "disp_main.h"
+  38          #include "disp_menu.h"
+  39          #include "disp_string.h"
+  40          // msr
+  41          #include "measure_main.h"
+  42          #include "measure_analyze.h"
+  43          // menu
+  44          #include "menu_main.h"
+  45          #include "menu_box.h"
+  46          #include "menu_system.h"
+  47          #include "menu_factory.h"
+  48          #include "menu_output.h"
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 2   
+
+  49          #include "menu_quick.h"
+  50          #include "menu_pass.h"
+  51          #include "menu_engineer.h"
+  52          // font
+  53          #include "font_def.h"
+  54          #include "font_idx_kor.h"
+  55          
+  56          
+  57          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  58          //  Global variables
+  59          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  60          
+  61          
+  62          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  63          //  Local variables
+  64          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  65          LS_MnMSR lMnMsr;
+  66          
+  67          
+  68          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  69          //  Local Funtions - Visual Cfg.
+  70          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  71          void MsrDp_StrEmpty(void)
+  72          {
+  73   1          S16 rtn = 0;
+  74   1        U08 *pUnt = "ft";
+  75   1        U08 pStr[APP_STR_LENGTH] = {0, };
+  76   1      
+  77   1      
+  78   1      
+  79   1        switch(MnSYS_GetLang())
+  80   1        {
+  81   2          case MnSYS_LANG_LOC:
+  82   2          #if defined (_FT_LANG_KR)
+                    MnLST_DispClr(1);
+                    DpSTR_DrawLin(FT_EN_08x16, 0, 75, 0, ":");
+                    DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 94, 85,  126, 127, 0,   0,  0,   0, 0,0,0,0,0,0,0));
+                      
+                    break;
+              
+                  #elif defined (_FT_LANG_CN)
+                    MnLST_DispClr(1);
+                    DpSTR_DrawLin(FT_EN_08x16, 0, 40, 0, ":");
+                    DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 76, 117,  0, 0, 0,   0, 0,   0, 0,0,0,0,0,0,0));
+                      
+                    break;
+              
+                  #elif defined (_FT_LANG_JP)
+  97   2            MnLST_DispClr(1);
+  98   2            DpSTR_DrawLin(FT_EN_08x16, 0, 55, 0, ":");
+  99   2              DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 77, 84,  89, 0, 0,   0,   0,   0, 0,0,0,0,0,0,0));
+ 100   2            
+ 101   2            break;
+ 102   2          #endif
+ 103   2            break;
+ 104   2          case MnSYS_LANG_ENG:
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 3   
+
+ 105   2          default:
+ 106   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 0, "Empty:");
+ 107   2            break;
+ 108   2        }
+ 109   1      
+ 110   1      
+ 111   1      
+ 112   1          if(lMnMsr.unit == MnMSR_UNIT_METER)
+ 113   1          {
+ 114   2          pUnt = "m ";
+ 115   2          APP_Num2Str(lMnMsr.empty, pStr, 4, 2, FALSE);
+ 116   2          }
+ 117   1          else if(lMnMsr.unit == MnMSR_UNIT_FEET)
+ 118   1          {
+ 119   2          pUnt = "ft";
+ 120   2          rtn = (S16)MEAS_CalcMeter2Feet(lMnMsr.empty);
+ 121   2          APP_Num2Str(rtn, pStr, 4, 1, FALSE);
+ 122   2          }
+ 123   1      
+ 124   1        DpSTR_DrawLin(FT_EN_08x16, FALSE, 100,  0, pStr);
+ 125   1        DpSTR_DrawLin(FT_EN_08x16, FALSE, 160, 0, pUnt);
+ 126   1      
+ 127   1      }
+ 128          
+ 129          void MsrDp_StrDeadzone(void)
+ 130          {
+ 131   1          //F32 calc = 0;
+ 132   1          S16 rtn  = 0;
+ 133   1        U08 *pUnt = "ft";
+ 134   1        U08 pStr[APP_STR_LENGTH] = {0, };
+ 135   1        
+ 136   1      
+ 137   1        switch(MnSYS_GetLang())
+ 138   1        {
+ 139   2          case MnSYS_LANG_LOC:
+ 140   2        #if defined (_FT_LANG_KR)
+                    MnLST_DispClr(1);
+                    DpSTR_DrawLin(FT_EN_08x16, 0, 55, 0, ":");
+                    DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 43, 3,  17, 0, 0,   0,  0,   0, 0,0,0,0,0,0,0));
+                      
+                    break;
+              
+                #elif defined (_FT_LANG_CN)
+                    MnLST_DispClr(1);
+                    DpSTR_DrawLin(FT_EN_08x16, 0, 55, 0, ":");
+                    DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 70, 17,  0, 0, 0,   0,  0,   0, 0,0,0,0,0,0,0));
+                      
+                    break;
+              
+                #elif defined (_FT_LANG_JP)
+ 155   2            MnLST_DispClr(1);
+ 156   2            DpSTR_DrawLin(FT_EN_08x16, 0, 55, 0, ":");
+ 157   2              DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 43, 66,  62, 0, 0,   0,   0,   0, 0,0,0,0,0,0,0));
+ 158   2            
+ 159   2            break;
+ 160   2        #endif
+ 161   2            break;
+ 162   2          case MnSYS_LANG_ENG:
+ 163   2          default:
+ 164   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 0, "Dead Zone:");
+ 165   2            break;
+ 166   2        }
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 4   
+
+ 167   1      
+ 168   1      
+ 169   1      
+ 170   1          if(lMnMsr.unit == MnMSR_UNIT_METER)
+ 171   1          {
+ 172   2          pUnt = "m ";
+ 173   2          APP_Num2Str(lMnMsr.dead, pStr, 4, 2, FALSE);
+ 174   2          }
+ 175   1          else if (lMnMsr.unit == MnMSR_UNIT_FEET)
+ 176   1          {
+ 177   2          pUnt = "ft";
+ 178   2          rtn = (S16)MEAS_CalcMeter2Feet(lMnMsr.dead);
+ 179   2          APP_Num2Str(rtn, pStr, 4, 1, FALSE);
+ 180   2          }
+ 181   1      
+ 182   1        DpSTR_DrawLin(FT_EN_08x16, FALSE, 100, 0, pStr);
+ 183   1        DpSTR_DrawLin(FT_EN_08x16, FALSE, 160, 0, pUnt);
+ 184   1      
+ 185   1      }
+ 186          #if 0
+              void MsrDp_StrTvgIdx(void)
+              {
+                U08 pStr[APP_STR_LENGTH] = {0, };
+              
+                APP_Num2Str(lMnMsr.tvg, pStr, 2, 0, FALSE);
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 5, 0, "TVG Curve:");
+                DpSTR_LineUpd(FT_EN_08x16, FALSE, 120, 0, "           ");
+                
+                if  (MnEGN_GetFTvgCst())  DpSTR_LineUpd(FT_EN_08x16, FALSE, 120, 0, "Custom");
+                else            DpSTR_LineUpd(FT_EN_08x16, FALSE, 120, 0, pStr);
+              }
+              #endif
+ 199          void MsrDp_StrEchoAmp(void)
+ 200          {
+ 201   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 202   1      
+ 203   1        switch(MnSYS_GetLang())
+ 204   1        {
+ 205   2          case MnSYS_LANG_LOC:
+ 206   2      #if defined (_FT_LANG_KR)
+                    MnLST_DispClr(1);
+                    DpSTR_DrawLin(FT_EN_08x16, 0, 70, 0, ":");
+                    DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 55, 58,  3, 19, 0,   0, 0,   0, 0,0,0,0,0,0,0));
+                      
+                    break;
+              
+              #elif defined (_FT_LANG_CN)
+                    MnLST_DispClr(1);
+                    DpSTR_DrawLin(FT_EN_08x16, 0, 85, 0, ":");
+                    DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 7, 22,  47, 27, 24,   0,  0,   0, 0,0,0,0,0,0,0));
+                      
+                    break;
+              
+              #elif defined (_FT_LANG_JP)
+ 221   2            MnLST_DispClr(1);
+ 222   2            DpSTR_DrawLin(FT_EN_08x16, 0, 101, 0, ":");
+ 223   2              DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 6, 12,  42, 3, 41,   29,    0,   0, 0,0,0,0,0,0,0));
+ 224   2            
+ 225   2      #endif
+ 226   2            break;
+ 227   2          case MnSYS_LANG_ENG:
+ 228   2          default:
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 5   
+
+ 229   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 0, "Echo AMP:");
+ 230   2            break;
+ 231   2        }
+ 232   1      
+ 233   1      
+ 234   1      
+ 235   1        APP_Num2Str(lMnMsr.amp, p_str, 3, 0, FALSE);
+ 236   1        //DpSTR_DrawLin(FT_EN_08x16, FALSE, 5, 0, "Echo AMP:");
+ 237   1        DpSTR_LineUpd(FT_EN_08x16, FALSE, 120, 0, p_str);
+ 238   1      }
+ 239          
+ 240          void MsrDp_StrFreq(void)
+ 241          {
+ 242   1        switch(MnSYS_GetLang())
+ 243   1        {
+ 244   2          case MnSYS_LANG_LOC:
+ 245   2      #if defined (_FT_LANG_KR)
+                    MnLST_DispClr(1);
+                    DpSTR_DrawLin(FT_EN_08x16, 0, 75, 0, ":");
+                    DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 88, 136,  55, 0, 0,   0,  0,   0, 0,0,0,0,0,0,0));
+                      
+                    break;
+              
+              #elif defined (_FT_LANG_CN)
+                    MnLST_DispClr(1);
+                    DpSTR_DrawLin(FT_EN_08x16, 0, 75, 0, ":");
+                    DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 156, 145,  0, 0, 0,   0,  0,   0, 0,0,0,0,0,0,0));
+                      
+                    break;
+              
+              #elif defined (_FT_LANG_JP)
+ 260   2            MnLST_DispClr(1);
+ 261   2            DpSTR_DrawLin(FT_EN_08x16, 0, 75, 0, ":");
+ 262   2              DpSTR_DrawLin(FT_LC_16x16, 0, 5, 0, _F_STR( 57, 71,  67, 0, 0,   0,   0,   0, 0,0,0,0,0,0,0));
+ 263   2            
+ 264   2            break;
+ 265   2      #endif
+ 266   2            break;
+ 267   2          case MnSYS_LANG_ENG:
+ 268   2          default:
+ 269   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 0, "Frequency:");
+ 270   2            break;
+ 271   2        }
+ 272   1      
+ 273   1        //DpSTR_LineUpd(FT_EN_08x16, 0, 5, 0, "Frequency:");
+ 274   1        DpSTR_FreqUpd(lMnMsr.freq, 100, 0);
+ 275   1      }
+ 276          
+ 277          void MsrDp_StrCfg(U08 idx, U08 cnt)
+ 278          {
+ 279   1        U08 pStr[APP_STR_LENGTH] = {0, };
+ 280   1        U08 maxRange  = MnFTR_GetDistMax();
+ 281   1        S16 feet; 
+ 282   1        
+ 283   1          switch(idx)
+ 284   1          {
+ 285   2              case MnMSR_L03_EMPTY:
+ 286   2                  if(lMnMsr.unit == MnMSR_UNIT_METER) 
+ 287   2                  {
+ 288   3              switch(maxRange)
+ 289   3              {
+ 290   4                case MnFTR_DIST_MAX_10m: lMnMsr.empty = BTN_GetValue_UpDn(lMnMsr.empty, MnMSR_EMPTY_MT_MIN, MnMSR_EMP
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 6   
+
+             -TY_MT_10_MAX, 1, cnt); break;
+ 291   4                case MnFTR_DIST_MAX_20m: lMnMsr.empty = BTN_GetValue_UpDn(lMnMsr.empty, MnMSR_EMPTY_MT_MIN, MnMSR_EMP
+             -TY_MT_20_MAX, 1, cnt); break;
+ 292   4              }
+ 293   3                      
+ 294   3              APP_Num2Str(lMnMsr.empty, pStr, 4, 2, FALSE);
+ 295   3                  }
+ 296   2                  else 
+ 297   2                  {
+ 298   3                    feet = (S16)MEAS_CalcMeter2Feet(lMnMsr.empty);
+ 299   3              switch(maxRange)
+ 300   3              {
+ 301   4                case MnFTR_DIST_MAX_10m: feet = BTN_GetValue_UpDn(feet, MnMSR_EMPTY_FT_MIN, MnMSR_EMPTY_FT_10_MAX, 1,
+             - cnt); break;
+ 302   4                case MnFTR_DIST_MAX_20m: feet = BTN_GetValue_UpDn(feet, MnMSR_EMPTY_FT_MIN, MnMSR_EMPTY_FT_20_MAX, 1,
+             - cnt); break;
+ 303   4              }
+ 304   3                      
+ 305   3                      lMnMsr.empty = (U16)MEAS_CalcFeet2Meter(feet);
+ 306   3              APP_Num2Str(feet, pStr, 4, 1, FALSE);
+ 307   3                  }
+ 308   2            DpSTR_LineUpd(FT_EN_08x16, FALSE, 100, 0, pStr);
+ 309   2                  break;
+ 310   2      
+ 311   2              case MnMSR_L04_DEADZONE:
+ 312   2                  if(lMnMsr.unit == MnMSR_UNIT_METER) 
+ 313   2                  {
+ 314   3              switch(maxRange)
+ 315   3              {
+ 316   4                case MnFTR_DIST_MAX_10m: lMnMsr.dead = BTN_GetValue_UpDn(lMnMsr.dead, MnMSR_DEAD_MT_MIN, MnMSR_DEAD_M
+             -T_10_MAX, 1, cnt); break;
+ 317   4                case MnFTR_DIST_MAX_20m: lMnMsr.dead = BTN_GetValue_UpDn(lMnMsr.dead, MnMSR_DEAD_MT_MIN, MnMSR_DEAD_M
+             -T_20_MAX, 1, cnt); break;
+ 318   4              }
+ 319   3                      
+ 320   3              APP_Num2Str(lMnMsr.dead, pStr, 4, 2, FALSE);
+ 321   3                  } 
+ 322   2                  else
+ 323   2                  {
+ 324   3                    feet = (S16)MEAS_CalcMeter2Feet(lMnMsr.dead);
+ 325   3              switch(maxRange)
+ 326   3              {
+ 327   4                case MnFTR_DIST_MAX_10m: feet = BTN_GetValue_UpDn(feet, MnMSR_DEAD_FT_MIN, MnMSR_DEAD_FT_10_MAX, 1, c
+             -nt); break;
+ 328   4                case MnFTR_DIST_MAX_20m: feet = BTN_GetValue_UpDn(feet, MnMSR_DEAD_FT_MIN, MnMSR_DEAD_FT_20_MAX, 1, c
+             -nt); break;
+ 329   4              }
+ 330   3                      
+ 331   3              lMnMsr.dead = (U16)MEAS_CalcFeet2Meter(feet);
+ 332   3              APP_Num2Str(feet, pStr, 4, 1, FALSE);
+ 333   3                  }
+ 334   2            DpSTR_LineUpd(FT_EN_08x16, FALSE, 100, 0, pStr);
+ 335   2                  break;
+ 336   2      
+ 337   2              case MnMSR_L05_ECHO_AMP:
+ 338   2            lMnMsr.amp = BTN_GetValue_UpDn(lMnMsr.amp, MnMSR_AMP_MIN, MnMSR_AMP_MAX, 1, 0);
+ 339   2            APP_Num2Str(lMnMsr.amp, pStr, 3, 0, FALSE);
+ 340   2            DpSTR_LineUpd(FT_EN_08x16, FALSE, 120, 0, pStr);
+ 341   2            break;
+ 342   2      
+ 343   2              case MnMSR_L06_FREQ:
+ 344   2                  lMnMsr.freq = BTN_GetValue_UpDn(lMnMsr.freq, MnMSR_FREQ_130K, MnMSR_FREQ_380K, 1, 0);
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 7   
+
+ 345   2            DpSTR_FreqUpd(lMnMsr.freq, 100, 0);
+ 346   2          }
+ 347   1      }
+ 348          
+ 349          void MsrDp_VisualCfg(U08 lst)
+ 350          {
+ 351   1          S16 old;
+ 352   1          U08 cnt = 0;
+ 353   1          S16 feet = 0;
+ 354   1      
+ 355   1          SFRPAGE = CONFIG_PAGE;
+ 356   1      
+ 357   1          MEAS_CfgSens(4);
+ 358   1          MEAS_PrcEcho();
+ 359   1      
+ 360   1          LDT_ClrBuff(LCD_X_START, LCD_Y_START, LCD_X_END, LCD_Y_END);
+ 361   1      
+ 362   1          switch(lst)
+ 363   1          {
+ 364   2              case MnMSR_L03_EMPTY:   old = lMnMsr.empty;   MsrDp_StrEmpty();       break;
+ 365   2              case MnMSR_L04_DEADZONE:  old = lMnMsr.dead;    MsrDp_StrDeadzone();      break;
+ 366   2              case MnMSR_L05_ECHO_AMP:  old = lMnMsr.amp;   MsrDp_StrEchoAmp();       break;
+ 367   2              case MnMSR_L06_FREQ:    old = lMnMsr.freq;    MsrDp_StrFreq();        break;
+ 368   2        }
+ 369   1      
+ 370   1          DSP_DrawEchoQ(gAd_data);
+ 371   1      
+ 372   1          LDT_UpdBuff(LCD_Y_START, LCD_Y_END);
+ 373   1          BTN_DelayMsec(BTN_WAIT_SET);
+ 374   1      
+ 375   1          TMR3_Start1sec();
+ 376   1      
+ 377   1          do
+ 378   1          {
+ 379   2          if(!_SBIT_BTN_UP || !_SBIT_BTN_DOWN)
+ 380   2          {
+ 381   3                  if(++cnt >= 30)
+ 382   3                      cnt = 30;
+ 383   3      
+ 384   3      
+ 385   3            MsrDp_StrCfg(lst, cnt);
+ 386   3      
+ 387   3            MEAS_CfgSens(4);
+ 388   3            MEAS_PrcEcho();
+ 389   3            DSP_DrawEchoQ(gAd_data);
+ 390   3            LDT_UpdBuff(LCD_Y_START, LCD_Y_END);
+ 391   3      
+ 392   3            BTN_DelayMsec(BTN_WAIT_UD);
+ 393   3          }
+ 394   2              else
+ 395   2            cnt = 0;
+ 396   2      
+ 397   2              if(gIsr_tm3_cnt >= 100)  // 100 = 1sec
+ 398   2              {
+ 399   3                gIsr_tm3_cnt = 0;
+ 400   3      
+ 401   3                MEAS_CfgSens(4);
+ 402   3                MEAS_PrcEcho();
+ 403   3      
+ 404   3                DSP_DrawEchoQ(gAd_data);
+ 405   3                LDT_UpdBuff(LCD_Y_START, LCD_Y_END);
+ 406   3              }
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 8   
+
+ 407   2        }
+ 408   1          while(_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+ 409   1      
+ 410   1          if(!_SBIT_BTN_EXIT)
+ 411   1          {
+ 412   2              switch(lst)
+ 413   2              {
+ 414   3                  case MnMSR_L03_EMPTY:   lMnMsr.empty = old;   ANZ_SetEmptyPct(110); break;
+ 415   3                  case MnMSR_L04_DEADZONE:  lMnMsr.dead  = old;   break;
+ 416   3                  case MnMSR_L05_ECHO_AMP:  lMnMsr.amp = old;   break;
+ 417   3                  case MnMSR_L06_FREQ:    lMnMsr.freq  = old;   break;
+ 418   3              }
+ 419   2          }
+ 420   1      
+ 421   1          TMR3_Stop1sec();
+ 422   1      }
+ 423          
+ 424          
+ 425          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 426          //  Local Funtions - List Item (Page 1)
+ 427          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 428          void MnMsr_Unit(void)
+ 429          {
+ 430   1        MnBOX_DispBox();
+ 431   1      
+ 432   1      
+ 433   1          switch(MnSYS_GetLang())
+ 434   1          {
+ 435   2            case MnSYS_LANG_LOC:
+ 436   2      #if defined (_FT_LANG_KR)
+                      MnBOX_DispStr(FT_LC_16x16, MnBOX_X07, MnBOX_Y01, F_F, _F_STR( 94, 85,  15, 127, 0,   0,   0,   0, 0,0,
+             -0,0,0,0,0));
+                      break;
+                
+                
+              #elif defined (_FT_LANG_CN)
+                      MnBOX_DispStr(FT_LC_16x16, MnBOX_X07, MnBOX_Y01, F_F, _F_STR( 66, 107,  18, 4, 0,  0,   0,   0, 0,0,0,0
+             -,0,0,0));
+                      break;
+                
+              #elif defined (_FT_LANG_JP)
+ 446   2              MnBOX_DispStr(FT_LC_16x16, MnBOX_X10, MnBOX_Y01, F_F, _F_STR( 54, 44,  0, 0, 0,  0,   0,   0, 0,0,0,0,
+             -0,0,0));
+ 447   2              break;
+ 448   2      #endif
+ 449   2              break;
+ 450   2            case MnSYS_LANG_ENG:
+ 451   2            default:
+ 452   2              MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X10, MnBOX_Y01, F_F, "Unit");
+ 453   2              break;
+ 454   2          }
+ 455   1      
+ 456   1      
+ 457   1      
+ 458   1      
+ 459   1          lMnMsr.unit = MnBOX_SelArg4(MnSYS_LANG_ENG, lMnMsr.unit, MnBOX_X09, "Meter", MnBOX_X10, "Feet", 0, "",
+             - 0, "", 2);
+ 460   1      
+ 461   1      
+ 462   1      
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 9   
+
+ 463   1        
+ 464   1      }
+ 465          
+ 466          void MnMsr_Operation(void)
+ 467          {
+ 468   1        S16 sel = lMnMsr.oper;
+ 469   1      
+ 470   1        MnBOX_DispBox();
+ 471   1      
+ 472   1        switch(MnSYS_GetLang())
+ 473   1        {
+ 474   2          case MnSYS_LANG_LOC:
+ 475   2      #if defined (_FT_LANG_KR)
+                    MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X05, MnBOX_Y01, F_F, "Operation");
+                    break;
+              
+              #elif defined (_FT_LANG_CN)
+                    MnBOX_DispStr(FT_LC_16x16, MnBOX_X05, MnBOX_Y01, F_F, _F_STR( 66, 107,  60, 38, 0,   0,   0,   0, 0,0,0
+             -,0,0,0,0));
+                    break;
+              
+              #elif defined (_FT_LANG_JP)
+ 484   2            MnBOX_DispStr(FT_LC_16x16, MnBOX_X05, MnBOX_Y01, F_F, _F_STR( 73, 61,  32, 42, 23,   0,   0,   0, 0,0,0
+             -,0,0,0,0));
+ 485   2            break;
+ 486   2      #endif
+ 487   2            break;
+ 488   2          case MnSYS_LANG_ENG:
+ 489   2          default:
+ 490   2            MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X05, MnBOX_Y01, F_F, "Operation");
+ 491   2            break;
+ 492   2        }
+ 493   1      
+ 494   1      
+ 495   1        lMnMsr.oper = MnBOX_SelArg4(MnSYS_LANG_ENG, sel, MnBOX_X09, "Level", MnBOX_X06, "Distance", 0, "", 0, "",
+             - 2);
+ 496   1      
+ 497   1        if(sel != lMnMsr.oper)
+ 498   1          MEAS_ResetFlag();
+ 499   1      }
+ 500          
+ 501          void MnMsr_Empty(void)
+ 502          {
+ 503   1        S16 old = lMnMsr.empty;
+ 504   1      
+ 505   1        MsrDp_VisualCfg(MnMSR_L03_EMPTY);
+ 506   1      
+ 507   1        if(old == lMnMsr.empty)
+ 508   1          return;
+ 509   1      
+ 510   1        MEAS_ResetFlag();
+ 511   1      
+ 512   1        MnBOX_DispBox();
+ 513   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X03, MnBOX_Y01, F_F, "change mA ?");
+ 514   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X06, MnBOX_Y02, F_F, "OK - SET");
+ 515   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X05, MnBOX_Y03, F_F, "NO - EXIT");
+ 516   1        BTN_DelayMsec(BTN_WAIT_SET*6);
+ 517   1      
+ 518   1        while(_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+ 519   1      
+ 520   1        if(!_SBIT_BTN_SET)
+ 521   1          MnOUT_SetSet20mA(lMnMsr.empty);
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 10  
+
+ 522   1          //lMnOut.set20mA = lMnMsr.empty;
+ 523   1      }
+ 524          
+ 525          void MnMsr_DeadZone(void)
+ 526          {
+ 527   1        S16 ex_para = lMnMsr.dead;
+ 528   1      
+ 529   1        MsrDp_VisualCfg(MnMSR_L04_DEADZONE);
+ 530   1      
+ 531   1        if(ex_para != lMnMsr.dead)
+ 532   1          MEAS_ResetFlag();
+ 533   1      }
+ 534          
+ 535          
+ 536          
+ 537          void MnMsr_EchoAmp(void)
+ 538          {
+ 539   1        MsrDp_VisualCfg(MnMSR_L05_ECHO_AMP);
+ 540   1      }
+ 541          
+ 542          void MnMsr_Freq(void)
+ 543          {
+ 544   1        S16 old = lMnMsr.freq;
+ 545   1      
+ 546   1        MsrDp_VisualCfg(MnMSR_L06_FREQ);
+ 547   1      
+ 548   1        if(old != lMnMsr.freq)
+ 549   1          MEAS_ResetFlag();
+ 550   1      }
+ 551          
+ 552          
+ 553          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 554          //  Local Funtions - List Item (Page 2)
+ 555          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 556          void MnMsr_Interval(void) 
+ 557          {
+ 558   1        U08 old = lMnMsr.intv;
+ 559   1        U08 sel = old;
+ 560   1      
+ 561   1        MnBOX_DispBox();
+ 562   1        switch(MnSYS_GetLang())
+ 563   1        {
+ 564   2          case MnSYS_LANG_LOC:
+ 565   2      #if defined (_FT_LANG_KR)
+                    MnBOX_DispStr(FT_LC_16x16, MnBOX_X05, MnBOX_Y01, F_F, _F_STR( 94, 85,  88, 10, 0,  0,   0,   0, 0,0,0,0
+             -,0,0,0));
+                    break;
+              
+              
+              #elif defined (_FT_LANG_CN)
+                    MnBOX_DispStr(FT_LC_16x16, MnBOX_X05, MnBOX_Y01, F_F, _F_STR( 66, 107,  110, 113, 0,   0,   0,   0, 0,0,0
+             -,0,0,0,0));
+                    break;
+              
+              #elif defined (_FT_LANG_JP)
+ 575   2            MnBOX_DispStr(FT_LC_16x16, MnBOX_X05, MnBOX_Y01, F_F, _F_STR( 73, 61,  57, 69, 0,  0,   0,   0, 0,0,0,0
+             -,0,0,0));
+ 576   2            break;
+ 577   2      #endif
+ 578   2            break;
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 11  
+
+ 579   2          case MnSYS_LANG_ENG:
+ 580   2          default:
+ 581   2            MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X06, MnBOX_Y01, F_F, "Interval");
+ 582   2            break;
+ 583   2        }
+ 584   1      
+ 585   1      
+ 586   1        
+ 587   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y02, F_F, "(sec)");
+ 588   1        sel = MnBOX_CfgNumb(sel, MnMSR_INTV_MIN, MnMSR_INTV_MAX, 1, 0, FALSE, "");
+ 589   1      
+ 590   1        if(old != sel)
+ 591   1          lMnMsr.intv = sel;
+ 592   1      }
+ 593          
+ 594          void MnMsr_Offset(void)
+ 595          {
+ 596   1          S16 feet = 0;
+ 597   1          F32 calc = (lMnMsr.offs * MSR_CALC_M2F_CONST);
+ 598   1      
+ 599   1          if(calc >= 0)   calc += 0.5;
+ 600   1          else            calc -= 0.5;
+ 601   1      
+ 602   1          feet = calc;
+ 603   1      
+ 604   1        MnBOX_DispBox();
+ 605   1      
+ 606   1        switch(MnSYS_GetLang())
+ 607   1        {
+ 608   2          case MnSYS_LANG_LOC:
+ 609   2      #if defined (_FT_LANG_KR)
+                    MnBOX_DispStr(FT_LC_16x16, MnBOX_X05, MnBOX_Y01, F_F, _F_STR( 34, 51,  87, 85, 0,  0,   0,   0, 0,0,0,0
+             -,0,0,0));
+                    break;
+              
+              
+              #elif defined (_FT_LANG_CN)
+                    MnBOX_DispStr(FT_LC_16x16, MnBOX_X10, MnBOX_Y01, F_F, _F_STR( 87, 120,  0, 0, 0,   0,   0,  0, 0,0,0,0,0,0
+             -,0));
+                    break;
+              
+              #elif defined (_FT_LANG_JP)
+ 619   2            MnBOX_DispStr(FT_LC_16x16, MnBOX_X05, MnBOX_Y01, F_F, _F_STR( 7, 27,  16, 19, 22,  0, 0,   0, 0,0,0,0,0,
+             -0,0));
+ 620   2            break;
+ 621   2      #endif
+ 622   2            break;
+ 623   2          case MnSYS_LANG_ENG:
+ 624   2          default:
+ 625   2            MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X08, MnBOX_Y01, F_F, "Offset");
+ 626   2            break;
+ 627   2        }
+ 628   1      
+ 629   1      
+ 630   1      
+ 631   1        switch(lMnMsr.unit)
+ 632   1        {
+ 633   2          case MnMSR_UNIT_FEET:   MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y02, F_F, "(ft)");   break;
+ 634   2          case MnMSR_UNIT_METER:    MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X10, MnBOX_Y02, F_F, "(m)");    break;
+ 635   2          default:          return;
+ 636   2        }
+ 637   1      
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 12  
+
+ 638   1          if(lMnMsr.unit == MnMSR_UNIT_METER)
+ 639   1          {
+ 640   2            lMnMsr.offs = MnBOX_CfgNumb(lMnMsr.offs, MnMSR_OFFS_MT_MIN, MnMSR_OFFS_MT_MAX, 1, 2, F_F, "");
+ 641   2          }
+ 642   1          else
+ 643   1          {
+ 644   2            feet = MnBOX_CfgNumb(feet, MnMSR_OFFS_FT_MIN, MnMSR_OFFS_FT_MAX, 1, 1, F_F, "");
+ 645   2            calc = (feet * MSR_CALC_F2M_CONST);
+ 646   2      
+ 647   2            if(calc >= 0)       calc += 0.5;
+ 648   2            else                calc -= 0.5;
+ 649   2      
+ 650   2            lMnMsr.offs = calc;
+ 651   2          }
+ 652   1      }
+ 653          
+ 654          void MnMsr_Damping(void)
+ 655          {
+ 656   1        S16 old = lMnMsr.damp;
+ 657   1        U08 lg_e = MnSYS_LANG_ENG;
+ 658   1        U08 x0   = MnBOX_X08;
+ 659   1        U08 y0   = MnBOX_Y03;
+ 660   1      
+ 661   1        MnBOX_DispBox();
+ 662   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y01, F_F, "Number");
+ 663   1      
+ 664   1        switch(lMnMsr.damp)
+ 665   1        {
+ 666   2          case MnMSR_DAMP_I01_T0001:    MnBOX_DispStr(lg_e, x0, y0, F_F, "   1");   break;    // 03 sec
+ 667   2          case MnMSR_DAMP_I02_T0010:    MnBOX_DispStr(lg_e, x0, y0, F_F, "  10");   break;    // 30 sec
+ 668   2          case MnMSR_DAMP_I03_T0020:    MnBOX_DispStr(lg_e, x0, y0, F_F, "  20");   break;    // 01 min
+ 669   2          case MnMSR_DAMP_I04_T0040:    MnBOX_DispStr(lg_e, x0, y0, F_F, "  40");   break;    // 02 min
+ 670   2          case MnMSR_DAMP_I05_T0100:    MnBOX_DispStr(lg_e, x0, y0, F_F, " 100");   break;    // 05 min
+ 671   2          case MnMSR_DAMP_I06_T0200:    MnBOX_DispStr(lg_e, x0, y0, F_F, " 200");   break;    // 10 min
+ 672   2          case MnMSR_DAMP_I07_T0600:    MnBOX_DispStr(lg_e, x0, y0, F_F, " 600");   break;    // 30 min
+ 673   2          case MnMSR_DAMP_I08_T1200:    MnBOX_DispStr(lg_e, x0, y0, F_F, "1200");   break;    // 60 min
+ 674   2        }
+ 675   1        BTN_DelayMsec(BTN_WAIT_SET);
+ 676   1      
+ 677   1        do
+ 678   1        {
+ 679   2          if(BTN_GetStatus(BTN_IDX_UP) || BTN_GetStatus(BTN_IDX_DOWN))
+ 680   2          {
+ 681   3            if     (!_SBIT_BTN_UP)      lMnMsr.damp++;
+ 682   3            else if(!_SBIT_BTN_DOWN)    lMnMsr.damp--;
+ 683   3      
+ 684   3            if     (lMnMsr.damp >= (MnMSR_DAMP_IDX_MAX-1))    lMnMsr.damp = MnMSR_DAMP_IDX_MAX  - 1;
+ 685   3            else if(lMnMsr.damp <= (MnMSR_DAMP_I00_IDLE+1))   lMnMsr.damp = MnMSR_DAMP_I00_IDLE + 1;
+ 686   3      
+ 687   3            switch (lMnMsr.damp)
+ 688   3            {
+ 689   4              case MnMSR_DAMP_I01_T0001:  MnBOX_DispStr(lg_e, x0, y0, F_F, "   1");   break;    // 03 sec
+ 690   4              case MnMSR_DAMP_I02_T0010:  MnBOX_DispStr(lg_e, x0, y0, F_F, "  10");   break;    // 30 sec
+ 691   4              case MnMSR_DAMP_I03_T0020:  MnBOX_DispStr(lg_e, x0, y0, F_F, "  20");   break;    // 01 min
+ 692   4              case MnMSR_DAMP_I04_T0040:  MnBOX_DispStr(lg_e, x0, y0, F_F, "  40");   break;    // 02 min
+ 693   4              case MnMSR_DAMP_I05_T0100:  MnBOX_DispStr(lg_e, x0, y0, F_F, " 100");   break;    // 05 min
+ 694   4              case MnMSR_DAMP_I06_T0200:  MnBOX_DispStr(lg_e, x0, y0, F_F, " 200");   break;    // 10 min
+ 695   4              case MnMSR_DAMP_I07_T0600:  MnBOX_DispStr(lg_e, x0, y0, F_F, " 600");   break;    // 30 min
+ 696   4              case MnMSR_DAMP_I08_T1200:  MnBOX_DispStr(lg_e, x0, y0, F_F, "1200");   break;    // 60 min
+ 697   4            }
+ 698   3            BTN_DelayMsec(BTN_WAIT_UD);
+ 699   3          }
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 13  
+
+ 700   2        }
+ 701   1        while (_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+ 702   1      
+ 703   1        if(!_SBIT_BTN_EXIT)
+ 704   1          lMnMsr.damp = old;
+ 705   1      }
+ 706          
+ 707          void MnMsr_Threshold(void)
+ 708          {
+ 709   1        U16 tmp0;
+ 710   1        F32 tmp1, tmp2;
+ 711   1        U08 cnt = 0;
+ 712   1        S16 per = lMnMsr.trhd_per;
+ 713   1        S16 fix = lMnMsr.trhd_fix;
+ 714   1        U08 mod_old = lMnMsr.trhd_mod;
+ 715   1        U08 mod_sel = mod_old;
+ 716   1      
+ 717   1        MnBOX_DispBox();
+ 718   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y01, F_F, "Mode");
+ 719   1      
+ 720   1        switch(lMnMsr.trhd_mod) 
+ 721   1        {
+ 722   2          case MnMSR_TRHD_MOD_AUTO:   DpSTR_LineUpd(FT_EN_08x16, F_F, MnBOX_X08, MnBOX_Y03, " Auto ");      break;
+ 723   2          case MnMSR_TRHD_MOD_MANUAL:   DpSTR_LineUpd(FT_EN_08x16, F_F, MnBOX_X08, MnBOX_Y03, "Manual");      break;
+ 724   2        }
+ 725   1        BTN_DelayMsec(BTN_WAIT_SET);
+ 726   1      
+ 727   1        do 
+ 728   1        {
+ 729   2          if(!_SBIT_BTN_UP || !_SBIT_BTN_DOWN)
+ 730   2          {     
+ 731   3            if     (mod_sel == MnMSR_TRHD_MOD_MANUAL) mod_sel = MnMSR_TRHD_MOD_AUTO;
+ 732   3            else if(mod_sel == MnMSR_TRHD_MOD_AUTO)   mod_sel = MnMSR_TRHD_MOD_MANUAL;
+ 733   3            
+ 734   3            BTN_DelayMsec(BTN_WAIT_UD);
+ 735   3      
+ 736   3            switch(mod_sel) 
+ 737   3            {
+ 738   4              case MnMSR_TRHD_MOD_AUTO:   DpSTR_LineUpd(FT_EN_08x16, F_F, MnBOX_X08, MnBOX_Y03, " Auto ");  break;
+ 739   4              case MnMSR_TRHD_MOD_MANUAL:   DpSTR_LineUpd(FT_EN_08x16, F_F, MnBOX_X08, MnBOX_Y03, "Manual");  break;
+ 740   4            }
+ 741   3          }
+ 742   2        } 
+ 743   1        while(_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+ 744   1      
+ 745   1        if(!_SBIT_BTN_EXIT)
+ 746   1          return;
+ 747   1      
+ 748   1        lMnMsr.trhd_mod = mod_sel;
+ 749   1      
+ 750   1        if(lMnMsr.trhd_mod == MnMSR_TRHD_MOD_AUTO)
+ 751   1        {
+ 752   2          MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X04, MnBOX_Y01, F_F, "   Auto   ");  
+ 753   2          MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X11, MnBOX_Y02, F_F, "(%)");
+ 754   2          lMnMsr.trhd_per = MnBOX_CfgNumb(lMnMsr.trhd_per, MnMSR_TRHD_PCT_MIN,
+ 755   2                                   MnMSR_TRHD_PCT_MAX, MnMSR_TRHD_PCT_STP, 0, FALSE, "");
+ 756   2          if(per != lMnMsr.trhd_per)
+ 757   2            MsANL_SetFgTimWin(FALSE);
+ 758   2        }
+ 759   1        else
+ 760   1        {
+ 761   2          MnBOX_DispBox();
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 14  
+
+ 762   2          MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X04, MnBOX_Y01, F_F, "  Manual  ");
+ 763   2          MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X11, MnBOX_Y02, F_F, "(V)");
+ 764   2      
+ 765   2          tmp1 = lMnMsr.trhd_fix;
+ 766   2          tmp2 = (tmp1 * 255.0) / 255.0;
+ 767   2          tmp0 = tmp2;
+ 768   2      
+ 769   2          DpSTR_NumbUpd(MnBOX_Y03, tmp0, 240, 2, 0, "");
+ 770   2          BTN_DelayMsec(BTN_WAIT_SET);
+ 771   2          
+ 772   2          do 
+ 773   2          {
+ 774   3            if(!_SBIT_BTN_UP || !_SBIT_BTN_DOWN)
+ 775   3            {
+ 776   4              if(++cnt >= 30)
+ 777   4                cnt = 30;
+ 778   4          
+ 779   4              lMnMsr.trhd_fix = BTN_GetValue_UpDn(lMnMsr.trhd_fix, MnMSR_TRHD_FIX_MIN,
+ 780   4                                         MnMSR_TRHD_FIX_MAX, MnMSR_TRHD_FIX_STP, cnt);
+ 781   4              tmp1 = lMnMsr.trhd_fix;
+ 782   4              tmp2 = (tmp1 * 255.0) / 255.0;
+ 783   4              tmp0 = tmp2;
+ 784   4      
+ 785   4              DpSTR_NumbUpd(MnBOX_Y03, tmp0, 240, 2, 0, "");
+ 786   4              BTN_DelayMsec(BTN_WAIT_UD);
+ 787   4            } 
+ 788   3            else
+ 789   3              cnt = 0;
+ 790   3          }
+ 791   2          while(_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+ 792   2          
+ 793   2          if(!_SBIT_BTN_EXIT)
+ 794   2            lMnMsr.trhd_fix = fix;
+ 795   2        }
+ 796   1      }
+ 797          
+ 798          void MnMsrAsf_CalcVari(void)
+ 799          {
+ 800   1        U16 i, idx_cursor;
+ 801   1        U32 cnt_asf;
+ 802   1        U16 cnt_thr_up, val_asf_h, val_asf_r;
+ 803   1        U08 flg_thr_up;
+ 804   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 805   1        U08 p_st2[APP_STR_LENGTH] = {0, };
+ 806   1        U08 p_st3[APP_STR_LENGTH] = {0, };
+ 807   1        F32 veloc    = MEAS_GetVeloc();
+ 808   1        U16 trhd_pct = MsANL_GetTrhdPct();
+ 809   1        U32 aux0 = (U32)gDp_cursor_vert * (U32)MsANL_GetEmpty();
+ 810   1      
+ 811   1        idx_cursor = aux0 / 220;
+ 812   1      
+ 813   1        flg_thr_up = 0;
+ 814   1        cnt_thr_up = 0;
+ 815   1        cnt_asf = 0;
+ 816   1      
+ 817   1        for(i=MnMSR_GetDead(); i<idx_cursor; i++) 
+ 818   1        {
+ 819   2            if(flg_thr_up == FALSE)
+ 820   2            {
+ 821   3                if(gAd_data[i] >= trhd_pct) 
+ 822   3                {
+ 823   4                    flg_thr_up = TRUE;
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 15  
+
+ 824   4                    cnt_thr_up++;
+ 825   4                }
+ 826   3            } 
+ 827   2            else 
+ 828   2            {
+ 829   3              if(gAd_data[i] >= trhd_pct)
+ 830   3              cnt_thr_up++;
+ 831   3              else
+ 832   3              {
+ 833   4                flg_thr_up = FALSE;
+ 834   4      
+ 835   4                if(lMnMsr.cAsf < cnt_thr_up)        lMnMsr.cAsf = cnt_thr_up;
+ 836   4                if(cnt_asf     < cnt_thr_up)    cnt_asf     = cnt_thr_up;
+ 837   4                
+ 838   4                cnt_thr_up = 0;
+ 839   4              }
+ 840   3            }
+ 841   2        }
+ 842   1      
+ 843   1        if(flg_thr_up == TRUE)
+ 844   1        {
+ 845   2            if(lMnMsr.cAsf < cnt_thr_up)       lMnMsr.cAsf = cnt_thr_up;
+ 846   2            if(cnt_asf     < cnt_thr_up)       cnt_asf = cnt_thr_up;
+ 847   2        }
+ 848   1      
+ 849   1        if(lMnMsr.cAsf == 0)    val_asf_h = 0;
+ 850   1        else                    val_asf_h = ((lMnMsr.cAsf * 2 * 10000) / veloc) + 20;
+ 851   1      
+ 852   1        if(cnt_asf == 0)        val_asf_r = 0;
+ 853   1        else                    val_asf_r = ((cnt_asf * 2 * 10000) / veloc) + 20;
+ 854   1      
+ 855   1        APP_Num2Str(lMnMsr.asf, p_str, 4, 0, FALSE);
+ 856   1        APP_Num2Str(val_asf_r,  p_st2, 4, 0, FALSE);
+ 857   1        APP_Num2Str(val_asf_h,  p_st3, 4, 0, FALSE);
+ 858   1      
+ 859   1        DpSTR_LineUpd(FT_EN_08x16, FALSE,  29, 0, p_str);
+ 860   1        DpSTR_LineUpd(FT_EN_08x16, FALSE, 116, 0, p_st2);
+ 861   1        DpSTR_LineUpd(FT_EN_08x16, FALSE, 203, 0, p_st3);
+ 862   1      }
+ 863          
+ 864          void MnMsrAsf_ProcFunc(void) 
+ 865          {
+ 866   1        U16 msr_mty = MsANL_GetEmpty();
+ 867   1          U16 aux1 = (220 * (U32)MnMSR_GetDead()) / (U32)msr_mty;
+ 868   1      
+ 869   1          gDp_flg_cs_vert = 1;
+ 870   1      
+ 871   1          MnMsrAsf_CalcVari();
+ 872   1        
+ 873   1          while(BTN_GetStatus(BTN_IDX_RIGHT) || BTN_GetStatus(BTN_IDX_LEFT)) 
+ 874   1          {
+ 875   2              LDT_ClearDot(0+gDp_cursor_vert-2, 30+2-2);
+ 876   2              LDT_ClearDot(0+gDp_cursor_vert-1, 30+2-1);
+ 877   2              LDT_ClearDot(0+gDp_cursor_vert+1, 30+2-1);
+ 878   2              LDT_ClearDot(0+gDp_cursor_vert+2, 30+2-2);
+ 879   2      
+ 880   2              if     (BTN_GetStatus(BTN_IDX_RIGHT))       gDp_cursor_vert += 1;
+ 881   2              else if(BTN_GetStatus(BTN_IDX_LEFT))        gDp_cursor_vert -= 1;
+ 882   2      
+ 883   2              if(gDp_cursor_vert < aux1)          gDp_cursor_vert = aux1;
+ 884   2              if(gDp_cursor_vert > 220-1)         gDp_cursor_vert = 220 - 1;
+ 885   2      
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 16  
+
+ 886   2              if((gDp_cursor_vert != aux1 && !BTN_GetStatus(BTN_IDX_LEFT)) ||
+ 887   2                 (gDp_cursor_vert != 220-1 && !BTN_GetStatus(BTN_IDX_RIGHT))  ) 
+ 888   2              {
+ 889   3                DSP_DrawGraph(0, 30 + 2, 220, 85, gAd_data, 0, msr_mty, 256, DP_IDX_GRAPH_2);
+ 890   3                
+ 891   3                MnMsrAsf_CalcVari();
+ 892   3              }
+ 893   2        }
+ 894   1      
+ 895   1        DSP_DrawGraph(0, 30 + 2, 220, 85, gAd_data, 0, msr_mty, 256, DP_IDX_GRAPH_2);
+ 896   1      
+ 897   1        DpSTR_DrawLin(FT_EN_06x07, 0, 195, 30 + 2 + 85 + 2, "Empty");
+ 898   1      
+ 899   1        gDp_flg_cs_vert = 0;
+ 900   1        LDT_UpdBuff(LCD_Y_START, LCD_Y_END);
+ 901   1      }
+ 902          
+ 903          void MnMsr_CfgAsf(void)
+ 904          {
+ 905   1        U16 aux0, aux1;
+ 906   1        U08 cnt = 0;
+ 907   1        S16 old = lMnMsr.asf;
+ 908   1        U16 msr_mty = MsANL_GetEmpty();
+ 909   1        F32 veloc   = MEAS_GetVeloc();
+ 910   1      
+ 911   1        MEAS_CfgSens(0);
+ 912   1      
+ 913   1        lMnMsr.cAsf = 0;
+ 914   1      
+ 915   1        aux0 = (220 * (U32)MsANL_GetDistaMt()) / (U32)msr_mty;
+ 916   1        aux1 = (220 * (U32)MnMSR_GetDead())    / (U32)msr_mty;
+ 917   1      
+ 918   1        if(aux0 < aux1)
+ 919   1          aux0 = aux1;
+ 920   1      
+ 921   1        gDp_cursor_vert = aux0;
+ 922   1      
+ 923   1        TMR3_Start1sec();
+ 924   1      
+ 925   1        DISP_ClearScr();
+ 926   1        DpSTR_LineUpd(FT_EN_08x16, 0,   5, 0, "P:");
+ 927   1        DpSTR_LineUpd(FT_EN_08x16, 0,  92, 0, "R:");
+ 928   1        DpSTR_LineUpd(FT_EN_08x16, 0, 179, 0, "H:");
+ 929   1      
+ 930   1        MnMsrAsf_ProcFunc();
+ 931   1      
+ 932   1        gIsr_tm3_cnt = 100;
+ 933   1        BTN_DelayMsec(BTN_WAIT_SET);
+ 934   1      
+ 935   1        do
+ 936   1        {
+ 937   2            if(BTN_GetStatus(BTN_IDX_RIGHT) || BTN_GetStatus(BTN_IDX_LEFT))
+ 938   2                MnMsrAsf_ProcFunc();
+ 939   2      
+ 940   2            if(gIsr_tm3_cnt >= 100)      //100 = 1sec
+ 941   2            {
+ 942   3                gIsr_tm3_cnt = 0;        // Cnt_sec_interval_UC_G[Num_CH_UC_G]++;
+ 943   3      
+ 944   3                MEAS_PrcSub1();
+ 945   3                MnMsrAsf_ProcFunc();
+ 946   3            }
+ 947   2        }
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 17  
+
+ 948   1        while(_SBIT_BTN_SET != BTN_STT_PRESS && _SBIT_BTN_EXIT != BTN_STT_PRESS);
+ 949   1      
+ 950   1        if(_SBIT_BTN_SET == BTN_STT_PRESS)
+ 951   1        {
+ 952   2          lMnMsr.asf = ((lMnMsr.cAsf * 2 * 10000) / veloc) + 20;
+ 953   2      
+ 954   2          MnBOX_DispBox();
+ 955   2          MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X06, MnBOX_Y01, F_F, "SetValue");
+ 956   2          DpSTR_NumbUpd(64, lMnMsr.asf, MnMSR_ASF_MAX, 0, 0, "");
+ 957   2          BTN_DelayMsec(BTN_WAIT_SET);
+ 958   2      
+ 959   2            do 
+ 960   2            {
+ 961   3            if(_SBIT_BTN_UP == BTN_STT_PRESS || _SBIT_BTN_DOWN == BTN_STT_PRESS)  //Button_state_any_press())
+ 962   3            {
+ 963   4              if((_SBIT_BTN_UP == BTN_STT_PRESS) || (_SBIT_BTN_DOWN == BTN_STT_PRESS))
+ 964   4                if(++cnt >= 30)
+ 965   4                  cnt = 30;
+ 966   4      
+ 967   4              lMnMsr.asf = BTN_GetValue_UpDn(lMnMsr.asf, MnMSR_ASF_MIN, MnMSR_ASF_MAX, 1, cnt);
+ 968   4              DpSTR_NumbUpd(64, lMnMsr.asf, MnMSR_ASF_MAX, 0, 0, "");
+ 969   4              BTN_DelayMsec(BTN_WAIT_UD);
+ 970   4            } 
+ 971   3            else
+ 972   3              cnt = 0;
+ 973   3            
+ 974   3          } while(_SBIT_BTN_SET != BTN_STT_PRESS && _SBIT_BTN_EXIT != BTN_STT_PRESS);
+ 975   2      
+ 976   2          if (_SBIT_BTN_EXIT == BTN_STT_PRESS)
+ 977   2            lMnMsr.asf = old;
+ 978   2        }
+ 979   1      
+ 980   1        TMR3_Stop1sec();
+ 981   1      }
+ 982          
+ 983          void MnMsr_TwDelay(void) 
+ 984          {
+ 985   1        MnBOX_DispBox();
+ 986   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y01, F_F, "Number");
+ 987   1      
+ 988   1      
+ 989   1        lMnMsr.tw_delay = MnBOX_CfgNumb(lMnMsr.tw_delay, MnMSR_TW_DELAY_MIN, MnMSR_TW_DELAY_MAX,
+ 990   1                                 MnMSR_TW_DELAY_STP, 0, F_F, "");
+ 991   1      }
+ 992          
+ 993          void MnMsr_TwRange(void) 
+ 994          {
+ 995   1        MnBOX_DispBox();
+ 996   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y01, F_F, "Range");
+ 997   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X10, MnBOX_Y02, F_F, "(cm)");
+ 998   1      
+ 999   1        lMnMsr.tw_range = MnBOX_CfgNumb(lMnMsr.tw_range, MnMSR_TW_RANGE_MIN, MnMSR_TW_RANGE_MAX,
+1000   1                                 MnMSR_TW_RANGE_STP, 0, F_F, "");
+1001   1      }
+1002          
+1003          
+1004          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1005          //  Local Funtions - List Item (Page 3)
+1006          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1007          void MnMsr_PcdIntv(void)
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 18  
+
+1008          {
+1009   1        S16 old = lMnMsr.pcd_intv;
+1010   1      
+1011   1        MnBOX_DispBox();
+1012   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X10, MnBOX_Y01, F_F, "Time");
+1013   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y02, F_F, "(sec)");
+1014   1        DpSTR_NumbUpd(MnBOX_Y03, lMnMsr.pcd_intv, MnMSR_PCD_INTV_MAX, 0, 0, "");
+1015   1        BTN_DelayMsec(BTN_WAIT_SET);
+1016   1      
+1017   1        do
+1018   1        {
+1019   2          if(!_SBIT_BTN_UP || !_SBIT_BTN_DOWN)
+1020   2          {
+1021   3            if(BTN_GetStatus(BTN_IDX_UP))
+1022   3            {
+1023   4              if(lMnMsr.pcd_intv <= 50)   lMnMsr.pcd_intv += 10;
+1024   4              else              lMnMsr.pcd_intv += MnMSR_PCD_INTV_STP;
+1025   4            }
+1026   3            if(BTN_GetStatus(BTN_IDX_DOWN))
+1027   3            {
+1028   4              if(lMnMsr.pcd_intv <= 60)   lMnMsr.pcd_intv -= 10;
+1029   4              else              lMnMsr.pcd_intv -= MnMSR_PCD_INTV_STP;
+1030   4            }
+1031   3      
+1032   3            if(lMnMsr.pcd_intv > MnMSR_PCD_INTV_MAX)    lMnMsr.pcd_intv = MnMSR_PCD_INTV_MAX;
+1033   3            if(lMnMsr.pcd_intv < MnMSR_PCD_INTV_MIN)    lMnMsr.pcd_intv = MnMSR_PCD_INTV_MIN;
+1034   3      
+1035   3            DpSTR_NumbUpd(MnBOX_Y03, lMnMsr.pcd_intv, MnMSR_PCD_INTV_MAX, 0, 0, "");
+1036   3            BTN_DelayMsec(BTN_WAIT_UD);
+1037   3          }
+1038   2        }
+1039   1        while(_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+1040   1      
+1041   1        if(!_SBIT_BTN_EXIT)
+1042   1          lMnMsr.pcd_intv = old;
+1043   1      }
+1044          
+1045          void MnMsr_PcdTerm(void)
+1046          {
+1047   1        MnBOX_DispBox();
+1048   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X10, MnBOX_Y01, F_F, "Time");
+1049   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X09, MnBOX_Y02, F_F, "(sec)");
+1050   1        lMnMsr.pcd_term = MnBOX_CfgNumb(lMnMsr.pcd_term, MnMSR_PCD_TERM_MIN, MnMSR_PCD_TERM_MAX, 1, 0, FALSE, "")
+             -;
+1051   1      }
+1052          
+1053          void MnMsr_RstMsr(void)
+1054          {
+1055   1          U08 flg = FALSE;
+1056   1      
+1057   1        MnBOX_DispBox();
+1058   1      
+1059   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X07, MnBOX_Y01, F_F, "Reset?");
+1060   1        flg = MnBOX_SelArg4(MnSYS_LANG_ENG, flg, MnBOX_X11, "NO", MnBOX_X10, "YES", 0, "", 0, "", 2);
+1061   1      
+1062   1          if(!_SBIT_BTN_SET && flg)
+1063   1            MEAS_ResetFlag();
+1064   1      }
+1065          
+1066          void MnMsr_RstFtr(void)
+1067          {
+1068   1        DISP_ClearScr();          //0123456789abcdef0123456789a
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 19  
+
+1069   1        DpSTR_LineUpd(FT_EN_08x16, 0, 0, 16, "   Parameter data          ");
+1070   1        DpSTR_LineUpd(FT_EN_08x16, 0, 0, 32, "        will be reset!!    ");
+1071   1        DpSTR_LineUpd(FT_EN_08x16, 0, 0, 64, "  OK - SET     NO - EXIT   ");
+1072   1      
+1073   1        while(!_SBIT_BTN_SET);
+1074   1        while(_SBIT_BTN_SET && _SBIT_BTN_EXIT);
+1075   1      
+1076   1        if(!_SBIT_BTN_SET)
+1077   1        {
+1078   2          DISP_ClearScr();
+1079   2          
+1080   2          FLS_ResetFactory();
+1081   2          ANZ_SetEmptyPct(110);
+1082   2        }
+1083   1      }
+1084          
+1085          void MnMsr_TestMode(void)
+1086          {
+1087   1        S16 old = lMnMsr.fTest;
+1088   1      
+1089   1        MnBOX_DispBox();
+1090   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X07, MnBOX_Y01, F_F, "Enable?");
+1091   1      
+1092   1        lMnMsr.fTest = MnBOX_SelArg4(MnSYS_LANG_ENG, lMnMsr.fTest, MnBOX_X11, "NO", MnBOX_X10, "YES", 0, "", 0, "
+             -", 2);
+1093   1      
+1094   1        if(!_SBIT_BTN_EXIT)
+1095   1          lMnMsr.fTest = old;
+1096   1      
+1097   1        if(old != lMnMsr.fTest)
+1098   1          MEAS_ResetFlag();
+1099   1      }
+1100          
+1101          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1102          //  Local Funtions - Disp. List
+1103          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1104          #if 1
+1105          void MsrDp_ListP1(U08* pSel)
+1106          {
+1107   1        U08 c  = MnMSR_L00_IDLE + 1;
+1108   1        U08 ft_eng = FT_EN_08x16;
+1109   1        U08 ft_loc = FT_LC_16x16;
+1110   1      
+1111   1        switch(MnSYS_GetLang())
+1112   1        {
+1113   2          case MnSYS_LANG_LOC:
+1114   2            #if defined (_FT_LANG_KR)
+                    MnLST_DispClr(1);
+                    
+                    DpSTR_DrawLin(ft_loc, FALSE, MnMSR_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(FKR_CHEUG, FKR_JEONG,1,1,1,1,1
+             -,1,1,1,1,1,1,1,1));
+                    DpSTR_DrawLin(ft_eng, FALSE, MnMSR_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#1/3");
+              
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L01_UNIT+1,     _F_STR(FKR_CHEUG, FKR_JEONG, FKR_DAN,  FKR_WI_, 1
+             -,1,1,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L02_OPER+1,     _F_STR(FKR_SEUL,  FKR_LEO, FKR_JI_,  1,     1,    
+             -  FKR_SANG, FKR_DEUNG, FKR_SU_,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L03_EMPTY+1,    _F_STR(FKR_CHEUG, FKR_JEONG, FKR_BEOM, FKR_WI_, 
+             -1,1,1,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L04_DEADZONE+1, _F_STR(FKR_BUL,   FKR_GAM, FKR_DAE,  1,1,1,1,1,1,
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 20  
+
+             -1,1,1,1,1,1));
+                    #if 0
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L05_TVG_IDX+1,  _F_STR(1,     1,     1,      1,     FKR_SEON, FKR_TAEG,
+             -1,1,1,1,1,1,1,1,1));
+                    #endif
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L05_ECHO_AMP+1, _F_STR(FKR_SU_,   FKR_SIN, FKR_GAM,  FKR_DO_,1,1,
+             -1,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L06_FREQ+1,     _F_STR(FKR_JU_,   FKR_PA,    FKR_SU_,1,1,1,1,1,1,
+             -1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L07_TX_INTV+1,  _F_STR(FKR_CHEUG,  FKR_JEONG, FKR_JU_,  FKR_GI_,
+             -   1,1,1,1,1,1,1,1,1,1,1));
+                    DpSTR_DrawLin(ft_eng, pSel[MnMSR_L02_OPER],   60, MnSTR_Y_HEIGHT*2, "/");
+                    #if 0
+                    DpSTR_DrawLin(ft_eng, pSel[MnMSR_L05_TVG_IDX], 9, MnSTR_Y_HEIGHT*5, "TVG");
+                    #endif
+                    #elif defined (_FT_LANG_CN)
+                    MnLST_DispClr(1);
+                    
+                    DpSTR_DrawLin(ft_loc, FALSE, MnMSR_X0_TITLE_KO-10, MnSTR_Y_HEIGHT*0, _F_STR(66, 107, 187, 82,1,1,1,1,1,
+             -1,1,1,1,1,1));
+                    DpSTR_DrawLin(ft_eng, FALSE, MnMSR_X0_PAGE_KO+20,  MnSTR_Y_HEIGHT*0, "#1/3");
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L01_UNIT+1,     _F_STR(66, 107,  18,   4,  1,1,1,1,1,1,1,1,1,1,1)
+             -);
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L02_OPER+1,     _F_STR(66, 107,  60,  38,  1,1,1,1,1,1,1,1,1,1,1)
+             -);
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L03_EMPTY+1,    _F_STR(76, 117,   1,   1,  1,1,1,1,1,1,1,1,1,1,1
+             -));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L04_DEADZONE+1, _F_STR(70,  17,   1,   1,  1,1,1,1,1,1,1,1,1,1,1
+             -));
+                    #if 0
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L05_TVG_IDX+1,  _F_STR( 7,  22, 165, 166,  1,1,1,1,1,1,1,1,1,1,1
+             -));
+                    #endif
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L05_ECHO_AMP+1, _F_STR( 7,  22,  47,  27, 24,1,1,1,1,1,1,1,1,1,1
+             -));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L06_FREQ+1,     _F_STR(156,  145,  1,  1,  1,1,1,1,1,1,1,1,1,1,1)
+             -);
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L07_TX_INTV+1,  _F_STR( 66, 107, 110, 113,   1,   1,1,1,1,1,1,1,
+             -1,1,1));
+              
+                    #elif defined (_FT_LANG_JP)
+1151   2            MnLST_DispClr(1);
+1152   2            DpSTR_DrawLin(ft_loc, FALSE, MnMSR_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(81, 73, 1, 1,1,1,1,1,1,1,1,1,1
+             -,1,1));
+1153   2            DpSTR_DrawLin(ft_eng, FALSE, MnMSR_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#1/3");                                  
+1154   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L01_UNIT+1,     _F_STR(54, 44,  1,   1,  1,   1,   1,   1, 1,1,1,1,
+             -1,1,1));
+1155   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L02_OPER+1,     _F_STR( 73,  61, 32, 42, 23, 1, 1,   1, 1,1,1,1,1
+             -,1,1));
+1156   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L03_EMPTY+1,    _F_STR( 77, 84,  89, 1, 1,   1,    1,   1, 1,1,1,
+             -1,1,1,1));
+1157   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L04_DEADZONE+1, _F_STR(43,  66, 62, 1,  1,   1,    1,   1, 1,1,1,
+             -1,1,1,1));
+1158   2            #if 0
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L05_TVG_IDX+1,  _F_STR(130, 118, 106, 166, 171, 132, 162, 170, 0
+             -,1,1,1,1,1,1));
+                    #endif
+1161   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L05_ECHO_AMP+1, _F_STR(6, 12, 42, 3, 41,  29, 1, 1, 1,1,1,1,1,1,
+             -1));
+1162   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L06_FREQ+1,     _F_STR(57, 71, 67, 1, 1, 1,  1, 1, 0,1,1,1,1,1,1)
+             -);
+1163   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L07_TX_INTV+1,  _F_STR( 73, 61, 57, 69,   1,   1,1,1,1,1,1,1,1,1
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 21  
+
+             -,1));
+1164   2            #endif
+1165   2            break;
+1166   2          case MnSYS_LANG_ENG:
+1167   2          default:
+1168   2                                       // 0123456789abcdef0123456789abcde
+1169   2            MnLST_DispStr(ft_eng, FALSE,   MnMSR_L00_IDLE+1,     "      MEASUREMENT #1/3         ");
+1170   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L01_UNIT+1,     "Display Unit                   ");
+1171   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L02_OPER+1,     "Operation                      ");
+1172   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L03_EMPTY+1,    "Empty                          ");
+1173   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L04_DEADZONE+1, "Dead Zone                      ");
+1174   2            #if 0
+                    MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L05_TVG_IDX+1,  "TVG Curve                      ");
+                    #endif
+1177   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L05_ECHO_AMP+1, "Echo AMP                       ");
+1178   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L06_FREQ+1,     "Frequency                      ");
+1179   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L07_TX_INTV+1,  "Measure Cycle                  ");
+1180   2      
+1181   2            break;
+1182   2        } 
+1183   1      }
+1184          
+1185          void MsrDp_ListP2(U08* pSel)
+1186          {
+1187   1        U08 c  = MnMSR_L00_IDLE + 1;
+1188   1        U08 ft_eng = FT_EN_08x16;
+1189   1        U08 ft_loc = FT_LC_16x16;
+1190   1      
+1191   1        switch(MnSYS_GetLang())
+1192   1        {
+1193   2          case MnSYS_LANG_LOC:
+1194   2            #if defined (_FT_LANG_KR)
+                    MnLST_DispClr(1);
+                    
+                    DpSTR_DrawLin(ft_loc, FALSE, MnMSR_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(FKR_CHEUG, FKR_JEONG,1,1,1,1,1
+             -,1,1,1,1,1,1,1,1));
+                    DpSTR_DrawLin(ft_eng, FALSE, MnMSR_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#2/3");
+                  
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L08_OFFSET-6,  _F_STR(FKR_MI_,    FKR_SE_,   FKR_JO_,  FKR_JEONG,
+             - 1,1,1,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L09_DAMPING-6, _F_STR(FKR_DAEM,   FKR_PING,  1,        1, 1,1,1,
+             -1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L10_THRESHOLD-6, _F_STR(FKR_MUN,    FKR_TEOG,  FKR_JEON, FKR_AB_
+             -,   1,1,1,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L11_ASF_BAND-6,  _F_STR(1,      1,     1,    1,       FKR_SEOL, FKR_JEO
+             -NG,1,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L12_TW_RST_TM-6, _F_STR(FKR_WIN,    FKR_DO_,   FKR_U__,  1,       
+             -FKR_RI_,  FKR_SES,   FKR_SI_, FKR_GAN,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L13_TW_RANGE-6,  _F_STR(FKR_WIN,    FKR_DO_,   FKR_U__,  1,       
+             -FKR_BEOM, FKR_WI_,1,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L14_PCD_INTV-6,  _F_STR(FKR_SE_,   FKR_CHEOG, FKR_JU_, FKR_GI_, 
+             -1,      1,1,1,1,1,1,1,1,1,1));
+                    #elif defined (_FT_LANG_CN)
+                          MnLST_DispClr(1);
+                    
+                    DpSTR_DrawLin(ft_loc, FALSE, MnMSR_X0_TITLE_KO-10, MnSTR_Y_HEIGHT*0, _F_STR(66, 107, 187, 82,1,1,1,1,1,
+             -1,1,1,1,1,1));
+                    DpSTR_DrawLin(ft_eng, FALSE, MnMSR_X0_PAGE_KO+20,  MnSTR_Y_HEIGHT*0, "#2/3");
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L08_OFFSET-6,  _F_STR( 87,  120,   1,  1,   1,   1,1,1,1,1,1,1,1,1
+             -,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L09_DAMPING-6, _F_STR(157, 159, 161,  35,   1,   1,1,1,1,1,1,1,1
+             -,1,1));
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 22  
+
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L10_THRESHOLD-6, _F_STR(109,  59,  69,  20,   1,   1,1,1,1,1,1,1
+             -,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L11_ASF_BAND-6,  _F_STR(  1,   1,  15,  83,   1,   1,1,1,1,1,1,1,
+             -1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L12_TW_RST_TM-6, _F_STR(7,  22,   167, 67, 155,   51,110,1,1,1,1
+             -,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L13_TW_RANGE-6,  _F_STR(7, 22, 167,   85,   25,   1,1,1,1,1,1,1,1
+             -,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L14_PCD_INTV-6, _F_STR(67,  65, 110, 113,  1, 1,1,1,1,1,1,1,1,1,
+             -1));
+              
+                    #elif defined (_FT_LANG_JP) 
+1221   2            MnLST_DispClr(1);
+1222   2            DpSTR_DrawLin(ft_loc, FALSE, MnMSR_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(81, 73, 1, 1,1,1,1,1,1,1,1,1,1
+             -,1,1));
+1223   2            DpSTR_DrawLin(ft_eng, FALSE, MnMSR_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#2/3");                                  
+1224   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L08_OFFSET-6,  _F_STR( 7, 27, 16, 19, 22,   0,   1,   1,  1,1,1,1
+             -,1,1,1));
+1225   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L09_DAMPING-6, _F_STR(56,  65,  85, 63, 1, 1,  1, 1,   1,1,1,1,1
+             -,1,1));
+1226   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L10_THRESHOLD-6, _F_STR(15, 38, 19, 13, 33, 30, 42, 37, 23,1,1,1
+             -,1,1,1));
+1227   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L11_ASF_BAND-6,  _F_STR(1, 1, 82, 61, 1, 1,  1,  1,   1,1,1,1,1,1,
+             -1));
+1228   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L12_TW_RST_TM-6, _F_STR(5, 4, 41, 23, 5, 36,  16,  19,   22,68,87
+             -,1,1,1,1));
+1229   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L13_TW_RANGE-6,  _F_STR(5, 4, 41, 23, 5, 78,  58,  1,   1,1,1,1,1,
+             -1,1));
+1230   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L14_PCD_INTV-6, _F_STR( 10,  36, 42, 24, 41,  11, 57, 69, 1, 1, 1
+             -,1,1,1,1));
+1231   2            #endif
+1232   2      
+1233   2            DpSTR_DrawLin(ft_eng, pSel[MnMSR_L11_ASF_BAND-7], 10, MnSTR_Y_HEIGHT*4, "ASF");     
+1234   2            break;
+1235   2          case MnSYS_LANG_ENG:
+1236   2          default:
+1237   2                                        // 0123456789abcdef0123456789abcde
+1238   2            MnLST_DispStr(ft_eng, FALSE,   MnMSR_L00_IDLE+1,    "      MEASUREMENT #2/3         ");
+1239   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L08_OFFSET-6,  "Offset                         ");
+1240   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L09_DAMPING-6, "Damping                        ");
+1241   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L10_THRESHOLD-6, "Threshold                      ");
+1242   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L11_ASF_BAND-6,  "ASF Value                      ");
+1243   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L12_TW_RST_TM-6, "Window Reset Time              ");
+1244   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L13_TW_RANGE-6,  "Window Range                   ");
+1245   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L14_PCD_INTV-6,  "Clean Interval                 ");
+1246   2      
+1247   2            break;
+1248   2        } 
+1249   1      }
+1250          
+1251          void MsrDp_ListP3(U08* pSel)
+1252          {
+1253   1        U08 c  = MnMSR_L00_IDLE + 1;
+1254   1        U08 ft_eng = FT_EN_08x16;
+1255   1        U08 ft_loc = FT_LC_16x16;
+1256   1        U08 *pStr = "";
+1257   1      
+1258   1        switch(MnSYS_GetLang())
+1259   1        {
+1260   2          case MnSYS_LANG_LOC:
+1261   2            #if defined (_FT_LANG_KR)
+                    MnLST_DispClr(1);
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 23  
+
+              
+                    DpSTR_DrawLin(ft_loc, FALSE, MnMSR_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(FKR_CHEUG, FKR_JEONG,1,1,1,1,1
+             -,1,1,1,1,1,1,1,1));
+                    DpSTR_DrawLin(ft_eng, FALSE, MnMSR_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#3/3");
+                    
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L15_PCD_TERM-13, _F_STR(FKR_SE_,   FKR_CHEOG, FKR_SI_, FKR_GAN, 
+             -1,      1,1,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L16_RST_MSR-13,  _F_STR(FKR_CHEUG, FKR_JEONG, FKR_CHO, FKR_GI_, F
+             -KR_HWA,1,1,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L17_RST_FTR-13,  _F_STR(FKR_GONG,  FKR_JANG,  FKR_CHO, FKR_GI_, F
+             -KR_HWA,1,1,1,1,1,1,1,1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L18_TEST-13,   _F_STR(FKR_TE_,   FKR_SEU,   FKR_TEU,1,FKR_MO_, FK
+             -R_DEU,1,1,1,1,1,1,1,1,1));
+                    #elif defined (_FT_LANG_CN)
+                    MnLST_DispClr(1);
+                                                  // 0123456789abcdef0123456789abcde
+                    DpSTR_DrawLin(ft_loc, FALSE, MnMSR_X0_TITLE_KO-10, MnSTR_Y_HEIGHT*0, _F_STR(66, 107, 187, 82,1,1,1,1,1,
+             -1,1,1,1,1,1));
+                    DpSTR_DrawLin(ft_eng, FALSE, MnMSR_X0_PAGE_KO+20,  MnSTR_Y_HEIGHT*0, "#3/3");     
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L15_PCD_TERM-13, _F_STR(67,  65,  51, 110,  1, 1,1,1,1,1,1,1,1,1
+             -,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L16_RST_MSR-13,  _F_STR(66, 107,  187,  188, 106, 82,1,1,1,1,1,1,
+             -1,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L17_RST_FTR-13,  _F_STR(181,  26,  12,  19,  91, 82,1,1,1,1,1,1,1
+             -,1,1));
+                    MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L18_TEST-13,   _F_STR(66,  92,  60,  38,  1, 1,1,1,1,1,1,1,1,1,1)
+             -);
+                    #elif defined (_FT_LANG_JP)
+1281   2            MnLST_DispClr(1);
+1282   2              DpSTR_DrawLin(ft_loc, FALSE, MnMSR_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(81, 73, 1, 1,1,1,1,1,1,1,1,
+             -1,1,1,1));
+1283   2            DpSTR_DrawLin(ft_eng, FALSE, MnMSR_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#3/3");                        
+1284   2      
+1285   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L15_PCD_TERM-13, _F_STR(10,  36, 42,  24, 41, 11, 68, 87,  1,   1
+             -, 1,1,1,1,1));
+1286   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L16_RST_MSR-13,  _F_STR(73,  61, 36,  16, 19, 22, 1, 1,  1,   1, 1
+             -,1,1,1,1));
+1287   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L17_RST_FTR-13,  _F_STR(49,  69,  53,  1,   1,   1,   1,   1,  1,   
+             -1, 1,1,1,1,1));
+1288   2            MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L18_TEST-13,   _F_STR(20,  15, 22, 32, 42, 23,   1,  1,  1,   1, 1,1,
+             -1,1,1));
+1289   2            #endif
+1290   2            break;
+1291   2          case MnSYS_LANG_ENG:
+1292   2          default:
+1293   2                                        // 0123456789abcdef0123456789abcde
+1294   2            MnLST_DispStr(ft_eng, FALSE,   MnMSR_L00_IDLE+1,    "      MEASUREMENT #3/3         ");
+1295   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L15_PCD_TERM-13, "Clean Term                     ");
+1296   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L16_RST_MSR-13,  "Measure Reset                  ");
+1297   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L17_RST_FTR-13,  "Factory Reset                  ");
+1298   2            MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L18_TEST-13,   "Test Mode                      "); 
+1299   2            break;
+1300   2        } 
+1301   1      
+1302   1        if  (lMnMsr.fTest)  pStr = "ON";
+1303   1        else        pStr = "OFF";
+1304   1        
+1305   1        DpSTR_DrawLin(ft_eng, pSel[MnMSR_L18_TEST-14], 180, MnSTR_Y_HEIGHT*4, pStr);
+1306   1      }
+1307          
+1308          #else
+              void MsrDp_ListEngP1(U08* pSel)
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 24  
+
+              {
+                U08 c  = MnMSR_L00_IDLE + 1;
+                U08 ft = FT_EN_08x16;
+                                        //   0123456789abcdef0123456789abcde
+                MnLST_DispStr(ft, FALSE,     MnMSR_L00_IDLE+1,    "      MEASUREMENT #1/3         ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L01_UNIT+1,    "Display Unit                   ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L02_OPER+1,    "Operation                      ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L03_EMPTY+1,   "Empty                          ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L04_DEADZONE+1,  "Dead Zone                      ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L05_TVG_IDX+1, "TVG Curve                      ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L06_ECHO_AMP+1,  "Echo AMP                       ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L07_FREQ+1,    "Frequency                      ");
+              }
+              
+              void MsrDp_ListEngP2(U08* pSel)
+              {
+                U08 c  = MnMSR_L00_IDLE + 1;
+                U08 ft = FT_EN_08x16;
+                                        //   0123456789abcdef0123456789abcde
+                MnLST_DispStr(ft, FALSE,     MnMSR_L00_IDLE+1,    "      MEASUREMENT #2/3         ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L08_TX_INTV-6, "Measure Cycle                  ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L09_OFFSET-6,  "Offset                         ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L10_DAMPING-6, "Damping                        ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L11_THRESHOLD-6, "Threshold                      ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L12_ASF_BAND-6,  "ASF Band                       ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L13_TW_RST_TM-6, "Window Reset Time              ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L14_TW_RANGE-6,  "Window Range                   ");
+              }
+              
+              void MsrDp_ListEngP3(U08* pSel)
+              {
+                U08 *pStr = "   ";
+                U08 c  = MnMSR_L00_IDLE + 1;
+                U08 ft = FT_EN_08x16;
+                                        //   0123456789abcdef0123456789abcde
+                MnLST_DispStr(ft, FALSE,     MnMSR_L00_IDLE+1,    "      MEASUREMENT #3/3         ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L15_PCD_INTV-13, "Clean Interval                 ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L16_PCD_TERM-13, "Clean Term                     ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L17_RST_MSR-13,  "Measure Reset                  ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L18_RST_FTR-13,  "Factory Reset                  ");
+                MnLST_DispStr(ft, pSel[c++], MnMSR_L19_TEST-13,   "Demo Mode                      ");
+              
+                if(lMnMsr.fDemo)  pStr = "ON";
+                else        pStr = "OFF";
+              
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnMSR_L19_TEST-14], 180, MnSTR_Y_HEIGHT*5, pStr);
+              }
+              
+              #if defined (_FT_LANG_KR)
+              void MsrDp_ListKorP1(U08* pSel)
+              {
+                U08 i;
+              
+                MnLST_DispClr(1);
+                _F_SS(FKR_CHEUG,FKR_JEONG,  1,1,1,1,1,1,1,1,1,1,1,1,1);
+                DpSTR_DrawLin(FT_LC_16x16, FALSE, MnMSR_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, gFt_str);
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, MnMSR_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#1/3");
+              
+                for(i=(MnMSR_L00_IDLE+1); i<=MNU_LIST_NUM; i++)
+                {
+                  switch(i)
+                  {
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 25  
+
+                    case MnMSR_L01_UNIT:    _F_SS(FKR_CHEUG,FKR_JEONG,  FKR_DAN,  FKR_WI_,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L02_OPER:    _F_SS(FKR_SEUL, FKR_LEO,  FKR_JI_,1,1,FKR_SANG, FKR_DEUNG,  FKR_SU_,  1,1,1,1,1,1,1)
+             -;  break;
+                    case MnMSR_L03_EMPTY:   _F_SS(FKR_CHEUG,FKR_JEONG,  FKR_BEOM, FKR_WI_,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L04_DEADZONE:  _F_SS(FKR_BUL,  FKR_GAM,  FKR_DAE,  1,      1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L05_TVG_IDX:   _F_SS(1,1,1,1,  FKR_SEON, FKR_TAEG, 1,      1,    1,1,1,1,1,1,1);   break;
+                    case MnMSR_L06_ECHO_AMP:  _F_SS(FKR_SU_,  FKR_SIN,  FKR_GAM,  FKR_DO_,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L07_FREQ:    _F_SS(1,    1,      1,      1,      1,1,1,1,1,1,1,1,1,1,1);   break;
+                    //case MnMSR_L07_FREQ:    _F_SS(FKR_JU_,  FKR_PA_,  FKR_SU_,  1,      1,1,1,1,1,1,1,1,1,1,1);   break;
+                  }
+              
+                  MnLST_DispStr(FT_LC_16x16, pSel[i], i+1, "");
+                }
+              
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnMSR_L02_OPER],   60, MnSTR_Y_HEIGHT*2, "/");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnMSR_L05_TVG_IDX], 9, MnSTR_Y_HEIGHT*5, "TVG");
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnMSR_L07_FREQ],    9, MnSTR_Y_HEIGHT*7, "Frequency");
+              }
+              
+              void MsrDp_ListKorP2(U08* pSel)
+              {
+                U08 i;
+              
+                MnLST_DispClr(1);
+                _F_SS(FKR_CHEUG,FKR_JEONG,  1,1,1,1,1,1,1,1,1,1,1,1,1);
+                DpSTR_DrawLin(FT_LC_16x16, FALSE, MnMSR_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, gFt_str);
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, MnMSR_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#2/3");
+              
+                for(i=(MNU_LIST_NUM+1); i<=(MNU_LIST_NUM*2); i++)
+                {
+                  switch(i)
+                  {
+                    case MnMSR_L08_TX_INTV:   _F_SS(FKR_CHEUG,FKR_JEONG,  FKR_JU_,  FKR_GI_,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L09_OFFSET:    _F_SS(FKR_MI_,  FKR_SE_,  FKR_JO_,  FKR_JEONG,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L10_DAMPING:   _F_SS(FKR_PYEONG,FKR_GYUN,  FKR_BO_,  FKR_JEONG,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L11_THRESHOLD: _F_SS(FKR_MUN,  FKR_TEOG, FKR_JEON, FKR_AB_,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L12_ASF_BAND:  _F_SS(1,1,1,1,  FKR_SEOL, FKR_JEONG,  1,      1,1,1,1,1,1,1,1);     break;
+                    case MnMSR_L13_TW_RST_TM:   _F_SS(FKR_WIN,  FKR_DO_,  FKR_U__,1,  FKR_RI_,  FKR_SES,FKR_SI_,FKR_GAN,1,1,1,1,
+             -1,1,1);  break;
+                    case MnMSR_L14_TW_RANGE:  _F_SS(FKR_WIN,  FKR_DO_,  FKR_U__,1,  FKR_BEOM, FKR_WI_,1,1,1,1,1,1,1,1,1); brea
+             -k;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i-MNU_LIST_NUM], i-MNU_LIST_NUM+1, "");
+                }
+              
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnMSR_L12_ASF_BAND-7], 10, MnSTR_Y_HEIGHT*5, "ASF");
+              }
+              
+              void MsrDp_ListKorP3(U08* pSel)
+              {
+                U08 i;
+                U08 *pStr = "   ";
+              
+                MnLST_DispClr(1);
+                _F_SS(FKR_CHEUG,FKR_JEONG,  1,1,1,1,1,1,1,1,1,1,1,1,1);
+                DpSTR_DrawLin(FT_LC_16x16, FALSE, MnMSR_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, gFt_str);
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, MnMSR_X0_PAGE_KO,  MnSTR_Y_HEIGHT*0, "#3/3");
+              
+                for(i=((MNU_LIST_NUM*2)+1); i<MnMSR_LST_NUMB; i++)
+                {
+                  switch(i)
+                  {
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 26  
+
+                    case MnMSR_L15_PCD_INTV:  _F_SS(FKR_SE_,  FKR_CHEOG,  FKR_JU_,  FKR_GI_,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L16_PCD_TERM:  _F_SS(FKR_SE_,  FKR_CHEOG,  FKR_SI_,  FKR_GAN,  1,1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L17_RST_MSR:   _F_SS(FKR_CHEUG,FKR_JEONG,  FKR_CHO,  FKR_GI_,  FKR_HWA,1,1,1,1,1,1,1,1,1,1); bre
+             -ak;
+                    case MnMSR_L18_RST_FTR:   _F_SS(FKR_GONG, FKR_JANG, FKR_CHO,  FKR_GI_,  FKR_HWA,1,1,1,1,1,1,1,1,1,1); brea
+             -k;
+                    case MnMSR_L19_TEST:    _F_SS(FKR_DE_,  FKR_MO_,1,  FKR_MO_,  FKR_DEU,    1,1,1,1,1,1,1,1,1,1);   break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i-(MNU_LIST_NUM*2)], i-(MNU_LIST_NUM*2)+1, "");
+                }
+              
+                if(lMnMsr.fDemo)  pStr = "ON";
+                else        pStr = "OFF";
+              
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnMSR_L19_TEST-14], 180, MnSTR_Y_HEIGHT*5, pStr);
+              }
+              
+              #elif defined (_FT_LANG_CN)
+              void MsrDp_ListChnP1(U08* pSel)
+              {
+                U08 i;
+                U08 height = MnSTR_Y_HEIGHT;
+                U08 ft_en = FT_EN_08x16;
+                                  //   0123456789abcdef0123456789abcde
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 0, 0, "      MEASUREMENT #1/3         ");
+              
+                for(i=(MnMSR_L00_IDLE+1); i<=MNU_LIST_NUM; i++)
+                {
+                  switch(i)
+                  {
+                    case MnMSR_L01_UNIT:    _F_SS(66,   107,  18,   4,    1,    1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L02_OPER:    _F_SS(66,   107,  60,   38,   1,    1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L03_EMPTY:     _F_SS(76,   117,  1,    1,    1,    1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L04_DEADZONE:  _F_SS(70,   17,   1,    1,    1,    1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L05_TVG_IDX:   _F_SS(7,    22,   165,  166,  1,    1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L06_ECHO_AMP:  _F_SS(7,    22,   47,   27,   24,   1,1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L07_FREQ:    _F_SS(63,   64,   74,   78,   1,    1,1,1,1,1,1,1,1,1,1);   break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i], i+1, "");
+                }
+              }
+              
+              void MsrDp_ListChnP2(U08* pSel)
+              {
+                U08 i;
+                                  //   0123456789abcdef0123456789abcde
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 0, 0, "      MEASUREMENT #2/3         ");
+              
+                for(i=(MNU_LIST_NUM+1); i<=(MNU_LIST_NUM*2); i++)
+                {
+                  switch(i)
+                  {
+                    case MnMSR_L08_TX_INTV:   _F_SS(66,   107,  110,  113,1,  1,  1,  1,  1,1,1,1,1,1,1);   break;
+                    case MnMSR_L09_OFFSET:    _F_SS(42,   94,   1,  1,  1,  1,  1,  1,    1,1,1,1,1,1,1);   break;
+                    case MnMSR_L10_DAMPING:   _F_SS(111,    33,   1,  1,  1,  1,  1,  1,    1,1,1,1,1,1,1);   break;
+                    case MnMSR_L11_THRESHOLD: _F_SS(109,    59,   69,   20, 1,  1,  1,  1,  1,1,1,1,1,1,1);   break;
+                    case MnMSR_L12_ASF_BAND:  _F_SS(1,  1,  15,   83,   1,    1,  1,  1,  1,1,1,1,1,1,1);   break;
+                    case MnMSR_L13_TW_RST_TM:   _F_SS(167,    171,  172,1,  173,  174,  1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L14_TW_RANGE:  _F_SS(167,    168,  169,1,  1,  1,  1,  1,    1,1,1,1,1,1,1);   break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i-MNU_LIST_NUM], i-MNU_LIST_NUM+1, "");
+                }
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 27  
+
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnMSR_L12_ASF_BAND-7], 10, MnSTR_Y_HEIGHT*5, "ASF");
+              }
+              
+              void MsrDp_ListChnP3(U08* pSel)
+              {
+                U08 i;
+                U08 *pStr = " ";
+                                  //   0123456789abcdef0123456789abcde
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 0, 0, "      MEASUREMENT #3/3         ");
+              
+                for(i=((MNU_LIST_NUM*2)+1); i<MnMSR_LST_NUMB; i++)
+                {
+                  switch(i)
+                  {
+                    case MnMSR_L15_PCD_INTV:  _F_SS(67,   65,   110,  113,  1,    1,    1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L16_PCD_TERM:  _F_SS(67,   65,   51,   110,  1,    1,    1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L17_RST_MSR:   _F_SS(66,   107,  91,   82,   26,   4,    1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L18_RST_FTR:   _F_SS(12,   19,   91,   82,   1,    1,    1,1,1,1,1,1,1,1,1);   break;
+                    case MnMSR_L19_TEST:    _F_SS(66,   92,   60,   38,   1,    1,    1,1,1,1,1,1,1,1,1);   break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i-(MNU_LIST_NUM*2)], i-(MNU_LIST_NUM*2)+1, "");
+                }
+              
+                if(lMnMsr.fDemo)  pStr = "ON";
+                else        pStr = "OFF";
+              
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnMSR_L19_TEST-14], 180, MnSTR_Y_HEIGHT*5, pStr);
+              }
+              
+              #elif defined (_FT_LANG_JP)
+              void MsrDp_ListJpnP1(U08* pSel)
+              {
+                U08 i;
+                U08 height = MnSTR_Y_HEIGHT;
+                U08 ft_en = FT_EN_08x16;
+                                  //   0123456789abcdef0123456789abcde
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 0, 0, "      MEASUREMENT #1/3         ");
+              
+                for(i=(MnMSR_L00_IDLE+1); i<=MNU_LIST_NUM; i++)
+                {
+                  switch(i)
+                  {
+                    case MnMSR_L01_UNIT:    _F_SS(114,  166,87, 0,  1,  1,  1,  1,  1,  1,1,1,1,1,1);   break;
+                    case MnMSR_L02_OPER:    _F_SS(93, 57, 159,170,106,154,166,0,  1,  1,1,1,1,1,1);   break;
+                    case MnMSR_L03_EMPTY:     _F_SS(94, 156,96, 154,157,0,  1,  1,  1,  1,1,1,1,1,1);   break;
+                    case MnMSR_L04_DEADZONE:  _F_SS(136,  94, 166,114,87, 0,  1,  1,  1,  1,1,1,1,1,1);   break;
+                    case MnMSR_L05_TVG_IDX:   _F_SS(130,  118,106,166,171,132,162,170,0,  1,1,1,1,1,1);   break;
+                    case MnMSR_L06_ECHO_AMP:  _F_SS(107,  152,106,166,171,85, 166,138,0,  1,1,1,1,1,1);   break;
+                    case MnMSR_L07_FREQ:    _F_SS(108,  156,118,107,171,129,89, 124,0,  1,1,1,1,1,1);   break;
+                  }
+              
+                  MnLST_DispStr(FT_LC_16x16, pSel[i], i+1, "");
+                }
+              }
+              
+              void MsrDp_ListJpnP2(U08* pSel)
+              {
+                U08 i;
+                U08 height = MnSTR_Y_HEIGHT;
+                U08 ft_en = FT_EN_08x16;
+                                  //   0123456789abcdef0123456789abcde
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 0, 0, "      MEASUREMENT #2/3         ");
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 28  
+
+              
+                for(i=(MNU_LIST_NUM+1); i<=(MNU_LIST_NUM*2); i++)
+                {
+                  switch(i)
+                  {                                   // 0123456789abcdef0123456789abcde
+                    case MnMSR_L08_TX_INTV:   _F_SS(112,  98, 121,87, 106,152,89, 96, 0,  1,1,1,1,1,1);   break;
+                    case MnMSR_L09_OFFSET:    _F_SS( 93,  136,110,118,123,0,  1,  1,  1,  1,1,1,1,1,1);   break;
+                    case MnMSR_L10_DAMPING:   _F_SS(139,  87, 96, 166,171,107,94, 166,1,  1,1,1,1,1,1);   break;
+                    case MnMSR_L11_THRESHOLD: _F_SS(108,  159,118,106,152,142,170,158,124,1,1,1,1,1,1);   break;
+                    case MnMSR_L12_ASF_BAND:  _F_SS(171,  171,171,110,118,121,87, 0,  1,  1,1,1,1,1,1);   break;
+                    case MnMSR_L13_TW_RST_TM:   DpSTR_DrawLin(ft_en, pSel[i], 8, height*i,"Window Reset Time              ")
+             -;  break;
+                    case MnMSR_L14_TW_RANGE:  DpSTR_DrawLin(ft_en, pSel[i], 8, height*i,"Window Range                   ");
+             -  break;
+                  }
+              
+                  switch(i)
+                  {
+                    case MnMSR_L13_TW_RST_TM:
+                    case MnMSR_L14_TW_RANGE:
+                      if(pSel[i])   DpSTR_DrawLin(ft_en, pSel[i], 0, height*i,">");
+                      else      DpSTR_DrawLin(ft_en, pSel[i], 0, height*i," ");
+                      break;
+              
+                    default:  MnLST_DispStr(FT_LC_16x16, pSel[i-MNU_LIST_NUM], i-MNU_LIST_NUM+1, "");   break;
+                  }
+                }
+              
+                DpSTR_DrawLin(FT_EN_08x16, pSel[MnMSR_L12_ASF_BAND-7], 10, MnSTR_Y_HEIGHT*5, "ASF");
+              }
+              
+              void MsrDp_ListJpnP3(U08* pSel)
+              {
+                U08 i;
+                                  //   0123456789abcdef0123456789abcde
+                DpSTR_DrawLin(FT_EN_08x16, FALSE, 0, 0, "      MEASUREMENT #3/3         ");
+              
+                for(i=(MNU_LIST_NUM+1); i<MnMSR_LST_NUMB; i++)
+                {
+                  switch(i)
+                  {
+                    case MnMSR_L15_PCD_INTV:  _F_SS(98, 157,170,126,166,99, 106,152,89, 96, 0,1,1,1,1);   break;
+                    case MnMSR_L16_PCD_TERM:  _F_SS(98, 157,170,126,166,99, 171,107,94, 166,0,1,1,1,1);   break;
+                    case MnMSR_L17_RST_MSR:   _F_SS(112,  98, 121,87, 157,110,118,123,0,  1,  1,1,1,1,1);   break;
+                    case MnMSR_L18_RST_FTR:   _F_SS(106,  154, 96,94, 0,  1,  1,  1,  1,  1,  1,1,1,1,1);   break;
+                    case MnMSR_L19_TEST:    _F_SS(121,  108,123,149,170,124,0,  1,  1,  1,  1,1,1,1,1);   break;
+                  }
+                  MnLST_DispStr(FT_LC_16x16, pSel[i-(MNU_LIST_NUM*2)], i-(MNU_LIST_NUM*2)+1, "");
+                }
+              }
+              
+              #endif
+              #endif
+1604          
+1605          void MsrDp_ProcList(U08 sel)
+1606          {
+1607   1        U08 i;
+1608   1        U08 page = MNU_PAGE_01;
+1609   1        U08 pSel[MnMSR_LST_NUMB] = {0, };
+1610   1      
+1611   1        pSel[sel] = TRUE;
+1612   1      
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 29  
+
+1613   1        if    (sel > (MNU_LIST_NUM*2))    page = MNU_PAGE_03;
+1614   1        else if (sel > (MNU_LIST_NUM*1))    page = MNU_PAGE_02;
+1615   1        else                  page = MNU_PAGE_01;
+1616   1      
+1617   1        if    (sel > (MNU_LIST_NUM*2))    pSel[sel-(MNU_LIST_NUM*2)] = TRUE;
+1618   1        else if (sel > (MNU_LIST_NUM*1))    pSel[sel-(MNU_LIST_NUM*1)] = TRUE;
+1619   1        else                  pSel[sel-(MNU_LIST_NUM*0)] = TRUE;
+1620   1      
+1621   1      #if 1
+1622   1        switch(page)
+1623   1        {
+1624   2          case MNU_PAGE_01:   MsrDp_ListP1(pSel);   break;
+1625   2          case MNU_PAGE_02:   MsrDp_ListP2(pSel);   break;
+1626   2          case MNU_PAGE_03:   MsrDp_ListP3(pSel);   break;
+1627   2          default:
+1628   2            return;
+1629   2        }
+1630   1      
+1631   1      #else
+                switch(MnSYS_GetLang())
+                {
+                  case MnSYS_LANG_LOC:
+                    switch(page)
+                    {
+              #if defined (_FT_LANG_KR)
+                      case MNU_PAGE_01:   MsrDp_ListKorP1(pSel);    break;
+                      case MNU_PAGE_02:   MsrDp_ListKorP2(pSel);    break;
+                      case MNU_PAGE_03:   MsrDp_ListKorP3(pSel);    break;
+              
+              #elif defined (_FT_LANG_CN)
+                      case MNU_PAGE_01:   MsrDp_ListChnP1(pSel);    break;
+                      case MNU_PAGE_02:   MsrDp_ListChnP2(pSel);    break;
+                      case MNU_PAGE_03:   MsrDp_ListChnP3(pSel);    break;
+              
+              #elif defined (_FT_LANG_JP)
+                      case MNU_PAGE_01:   MsrDp_ListJpnP1(pSel);    break;
+                      case MNU_PAGE_02:   MsrDp_ListJpnP2(pSel);    break;
+                      case MNU_PAGE_03:   MsrDp_ListJpnP3(pSel);    break;
+              #endif
+                    }
+                    break;
+                  case MnSYS_LANG_ENG:
+                  default:
+                    switch(page)
+                    {
+                      case MNU_PAGE_01:   MsrDp_ListEngP1(pSel);    break;
+                      case MNU_PAGE_02:   MsrDp_ListEngP2(pSel);    break;
+                      case MNU_PAGE_03:   MsrDp_ListEngP3(pSel);    break;
+                    }
+                    break;
+                }
+              #endif
+1665   1        if(page == MNU_PAGE_03)
+1666   1        {
+1667   2          for(i=(MnMSR_LST_NUMB-(MNU_LIST_NUM*2)+1); i<=(MNU_LIST_NUM+1); i++)
+1668   2            MnLST_DispClr(i);
+1669   2        }
+1670   1      
+1671   1          LDT_UpdBuff(LCD_Y_START,LCD_Y_END);
+1672   1        DLY_RunMsec(100);
+1673   1      }
+1674          
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 30  
+
+1675          void MsrChk_Vari(void)
+1676          {
+1677   1        U08 maxRange  = MnFTR_GetDistMax();
+1678   1        
+1679   1        // Page 1
+1680   1        if(lMnMsr.unit  > MnMSR_UNIT_FEET)    lMnMsr.unit  = MnMSR_UNIT_METER;
+1681   1        if(lMnMsr.oper  > MnMSR_OPER_DISTA)   lMnMsr.oper  = MnMSR_OPER_LEVEL;
+1682   1        
+1683   1        switch(maxRange)
+1684   1        {
+1685   2          case MnFTR_DIST_MAX_10m:
+1686   2            if(lMnMsr.empty > MnMSR_EMPTY_MT_10_MAX)  lMnMsr.empty = MnMSR_EMPTY_MT_DFT;
+1687   2            if(lMnMsr.dead  > MnMSR_DEAD_MT_10_MAX)   lMnMsr.dead  = MnMSR_DEAD_MT_DFT;
+1688   2            break;
+1689   2          case MnFTR_DIST_MAX_20m:
+1690   2            if(lMnMsr.empty > MnMSR_EMPTY_MT_20_MAX)  lMnMsr.empty = MnMSR_EMPTY_MT_DFT;
+1691   2            if(lMnMsr.dead  > MnMSR_DEAD_MT_20_MAX)   lMnMsr.dead  = MnMSR_DEAD_MT_DFT;
+1692   2            break;
+1693   2        }
+1694   1      
+1695   1        if(lMnMsr.amp   > MnMSR_AMP_MAX)    lMnMsr.amp   = MnMSR_AMP_DFT;
+1696   1        if(lMnMsr.freq  > MnMSR_FREQ_MAX)   lMnMsr.amp   = MnMSR_FREQ_380K;
+1697   1        // Page 2
+1698   1        if(lMnMsr.intv < MnMSR_INTV_MIN)      lMnMsr.intv = MnMSR_INTV_DFT;
+1699   1        if(lMnMsr.intv > MnMSR_INTV_MAX)      lMnMsr.intv = MnMSR_INTV_DFT;
+1700   1        if(lMnMsr.offs < MnMSR_OFFS_MT_MIN)     lMnMsr.offs = MnMSR_OFFS_MT_DFT;
+1701   1        if(lMnMsr.offs > MnMSR_OFFS_MT_MAX)     lMnMsr.offs = MnMSR_OFFS_MT_DFT;
+1702   1        if(lMnMsr.damp > MnMSR_DAMP_IDX_MAX)    lMnMsr.damp = MnMSR_DAMP_I01_T0001;
+1703   1        if(lMnMsr.trhd_mod > MnMSR_TRHD_MOD_MANUAL) lMnMsr.trhd_mod = MnMSR_TRHD_MOD_AUTO;
+1704   1        if(lMnMsr.trhd_per > MnMSR_TRHD_PCT_MAX)  lMnMsr.trhd_per = MnMSR_TRHD_PCT_DFT;
+1705   1        if(lMnMsr.trhd_fix > MnMSR_TRHD_FIX_MAX)  lMnMsr.trhd_fix = MnMSR_TRHD_FIX_DFT;
+1706   1        if(lMnMsr.asf    > MnMSR_ASF_MAX)     lMnMsr.asf    = MnMSR_ASF_DFT;
+1707   1        if(lMnMsr.tw_delay < MnMSR_TW_DELAY_MIN)  lMnMsr.tw_delay = MnMSR_TW_DELAY_DFT;
+1708   1        if(lMnMsr.tw_delay > MnMSR_TW_DELAY_MAX)  lMnMsr.tw_delay = MnMSR_TW_DELAY_DFT;
+1709   1        if(lMnMsr.tw_range < MnMSR_TW_RANGE_MIN)  lMnMsr.tw_range = MnMSR_TW_RANGE_DFT;
+1710   1        if(lMnMsr.tw_range > MnMSR_TW_RANGE_MAX)  lMnMsr.tw_range = MnMSR_TW_RANGE_DFT;
+1711   1        // Page 3
+1712   1        if(lMnMsr.pcd_intv > MnMSR_PCD_INTV_MAX)  lMnMsr.pcd_intv = MnMSR_PCD_INTV_DFT;
+1713   1        if(lMnMsr.pcd_term < MnMSR_PCD_TERM_MIN)  lMnMsr.pcd_term = MnMSR_PCD_TERM_DFT;
+1714   1        if(lMnMsr.pcd_term > MnMSR_PCD_TERM_MAX)  lMnMsr.pcd_term = MnMSR_PCD_TERM_DFT;
+1715   1        if(lMnMsr.fTest > TRUE)           lMnMsr.fTest = FALSE;
+1716   1      
+1717   1      }
+1718          
+1719          
+1720          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1721          //  Global APIs - Get Local Variables
+1722          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1723          // Page 1
+1724          U08 MnMSR_GetUnit(void)     { return lMnMsr.unit;   }
+1725          U08 MnMSR_GetOper(void)     { return lMnMsr.oper;   }
+1726          U16 MnMSR_GetEmpty(void)    { return lMnMsr.empty;  }
+1727          U16 MnMSR_GetDead(void)     { return lMnMsr.dead;   }
+1728          U08 MnMSR_GetAmp(void)      { return lMnMsr.amp;    }
+1729          U08 MnMSR_GetFreq(void)     { return lMnMsr.freq;   }
+1730          U08 MnMSR_GetIntv(void)     { return lMnMsr.intv;     }
+1731          // Page 2
+1732          S16 MnMSR_GetOffs(void)     { return lMnMsr.offs;     }
+1733          U08 MnMSR_GetDamp(void)     { return lMnMsr.damp;     }
+1734          U08 MnMSR_GetTrhdMod(void)    { return lMnMsr.trhd_mod;   }
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 31  
+
+1735          U08 MnMSR_GetTrhdPer(void)    { return lMnMsr.trhd_per;   }
+1736          U08 MnMSR_GetTrhdFix(void)    { return lMnMsr.trhd_fix;   }
+1737          U16 MnMSR_GetAsf(void)      { return lMnMsr.asf;      }
+1738          U16 MnMSR_GetTwDly(void)    { return lMnMsr.tw_delay;   }
+1739          U08 MnMSR_GetTwRng(void)    { return lMnMsr.tw_range;   }
+1740          U16 MnMSR_GetPcdIntv(void)    { return lMnMsr.pcd_intv;   }
+1741          // Page 3
+1742          U08 MnMSR_GetPcdTerm(void)    { return lMnMsr.pcd_term;   }
+1743          U08 MnMSR_GetFgTest(void)   { return lMnMsr.fTest;    }
+1744          
+1745          
+1746          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1747          //  Global APIs - Set Local Variables
+1748          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1749          // Page 2
+1750          void MnMSR_SetTrhdPer(U08 val)    { lMnMsr.trhd_per = val;    }
+1751          void MnMSR_SetTrhdFix(U08 val)    { lMnMsr.trhd_fix = val;    }
+1752          
+1753          
+1754          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1755          //  Global APIs - Memory Access
+1756          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1757          void MnMSR_MemLoad(void)
+1758          { // Page 1
+1759   1        lMnMsr.unit  = FLS_Rd1Byte(F000_MSR_UNIT);
+1760   1        lMnMsr.oper  = FLS_Rd1Byte(F001_MSR_OPER);
+1761   1        lMnMsr.empty = FLS_Rd2Byte(F002_MSR_EMPTY_L);
+1762   1        lMnMsr.dead  = FLS_Rd2Byte(F004_MSR_DEAD_L);
+1763   1        lMnMsr.amp   = FLS_Rd1Byte(F044_MSR_AMP);
+1764   1        lMnMsr.freq  = FLS_Rd1Byte(F039_MSR_FREQ);
+1765   1        // Page 2
+1766   1        lMnMsr.intv   = FLS_Rd1Byte(F042_MSR_INTV);
+1767   1        lMnMsr.offs   = FLS_Rd2Byte(F050_MSR_OFFS_L);
+1768   1        lMnMsr.damp   = FLS_Rd1Byte(F037_MSR_DAMP);
+1769   1        lMnMsr.trhd_mod = FLS_Rd1Byte(F100_MSR_TRHD_MODE);
+1770   1        lMnMsr.trhd_per = FLS_Rd1Byte(F038_MSR_TRHD_PERC);
+1771   1        lMnMsr.trhd_fix = FLS_Rd1Byte(F091_MSR_TRHD_FIX);
+1772   1        lMnMsr.asf    = FLS_Rd2Byte(F047_MSR_ASF_L);
+1773   1        lMnMsr.tw_delay = FLS_Rd2Byte(F075_MSR_TW_DELAY_L);
+1774   1        lMnMsr.tw_range = FLS_Rd1Byte(F089_MSR_TW_WIDTH);
+1775   1        // Page 3
+1776   1        lMnMsr.pcd_intv = FLS_Rd2Byte(F034_MSR_PCD_INTV_L);
+1777   1        lMnMsr.pcd_term = FLS_Rd1Byte(F036_MSR_PCD_TERM);
+1778   1        lMnMsr.fTest    = FLS_Rd1Byte(F049_MSR_F_DEMO);
+1779   1      
+1780   1      }
+1781          
+1782          void MnMSR_MemSave(void)
+1783          { // Page 1
+1784   1          FLS_Wr1Byte(F000_MSR_UNIT,    lMnMsr.unit);
+1785   1          FLS_Wr1Byte(F001_MSR_OPER,    lMnMsr.oper);
+1786   1          FLS_Wr2Byte(F002_MSR_EMPTY_L, lMnMsr.empty);
+1787   1          FLS_Wr2Byte(F004_MSR_DEAD_L,  lMnMsr.dead);
+1788   1          FLS_Wr1Byte(F044_MSR_AMP,   lMnMsr.amp);
+1789   1          FLS_Wr1Byte(F039_MSR_FREQ,    lMnMsr.freq);
+1790   1        // Page 2
+1791   1          FLS_Wr1Byte(F042_MSR_INTV,     lMnMsr.intv);
+1792   1          FLS_Wr2Byte(F050_MSR_OFFS_L,   lMnMsr.offs);
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 32  
+
+1793   1          FLS_Wr1Byte(F037_MSR_DAMP,     lMnMsr.damp);
+1794   1        FLS_Wr1Byte(F100_MSR_TRHD_MODE,  lMnMsr.trhd_mod);       
+1795   1          FLS_Wr1Byte(F038_MSR_TRHD_PERC,  lMnMsr.trhd_per);
+1796   1        FLS_Wr1Byte(F091_MSR_TRHD_FIX,   lMnMsr.trhd_fix);
+1797   1          FLS_Wr2Byte(F047_MSR_ASF_L,    lMnMsr.asf);
+1798   1          FLS_Wr2Byte(F075_MSR_TW_DELAY_L, lMnMsr.tw_delay);
+1799   1        FLS_Wr1Byte(F089_MSR_TW_WIDTH,   lMnMsr.tw_range);
+1800   1        // Page 3
+1801   1        FLS_Wr2Byte(F034_MSR_PCD_INTV_L, lMnMsr.pcd_intv);
+1802   1        FLS_Wr1Byte(F036_MSR_PCD_TERM,   lMnMsr.pcd_term);
+1803   1        FLS_Wr1Byte(F049_MSR_F_DEMO,     lMnMsr.fTest);
+1804   1      
+1805   1      }
+1806          
+1807          void MnMSR_MemFtry(void)
+1808          { // Page 1
+1809   1        FLS_Wr1Byte(F000_MSR_UNIT,    MnMSR_UNIT_METER);
+1810   1        FLS_Wr1Byte(F001_MSR_OPER,    MnMSR_OPER_LEVEL);
+1811   1        FLS_Wr2Byte(F002_MSR_EMPTY_L, MnMSR_EMPTY_MT_DFT);
+1812   1        FLS_Wr2Byte(F004_MSR_DEAD_L,  MnMSR_DEAD_MT_DFT);
+1813   1        FLS_Wr1Byte(F044_MSR_AMP,   MnMSR_AMP_DFT);
+1814   1        FLS_Wr1Byte(F039_MSR_FREQ,    MnMSR_FREQ_380K);
+1815   1        // Page 2
+1816   1        FLS_Wr1Byte(F042_MSR_INTV,     MnMSR_INTV_DFT);
+1817   1        FLS_Wr2Byte(F050_MSR_OFFS_L,   MnMSR_OFFS_MT_DFT);
+1818   1        FLS_Wr1Byte(F037_MSR_DAMP,     MnMSR_DAMP_I03_T0020);
+1819   1        FLS_Wr1Byte(F100_MSR_TRHD_MODE,  MnMSR_TRHD_MOD_AUTO);
+1820   1        FLS_Wr1Byte(F038_MSR_TRHD_PERC,  MnMSR_TRHD_PCT_DFT);
+1821   1        FLS_Wr1Byte(F091_MSR_TRHD_FIX,   MnMSR_TRHD_FIX_DFT);
+1822   1        FLS_Wr2Byte(F047_MSR_ASF_L,    MnMSR_ASF_DFT);
+1823   1        FLS_Wr2Byte(F075_MSR_TW_DELAY_L, MnMSR_TW_DELAY_DFT);
+1824   1        FLS_Wr1Byte(F089_MSR_TW_WIDTH,   MnMSR_TW_RANGE_DFT);
+1825   1        // Page 3
+1826   1        FLS_Wr2Byte(F034_MSR_PCD_INTV_L, MnMSR_PCD_INTV_DFT);
+1827   1        FLS_Wr1Byte(F036_MSR_PCD_TERM,   MnMSR_PCD_TERM_DFT);
+1828   1        FLS_Wr1Byte(F049_MSR_F_DEMO,   FALSE);
+1829   1      
+1830   1      }
+1831          
+1832          
+1833          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1834          //  Global APIs - Public
+1835          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1836          void MnMSR_InitVari(void)
+1837          {
+1838   1        MnMSR_MemLoad();
+1839   1        MsrChk_Vari();
+1840   1      }
+1841          
+1842          void MnMSR_ProcMain(void)
+1843          {
+1844   1        U08 fDp = FALSE;
+1845   1        U08 sel = MnMSR_L00_IDLE + 1;
+1846   1      
+1847   1        MsrDp_ProcList(sel);
+1848   1      
+1849   1        do
+1850   1        {
+1851   2          if(!_SBIT_BTN_DOWN)
+1852   2          {
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 33  
+
+1853   3            if(sel < (MnMSR_LST_NUMB-1))    sel++;
+1854   3            else                sel = MnMSR_L00_IDLE + 1;
+1855   3            fDp = TRUE;
+1856   3          }
+1857   2          
+1858   2          if(!_SBIT_BTN_UP)
+1859   2          {
+1860   3            if(sel > (MnMSR_L00_IDLE+1))    sel--;
+1861   3            else                sel = MnMSR_LST_NUMB - 1;
+1862   3            fDp = TRUE;
+1863   3          }
+1864   2      
+1865   2          if(!_SBIT_BTN_SET)
+1866   2          {
+1867   3            switch(sel)
+1868   3            { // Page 1
+1869   4              case MnMSR_L01_UNIT:      MnMsr_Unit();     break;
+1870   4              case MnMSR_L02_OPER:      MnMsr_Operation();    break;
+1871   4              case MnMSR_L03_EMPTY:     MnMsr_Empty();      break;
+1872   4              case MnMSR_L04_DEADZONE:    MnMsr_DeadZone();   break;
+1873   4              case MnMSR_L05_ECHO_AMP:    MnMsr_EchoAmp();    break;
+1874   4              case MnMSR_L06_FREQ:      MnMsr_Freq();     break;
+1875   4              case MnMSR_L07_TX_INTV:     MnMsr_Interval();   break;
+1876   4              // Page 2
+1877   4              case MnMSR_L08_OFFSET:      MnMsr_Offset();     break;
+1878   4              case MnMSR_L09_DAMPING:     MnMsr_Damping();    break;
+1879   4              case MnMSR_L10_THRESHOLD:   MnMsr_Threshold();    break;
+1880   4              case MnMSR_L11_ASF_BAND:    MnMsr_CfgAsf();     break;
+1881   4              case MnMSR_L12_TW_RST_TM:   MnMsr_TwDelay();    break;
+1882   4              case MnMSR_L13_TW_RANGE:    MnMsr_TwRange();    break;
+1883   4              case MnMSR_L14_PCD_INTV:    MnMsr_PcdIntv();    break;
+1884   4              // Page 3
+1885   4              case MnMSR_L15_PCD_TERM:    MnMsr_PcdTerm();    break;
+1886   4              case MnMSR_L16_RST_MSR:     MnMsr_RstMsr();     break;
+1887   4              case MnMSR_L17_RST_FTR:     MnMsr_RstFtr();     break;
+1888   4              case MnMSR_L18_TEST:      MnMsr_TestMode();   break;
+1889   4            }
+1890   3            fDp = TRUE;
+1891   3          }
+1892   2      
+1893   2          if(fDp)
+1894   2          {
+1895   3            MsrDp_ProcList(sel);
+1896   3            fDp = FALSE;
+1897   3          }
+1898   2        }
+1899   1        while(_SBIT_BTN_EXIT);
+1900   1      }
+1901          
+1902          
+1903          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1904          //  EOF
+1905          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1906          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =  13250    ----
+   CONSTANT SIZE    =   1222    ----
+   XDATA SIZE       =     29     256
+C51 COMPILER V9.55   MENU_MEASURE                                                          04/29/2026 17:23:27 PAGE 34  
+
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

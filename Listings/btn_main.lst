@@ -1,0 +1,207 @@
+C51 COMPILER V9.55   BTN_MAIN                                                              04/29/2026 17:22:40 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE BTN_MAIN
+OBJECT MODULE PLACED IN .\Objects\btn_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\bsp\btn_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_We
+                    -ss\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\List
+                    -ings\btn_main.lst) TABS(2) OBJECT(.\Objects\btn_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------
+   2          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use,
+   5          //  copying, transfer or disclosure of such information is prohibited except by express written
+   6          //  agreement with WESS-Global Co.,LTD
+   7          //
+   8          //  $Date: 2020-07-13 12:00:00 +0900 $
+   9          //  $Author: eddie $
+  10          //  $Rev: 1.0 $
+  11          //--------------------------------------------------------------------------------------------------
+  12          
+  13          
+  14          //--------------------------------------------------------------------------------------------------
+  15          //  Includes
+  16          //--------------------------------------------------------------------------------------------------
+  17          // chipset
+  18          #include "compiler_defs.h"
+  19          #include "C8051F120_defs.h"
+  20          // sys
+  21          #include "sys_def.h"
+  22          // self
+  23          #include "btn_main.h"
+  24          // lib
+  25          #include "dly_main.h"
+  26          // bsp
+  27          #include "bsp_main.h"
+  28          #include "flash_main.h"
+  29          #include "gpio_main.h"
+  30          #include "mem_main.h"
+  31          #include "lcd_main.h"
+  32          #include "lcd_data.h"
+  33          // app
+  34          #include "menu_main.h"
+  35          #include "menu_quick.h"
+  36          #include "disp_main.h"
+  37          #include "measure_analyze.h"
+  38          #include "app_main.h"
+  39          #include "data_main.h"
+  40          #include "measure_main.h"
+  41          // font
+  42          #include "font_def.h"
+  43          
+  44          
+  45          //--------------------------------------------------------------------------------------------------
+  46          //  Global variables
+  47          //--------------------------------------------------------------------------------------------------
+  48          
+  49          
+  50          //--------------------------------------------------------------------------------------------------
+  51          //  Local variables
+  52          //--------------------------------------------------------------------------------------------------
+  53          
+C51 COMPILER V9.55   BTN_MAIN                                                              04/29/2026 17:22:40 PAGE 2   
+
+  54          
+  55          //--------------------------------------------------------------------------------------------------
+  56          //  Local Funtions
+  57          //--------------------------------------------------------------------------------------------------
+  58          U08 BTN_GetIdx(void)
+  59          {
+  60   1        U08 rtn = BTN_IDX_MAX;
+  61   1        U08 save = SFRPAGE;
+  62   1      
+  63   1        SFRPAGE = CONFIG_PAGE;
+  64   1      
+  65   1        if     (_SBIT_BTN_PROG  == BTN_STT_PRESS) rtn = BTN_IDX_PROG;
+  66   1        else if(_SBIT_BTN_SET   == BTN_STT_PRESS) rtn = BTN_IDX_SET;
+  67   1        else if(_SBIT_BTN_EXIT  == BTN_STT_PRESS)   rtn = BTN_IDX_EXIT;
+  68   1        else if(_SBIT_BTN_UP    == BTN_STT_PRESS) rtn = BTN_IDX_UP;
+  69   1        else if(_SBIT_BTN_DOWN  == BTN_STT_PRESS)   rtn = BTN_IDX_DOWN;
+  70   1        else if(_SBIT_BTN_RIGHT == BTN_STT_PRESS) rtn = BTN_IDX_RIGHT;
+  71   1        else if(_SBIT_BTN_LEFT  == BTN_STT_PRESS) rtn = BTN_IDX_LEFT;
+  72   1      
+  73   1        SFRPAGE = save;
+  74   1      
+  75   1        return rtn;
+  76   1      }
+  77          
+  78          
+  79          //--------------------------------------------------------------------------------------------------
+  80          //  Global APIs
+  81          //--------------------------------------------------------------------------------------------------
+  82          void BTN_DelayMsec(U32 delay)
+  83          {
+  84   1          U32 cnt_press = 0;
+  85   1      
+  86   1          while(BTN_ChkPush() && cnt_press < delay)
+  87   1          {
+  88   2              cnt_press++;
+  89   2              DLY_RunMsec(1);
+  90   2          }
+  91   1      }
+  92          
+  93          U08 BTN_ChkLong(U08 idx, U32 delay)
+  94          {
+  95   1          U32 cnt_press = 0;          // OLD: U32 Cnt_Button_press_UL_L = 0;
+  96   1          U08 flg_delay = FALSE;      // OLD: U08 Flag_Delay_UC_L = 0;
+  97   1      
+  98   1          while(BTN_GetStatus(idx) && cnt_press < delay)
+  99   1          {
+ 100   2              cnt_press++;
+ 101   2              DLY_RunMsec(1);
+ 102   2          }
+ 103   1      
+ 104   1          if (cnt_press >= delay)
+ 105   1            flg_delay = TRUE;
+ 106   1      
+ 107   1          return flg_delay;
+ 108   1      }
+ 109          
+ 110          
+ 111          S32 BTN_GetValue_UpDn(S32 tmpr, S32 min, S32 max, U16 step, U08 cnt)
+ 112          {
+ 113   1          if (BTN_GetStatus(BTN_IDX_UP))
+ 114   1          {
+ 115   2              if     (cnt <= 10)      tmpr +=  step;
+C51 COMPILER V9.55   BTN_MAIN                                                              04/29/2026 17:22:40 PAGE 3   
+
+ 116   2              else if(cnt <  20)      tmpr += (step * 10);
+ 117   2              else if(cnt <  29)      tmpr += (step * 100);
+ 118   2              else          tmpr += (step * 1000);
+ 119   2          }
+ 120   1          else if (BTN_GetStatus(BTN_IDX_DOWN))
+ 121   1          {
+ 122   2          if     (cnt <= 10)      tmpr -=  step;
+ 123   2          else if(cnt <  20)      tmpr -= (step * 10);
+ 124   2          else if(cnt <  29)      tmpr -= (step * 100);
+ 125   2          else                    tmpr -= (step * 1000);
+ 126   2          }
+ 127   1      
+ 128   1        if(tmpr > max)       tmpr = max;
+ 129   1        if(tmpr < min)       tmpr = min;
+ 130   1      
+ 131   1        return tmpr;
+ 132   1      }
+ 133          
+ 134          U08 BTN_GetStatus(U08 idx)
+ 135          {
+ 136   1        U08 rtn = BTN_DET_IDLE;
+ 137   1        U08 old = SFRPAGE;
+ 138   1      
+ 139   1        SFRPAGE = CONFIG_PAGE;
+ 140   1      
+ 141   1        switch (idx)
+ 142   1        {
+ 143   2          case BTN_IDX_PROG:    if(!_SBIT_BTN_PROG)   rtn = BTN_DET_ACTV;   break;
+ 144   2          case BTN_IDX_SET:   if(!_SBIT_BTN_SET)    rtn = BTN_DET_ACTV;   break;
+ 145   2          case BTN_IDX_EXIT:    if(!_SBIT_BTN_EXIT)   rtn = BTN_DET_ACTV;   break;
+ 146   2          case BTN_IDX_UP:    if(!_SBIT_BTN_UP)   rtn = BTN_DET_ACTV;   break;
+ 147   2          case BTN_IDX_DOWN:    if(!_SBIT_BTN_DOWN)   rtn = BTN_DET_ACTV;   break;
+ 148   2          case BTN_IDX_RIGHT:   if(!_SBIT_BTN_RIGHT)  rtn = BTN_DET_ACTV;   break;
+ 149   2          case BTN_IDX_LEFT:    if(!_SBIT_BTN_LEFT)   rtn = BTN_DET_ACTV;   break;
+ 150   2        }
+ 151   1      
+ 152   1        SFRPAGE = old;
+ 153   1        return rtn;
+ 154   1      }
+ 155          
+ 156          U08 BTN_ChkPush(void)
+ 157          {
+ 158   1          U08 old = SFRPAGE;
+ 159   1          U08 key, rtn;
+ 160   1      
+ 161   1          SFRPAGE = CONFIG_PAGE;
+ 162   1      
+ 163   1          key = _SBIT_BTN_PROG & _SBIT_BTN_UP    & _SBIT_BTN_DOWN & _SBIT_BTN_SET &
+ 164   1            _SBIT_BTN_EXIT & _SBIT_BTN_RIGHT & _SBIT_BTN_LEFT;
+ 165   1      
+ 166   1          if(key == BTN_DET_ACTV)   rtn = BTN_STT_PRESS;
+ 167   1          else                        rtn = BTN_STT_RELEASE;
+ 168   1      
+ 169   1          SFRPAGE = old;
+ 170   1          return rtn;
+ 171   1      }
+ 172          
+ 173          
+ 174          
+ 175          // EOF
+ 176          
+
+C51 COMPILER V9.55   BTN_MAIN                                                              04/29/2026 17:22:40 PAGE 4   
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    972    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      33
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

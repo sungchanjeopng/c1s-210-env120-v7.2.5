@@ -1,0 +1,293 @@
+C51 COMPILER V9.55   MENU_TEST                                                             04/29/2026 17:23:17 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MENU_TEST
+OBJECT MODULE PLACED IN .\Objects\menu_test.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\menu\menu_test.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_
+                    -Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Li
+                    -stings\menu_test.lst) TABS(2) OBJECT(.\Objects\menu_test.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // std
+  15          #include <math.h>
+  16          #include <intrins.h>
+  17          #include <stdarg.h>
+  18          #include <string.h>
+  19          // chipset
+  20          #include "compiler_defs.h"
+  21          #include "C8051F120_defs.h"
+  22          // sys
+  23          #include "sys_def.h"
+  24          // self
+  25          #include "menu_test.h"
+  26          // bsp
+  27          #include "flash_main.h"
+  28          #include "gpio_main.h"
+  29          #include "tmr_main.h"
+  30          #include "dly_main.h"
+  31          #include "adc_main.h"
+  32          #include "btn_main.h"
+  33          #include "lcd_main.h"
+  34          #include "lcd_data.h"
+  35          // app
+  36          #include "isr_main.h"
+  37          #include "app_main.h"
+  38          #include "font_def.h"
+  39          #include "measure_main.h"
+  40          #include "measure_analyze.h"
+  41          // disp
+  42          #include "disp_main.h"
+  43          #include "disp_menu.h"
+  44          #include "disp_string.h"
+  45          // menu
+  46          #include "menu_box.h"
+  47          #include "menu_main.h"
+  48          #include "menu_system.h"
+C51 COMPILER V9.55   MENU_TEST                                                             04/29/2026 17:23:17 PAGE 2   
+
+  49          #include "menu_measure.h"
+  50          
+  51          
+  52          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  53          //  Global variables
+  54          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  55          
+  56          
+  57          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  58          //  Local variables
+  59          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  60          LS_MnTST lMnTst;
+  61          
+  62          
+  63          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  64          //  Local Funtions
+  65          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  66          void MnTst_Global_Cnt(void)
+  67          {
+  68   1        MnBOX_DispBox();
+  69   1        MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X08, MnBOX_Y01, F_F, "Enable");
+  70   1      
+  71   1        lMnTst.Gloval_fCnt = MnBOX_SelArg4(MnSYS_LANG_ENG, lMnTst.Gloval_fCnt, MnBOX_X11, "NO", MnBOX_X10, "YES",
+             - 0, "", 0, "", 2);
+  72   1        
+  73   1      }
+  74          
+  75          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  76          //  Local Funtions - Disp. List
+  77          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  78          void TstDp_ListP1(U08* pSel)
+  79          {
+  80   1        U08 *pStr = "   ";
+  81   1        U08 c  = MnTST_L00_IDLE + 1;
+  82   1        U08 ft = FT_EN_08x16;
+  83   1                                  //   0123456789abcdef0123456789abcde
+  84   1        MnLST_DispStr(ft, FALSE,   MnTST_L00_IDLE+1,      "           TEST                ");
+  85   1        MnLST_DispStr(ft, pSel[c++], MnTST_L01_GLOVAL_CNT+1,  "Global Counter                 ");
+  86   1      
+  87   1      
+  88   1        if  (lMnTst.Gloval_fCnt)  pStr = "ON";
+  89   1        else            pStr = "OFF";
+  90   1      
+  91   1        DpSTR_DrawLin(FT_EN_08x16, pSel[MnTST_L01_GLOVAL_CNT], 180, MnSTR_Y_HEIGHT*1,pStr); 
+  92   1      
+  93   1      
+  94   1      }
+  95          
+  96          
+  97          
+  98          void MnTstDp_List(U08 sel)
+  99          {
+ 100   1        U08 i;
+ 101   1        U08 page = MNU_PAGE_01;
+C51 COMPILER V9.55   MENU_TEST                                                             04/29/2026 17:23:17 PAGE 3   
+
+ 102   1        U08 font = FT_EN_08x16;
+ 103   1        U08 pSel[MnTST_LST_MAX] = {0, };
+ 104   1      
+ 105   1        pSel[sel] = TRUE;
+ 106   1      
+ 107   1        if    (sel > (MNU_LIST_NUM*2))    page = MNU_PAGE_03;
+ 108   1        else if (sel > (MNU_LIST_NUM*1))    page = MNU_PAGE_02;
+ 109   1        else                  page = MNU_PAGE_01;
+ 110   1      
+ 111   1        if    (sel > (MNU_LIST_NUM*2))    pSel[sel-(MNU_LIST_NUM*2)] = TRUE;
+ 112   1        else if (sel > (MNU_LIST_NUM*1))    pSel[sel-(MNU_LIST_NUM*1)] = TRUE;
+ 113   1        else                  pSel[sel-(MNU_LIST_NUM*0)] = TRUE;
+ 114   1      
+ 115   1        if(page > MNU_PAGE_01)
+ 116   1          return;
+ 117   1      
+ 118   1        TstDp_ListP1(pSel);
+ 119   1      
+ 120   1        for(i=(MnTST_LST_MAX+1); i<=(MNU_LIST_NUM+1); i++)
+ 121   1          MnLST_DispClr(i);
+ 122   1      
+ 123   1          LDT_UpdBuff(LCD_Y_START,LCD_Y_END);
+ 124   1        DLY_RunMsec(100);
+ 125   1      
+ 126   1      
+ 127   1      }
+ 128          
+ 129          
+ 130          
+ 131          
+ 132          void MnTSTCk_Vari(void)
+ 133          { 
+ 134   1        if(lMnTst.Gloval_fCnt > TRUE)           lMnTst.Gloval_fCnt = FALSE;
+ 135   1      
+ 136   1      }
+ 137          
+ 138          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 139          //  Global APIs - Access Local Variables
+ 140          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 141          // Get
+ 142          U08 MnTST_GetGloval_fCnt(void)  { return lMnTst.Gloval_fCnt;  }
+ 143          // Set
+ 144          
+ 145          
+ 146          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 147          //  Global APIs - Memory Access
+ 148          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 149          void MnTST_MemLoad(void)
+ 150          {
+ 151   1        U08 i=0;
+ 152   1      
+ 153   1        lMnTst.Gloval_fCnt = FLS_Rd1Byte(F102_GLOVAL_CNT);
+ 154   1        
+ 155   1      
+ 156   1      
+ 157   1      }
+ 158          
+ 159          void MnTST_MemSave(void)
+C51 COMPILER V9.55   MENU_TEST                                                             04/29/2026 17:23:17 PAGE 4   
+
+ 160          {
+ 161   1        U08 i = 0;
+ 162   1      
+ 163   1        FLS_Wr1Byte(F102_GLOVAL_CNT, lMnTst.Gloval_fCnt);
+ 164   1      
+ 165   1      }
+ 166          
+ 167          
+ 168          void MnTST_MemFtry(void)
+ 169          {
+ 170   1        U08 i=0;
+ 171   1      
+ 172   1        FLS_Wr1Byte(F102_GLOVAL_CNT,  FALSE);
+ 173   1      
+ 174   1      }
+ 175          
+ 176          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 177          //  Global APIs - Public
+ 178          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 179          void MnTST_InitVari(void)
+ 180          {
+ 181   1        MnTST_MemLoad();
+ 182   1        MnTSTCk_Vari();
+ 183   1      
+ 184   1      }
+ 185          
+ 186          
+ 187          
+ 188          void MnTST_ProcMain(void)
+ 189          {
+ 190   1        U32 cnt = 0;
+ 191   1        U08 fDp = FALSE;
+ 192   1        U08 sel = MnTST_L00_IDLE + 1;
+ 193   1      
+ 194   1        MnTstDp_List(sel);
+ 195   1      
+ 196   1        do
+ 197   1        {
+ 198   2              if(!_SBIT_BTN_DOWN)
+ 199   2              {
+ 200   3                if(sel < MnTST_LST_MAX-1)   sel++;
+ 201   3                else                            sel = MnTST_L00_IDLE+1;
+ 202   3            fDp = TRUE;
+ 203   3              }
+ 204   2      
+ 205   2              if(!_SBIT_BTN_UP)
+ 206   2              {
+ 207   3                if(sel > MnTST_L00_IDLE+1)    sel--;
+ 208   3                else                            sel = MnTST_LST_MAX-1;
+ 209   3            fDp = TRUE;
+ 210   3              }
+ 211   2          
+ 212   2      
+ 213   2      
+ 214   2            if(!_SBIT_BTN_SET)
+ 215   2            {
+ 216   3            switch(sel) 
+ 217   3            { // Page 1
+ 218   4              case MnTST_L01_GLOVAL_CNT:    MnTst_Global_Cnt();         break;
+ 219   4              // Page 2
+C51 COMPILER V9.55   MENU_TEST                                                             04/29/2026 17:23:17 PAGE 5   
+
+ 220   4            }
+ 221   3            fDp = TRUE;
+ 222   3            }
+ 223   2      
+ 224   2          if(fDp)
+ 225   2          {
+ 226   3            MnTstDp_List(sel);
+ 227   3            BTN_DelayMsec(BTN_WAIT_SET);
+ 228   3            fDp = FALSE;      
+ 229   3          }
+ 230   2        }
+ 231   1        while(_SBIT_BTN_EXIT);
+ 232   1      }
+ 233          
+ 234          
+ 235          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 236          //  EOF
+ 237          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 238          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    693    ----
+   CONSTANT SIZE    =     92    ----
+   XDATA SIZE       =      3      23
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

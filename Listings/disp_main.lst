@@ -1,0 +1,1402 @@
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE DISP_MAIN
+OBJECT MODULE PLACED IN .\Objects\disp_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\disp\disp_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_
+                    -Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Li
+                    -stings\disp_main.lst) TABS(2) OBJECT(.\Objects\disp_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // chipset
+  15          #include "compiler_defs.h"
+  16          #include "C8051F120_defs.h"
+  17          // sys
+  18          #include "sys_def.h"
+  19          // self
+  20          #include "disp_main.h"
+  21          // bsp
+  22          #include "flash_main.h"
+  23          #include "mem_main.h"
+  24          #include "rtc_ds1302.h"
+  25          #include "lcd_main.h"
+  26          #include "lcd_data.h"
+  27          #include "adc_main.h"
+  28          // app
+  29          #include "font_def.h"
+  30          #include "app_main.h"
+  31          #include "rly_main.h"
+  32          #include "prtc_main.h"
+  33          // measure
+  34          #include "measure_main.h"
+  35          #include "measure_analyze.h"
+  36          #include "measure_temperature.h"
+  37          // menu
+  38          #include "menu_box.h"
+  39          #include "menu_system.h"
+  40          #include "menu_measure.h"
+  41          #include "menu_output.h"
+  42          #include "menu_quick.h"
+  43          #include "menu_test.h"
+  44          // disp
+  45          #include "disp_menu.h"
+  46          #include "disp_string.h"
+  47          // screen
+  48          #include "screen_main.h"
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 2   
+
+  49          // font
+  50          #include "font_idx_kor.h"
+  51          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  52          //  Global variables
+  53          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  54          GV_DP gDp;
+  55          
+  56          U08 gDp_buff_grp[220];      // OLD: unsigned char Buffer_Graph_UC_G[220];
+  57          U08 gDp_buff_str[16];       // OLD: unsigned char Array_0_UC_G[16];
+  58          U08 gDp_flg_log;            // OLD: unsigned char Log_Flag_disp_UC_G;
+  59          U08 gDp_cursor_vert;        // OLD: unsigned char Position_Vert_cursor_UC_G;
+  60          S16 gDp_cursor_dist;
+  61          U08 gDp_flg_cs_vert;        // OLD: unsigned char Flag_Vert_cursor_UC_G;
+  62          
+  63          
+  64          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  65          //  Local variables
+  66          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  67          
+  68          
+  69          
+  70          //--------------------------------------------------------------------------------------------------
+  71          //  Global APIs - with Local
+  72          //--------------------------------------------------------------------------------------------------
+  73          
+  74          
+  75          //--------------------------------------------------------------------------------------------------
+  76          //  Local Funtions
+  77          //--------------------------------------------------------------------------------------------------
+  78          void DspArg_Time(void)
+  79          {
+  80   1          U08 *p_mm;
+  81   1        U08 p_date[APP_STR_LENGTH];
+  82   1        U08 p_year[APP_STR_LENGTH];
+  83   1        U08 p_hour[APP_STR_LENGTH];
+  84   1        U08 p_min [APP_STR_LENGTH];
+  85   1      
+  86   1          switch (gRt.mm)
+  87   1          {
+  88   2              case 1:     p_mm = "JAN";       break;
+  89   2              case 2:     p_mm = "FEB";       break;
+  90   2              case 3:     p_mm = "MAR";       break;
+  91   2              case 4:     p_mm = "APR";       break;
+  92   2              case 5:     p_mm = "MAY";       break;
+  93   2              case 6:     p_mm = "JUN";       break;
+  94   2              case 7:     p_mm = "JUL";       break;
+  95   2              case 8:     p_mm = "AUG";       break;
+  96   2              case 9:     p_mm = "SEP";       break;
+  97   2              case 10:    p_mm = "OCT";       break;
+  98   2              case 11:    p_mm = "NOV";       break;
+  99   2              case 12:    p_mm = "DEC";       break;
+ 100   2          }
+ 101   1      
+ 102   1        APP_Num2Str(gRt.date, p_date, 2, 0, FALSE);
+ 103   1        APP_Num2Str(gRt.yy,   p_year, 2, 0, TRUE);
+ 104   1        APP_Num2Str(gRt.hour, p_hour, 2, 0, TRUE);
+ 105   1        APP_Num2Str(gRt.min,  p_min,  2, 0, TRUE);
+ 106   1      
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 3   
+
+ 107   1          DpSTR_DrawLin(FT_EN_08x16, 0,  43, 0, p_mm);
+ 108   1          DpSTR_DrawLin(FT_EN_08x16, 0,  79, 0, p_date);
+ 109   1      
+ 110   1          DpSTR_DrawLin(FT_EN_08x16, 0, 106, 0, "20");
+ 111   1          DpSTR_DrawLin(FT_EN_08x16, 0, 124, 0, p_year);
+ 112   1      
+ 113   1          DpSTR_DrawLin(FT_EN_08x16, 0, 151, 0, p_hour);
+ 114   1          DpSTR_DrawLin(FT_EN_08x16, 0, 169, 0, ":");
+ 115   1          DpSTR_DrawLin(FT_EN_08x16, 0, 178, 0, p_min);
+ 116   1      }
+ 117          
+ 118          void DpFRT_ProcMain(void)
+ 119          {
+ 120   1        int i;
+ 121   1        S16 tprt;
+ 122   1        U08 p_str0[APP_STR_LENGTH];
+ 123   1        U08 p_str1[APP_STR_LENGTH];
+ 124   1        U08 unit = MnMSR_GetUnit();
+ 125   1        U08 oper = MnMSR_GetOper();
+ 126   1        U08 prtc = MnOUT_GetProtocol();
+ 127   1        U08 mdb_addr = MnOUT_GetMdbAddr();
+ 128   1        S16 level_mt = MsANL_GetLevelMt();
+ 129   1        S16 level_ft = MsANL_GetLevelFt();
+ 130   1        S16 dista_mt = MsANL_GetDistaMt();
+ 131   1        S16 dista_ft = MsANL_GetDistaFt();
+ 132   1        U08 fEco_dtt = MsANL_GetFgEcoDtt();
+ 133   1        U08 fEco_trk = MsANL_GetFgEcoTrk();
+ 134   1      
+ 135   1        DspArg_Time();
+ 136   1      
+ 137   1        // Protocol
+ 138   1        switch(prtc)
+ 139   1        {
+ 140   2          case MnOUT_PROT_RF:
+ 141   2            APP_Num2Str(MnOUT_GetRfCh(), p_str0, 2, 0, FALSE);
+ 142   2      
+ 143   2            DpSTR_DrawLin(FT_EN_08x16, 0, 10, 68, "RF");
+ 144   2            DpSTR_DrawLin(FT_EN_08x16, 0, 35, 68, p_str0);
+ 145   2            break;
+ 146   2      
+ 147   2          case MnOUT_PROT_MDBS:
+ 148   2            APP_Num2Str(mdb_addr, p_str0, 3, 0, FALSE);
+ 149   2      
+ 150   2            DpSTR_DrawLin(FT_EN_08x16, 0, 10, 68, "MBUS");
+ 151   2            DpSTR_DrawLin(FT_EN_08x16, 0, 50, 68, p_str0);
+ 152   2            break;
+ 153   2      
+ 154   2          case MnOUT_PROT_STD:
+ 155   2          default:
+ 156   2            DpSTR_DrawLin(FT_EN_08x16, 0, 10, 68, "");
+ 157   2            break;
+ 158   2        }
+ 159   1      
+ 160   1        // Operation
+ 161   1        switch(oper)
+ 162   1        {
+ 163   2          case MnMSR_OPER_LEVEL:
+ 164   2            DpSTR_DrawLin(FT_EN_08x16, 0, 10, 86, "D:");    // Distance
+ 165   2            
+ 166   2            switch(unit)
+ 167   2            {
+ 168   3              case MnMSR_UNIT_FEET: APP_Num2Str(level_ft, p_str0, 3, 1, 0);
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 4   
+
+ 169   3                          APP_Num2Str(dista_ft, p_str1, 3, 1, 0);   break;
+ 170   3              case MnMSR_UNIT_METER:
+ 171   3              default:        APP_Num2Str(level_mt, p_str0, 4, 2, 0);
+ 172   3                          APP_Num2Str(dista_mt, p_str1, 4, 2, 0);   break;
+ 173   3            }
+ 174   2      
+ 175   2            DpSTR_DrawLin(FT_EN_26x47, 0, 30, 20, p_str0);
+ 176   2            DpSTR_DrawLin(FT_EN_08x16, 0, 23, 86, p_str1);
+ 177   2            break;
+ 178   2      
+ 179   2          case MnMSR_OPER_DISTA:
+ 180   2          default:
+ 181   2            DpSTR_DrawLin(FT_EN_08x16, 0, 10, 86, "S:");    // Sludge
+ 182   2      
+ 183   2            switch(unit)
+ 184   2            {
+ 185   3              case MnMSR_UNIT_FEET: APP_Num2Str(dista_ft, p_str0, 3, 1, 0);
+ 186   3                          APP_Num2Str(level_ft, p_str1, 3, 1, 0);   break;
+ 187   3              case MnMSR_UNIT_METER:
+ 188   3              default:        APP_Num2Str(dista_mt, p_str0, 4, 2, 0);
+ 189   3                          APP_Num2Str(level_mt, p_str1, 4, 2, 0);   break;
+ 190   3            }
+ 191   2      
+ 192   2            DpSTR_DrawLin(FT_EN_26x47, 0, 30, 20, p_str0);
+ 193   2            DpSTR_DrawLin(FT_EN_08x16, 0, 23, 86, p_str1);
+ 194   2            break;
+ 195   2        }
+ 196   1      
+ 197   1        switch(unit)
+ 198   1        {
+ 199   2          case MnMSR_UNIT_FEET:   DpSTR_DrawLin(FT_EN_26x47, 0, 180, 20, ":<");   // "ft"
+ 200   2                      DpSTR_DrawLin(FT_EN_08x16, 0,  60, 86, "ft");   break;
+ 201   2          case MnMSR_UNIT_METER:
+ 202   2          default:        DpSTR_DrawLin(FT_EN_26x47, 0, 180, 20, ";" );   // "m"
+ 203   2                      DpSTR_DrawLin(FT_EN_08x16, 0,  67, 86, "m ");   break;
+ 204   2        }
+ 205   1      
+ 206   1        // Temprature
+ 207   1        tprt = gTp_now;
+ 208   1          
+ 209   1        if((tprt > -250) && (tprt < 1000))
+ 210   1          {
+ 211   2          gDp.f_err_tprt = FALSE;
+ 212   2      
+ 213   2          if (tprt < 0)
+ 214   2              {
+ 215   3            tprt = -tprt;
+ 216   3            DpSTR_DrawLin(FT_EN_08x16, 0, 149, 68, "-");
+ 217   3          }
+ 218   2              else
+ 219   2            DpSTR_DrawLin(FT_EN_08x16, 0, 149, 68, "+");
+ 220   2      
+ 221   2          APP_Num2Str(tprt, p_str0, 4, 1, 0);
+ 222   2          DpSTR_DrawLin(FT_EN_08x16, 0, 158, 68, p_str0);
+ 223   2        }
+ 224   1          else
+ 225   1          {
+ 226   2          gDp.f_err_tprt = TRUE;
+ 227   2          DpSTR_DrawLin(FT_EN_08x16, 0, 158, 68, "  X.X");
+ 228   2        }
+ 229   1      
+ 230   1        
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 5   
+
+ 231   1        if(unit == MnMSR_UNIT_FEET)   DpSTR_DrawLin(FT_EN_08x16, 0, 212, 68, "'F");
+ 232   1        else              DpSTR_DrawLin(FT_EN_08x16, 0, 212, 68, "'C");
+ 233   1      
+ 234   1        if(MnTST_GetGloval_fCnt())
+ 235   1        {
+ 236   2          APP_NumTest2Str(test_global_cnt, p_str0, 10, 0, FALSE);
+ 237   2          DpSTR_DrawLin(FT_EN_08x16, 0, 80, 86,p_str0);
+ 238   2        }
+ 239   1        
+ 240   1        // Current
+ 241   1        for(i=0; i<APP_STR_LENGTH; i++)   p_str0[i] = 0;
+ 242   1        APP_Num2Str(DSP_GetCurrent(), p_str0, 4, 2, FALSE);
+ 243   1      
+ 244   1        DpSTR_DrawLin(FT_EN_08x16, 0, 167, 86, p_str0);
+ 245   1        DpSTR_DrawLin(FT_EN_08x16, 0, 212, 86, "mA");
+ 246   1      
+ 247   1        LCD_DataLine_Horz(104, 0, 239);
+ 248   1      
+ 249   1        switch(MsANL_GetErrStat())
+ 250   1        {
+ 251   2          case MsANL_ERR_ECHO:
+ 252   2            DpSTR_DrawLin(FT_EN_08x16, 0, 20, 110, "ER01 : Loss of Echo");
+ 253   2            break;
+ 254   2          case MsANL_ERR_TPRT:
+ 255   2            DpSTR_DrawLin(FT_EN_08x16, 0, 20, 110, "ER02 : Temp. Error");
+ 256   2            break;
+ 257   2      
+ 258   2          case MsANL_ERR_NONE:
+ 259   2          default:
+ 260   2            DpSTR_DrawLin(FT_EN_08x16, 0, 21, 110, "R1:");
+ 261   2            if(gRly_state_01)   DpSTR_DrawLin(FT_EN_08x16, 0, 48, 110, " ON");
+ 262   2            else          DpSTR_DrawLin(FT_EN_08x16, 0, 48, 110, "OFF");
+ 263   2            
+ 264   2            DpSTR_DrawLin(FT_EN_08x16, 0, 102, 110, "R2:");
+ 265   2            if(gRly_state_02)   DpSTR_DrawLin(FT_EN_08x16, 0, 129, 110, " ON");
+ 266   2            else          DpSTR_DrawLin(FT_EN_08x16, 0, 129, 110, "OFF");
+ 267   2            
+ 268   2            DpSTR_DrawLin(FT_EN_08x16, 0, 183, 110, "ST");
+ 269   2            if     (!fEco_dtt && !fEco_trk)   DpSTR_DrawLin(FT_EN_08x16, 0, 201, 110, "00");
+ 270   2            else if( fEco_dtt && !fEco_trk)   DpSTR_DrawLin(FT_EN_08x16, 0, 201, 110, "01");
+ 271   2            else if( fEco_dtt &&  fEco_trk)   DpSTR_DrawLin(FT_EN_08x16, 0, 201, 110, "02");
+ 272   2            break;
+ 273   2        }
+ 274   1      }
+ 275          
+ 276          void DspDrw_AxisY(U16 x_start, U16 y_start, U16 x_width, U16 y_height, U08 grp_type)
+ 277          {
+ 278   1          U08 i;
+ 279   1          U16 x_wdt, y_hei;       // width, height
+ 280   1          U16 marker;             // OLD: U16 marking_position_UI_L;
+ 281   1          F32 y_ratio, interval, idx_aux;
+ 282   1          U16 Y_dot1_UI_L, Y_dot2_UI_L;
+ 283   1      
+ 284   1          x_wdt = x_start + x_width;
+ 285   1          y_hei = y_start + y_height;
+ 286   1      
+ 287   1          marker = x_start;
+ 288   1          idx_aux = marker;
+ 289   1          interval = x_width / 11.0;
+ 290   1      
+ 291   1          LCD_DataLine_Horz(y_hei, x_start, x_wdt);
+ 292   1          LDT_LineVert(x_wdt, y_start, y_hei, LDT_LINE_DATA);
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 6   
+
+ 293   1      
+ 294   1      #if 1
+ 295   1        switch(grp_type)
+ 296   1        {
+ 297   2          case DP_IDX_GRAPH_1:
+ 298   2          case DP_IDX_GRAPH_2:
+ 299   2          case DP_IDX_GRAPH_4:
+ 300   2            LCD_DataDot_LineVert(x_wdt - interval, y_start, y_hei - 1);
+ 301   2            LCD_DataDot_LineVert(x_wdt - interval + 1, y_start, y_hei - 1);
+ 302   2            
+ 303   2            for(i = 0; i < 11; i++)
+ 304   2            {
+ 305   3              LDT_ClearDot(marker, y_hei);
+ 306   3              LCD_DataDot_Buff(marker, y_hei + 1);
+ 307   3            
+ 308   3              idx_aux += interval;
+ 309   3              marker = idx_aux;
+ 310   3            }
+ 311   2            
+ 312   2            y_ratio = y_height / 240.0;
+ 313   2            Y_dot1_UI_L = y_hei - (200.0 * y_ratio);
+ 314   2            Y_dot2_UI_L = y_hei - (100.0 * y_ratio);
+ 315   2            
+ 316   2            LCD_DataDot_Buff(x_wdt + 1, Y_dot1_UI_L);
+ 317   2            LCD_DataDot_Buff(x_wdt + 1, Y_dot2_UI_L);
+ 318   2            
+ 319   2            if(gDp_flg_cs_vert == TRUE)                                                                            
+             -                                                                              
+ 320   2            {
+ 321   3              LCD_DataDot_LineVert(x_start + gDp_cursor_vert, y_start, y_hei);
+ 322   3      
+ 323   3              if(x_start + gDp_cursor_vert > 2) LCD_DataDot_Buff(x_start + gDp_cursor_vert - 2, y_start - 2);
+ 324   3              if(x_start + gDp_cursor_vert > 1) LCD_DataDot_Buff(x_start + gDp_cursor_vert - 1, y_start - 1);
+ 325   3              LCD_DataDot_Buff(x_start + gDp_cursor_vert + 1, y_start - 1);
+ 326   3              LCD_DataDot_Buff(x_start + gDp_cursor_vert + 2, y_start - 2);
+ 327   3            }
+ 328   2            break;
+ 329   2          case DP_IDX_GRAPH_0:
+ 330   2          case DP_IDX_GRAPH_3:
+ 331   2          default:
+ 332   2            break;
+ 333   2        }
+ 334   1      #else
+                  if(grp_type == 1 || grp_type == 2)
+                  {
+                      LCD_DataDot_LineVert(x_wdt - interval, y_start, y_hei - 1);
+                      LCD_DataDot_LineVert(x_wdt - interval + 1, y_start, y_hei - 1);
+              
+                      for(i = 0; i < 11; i++)
+                      {
+                          LDT_ClearDot(marker, y_hei);
+                          LCD_DataDot_Buff(marker, y_hei + 1);
+              
+                          idx_aux += interval;
+                          marker = idx_aux;
+                      }
+              
+                      y_ratio = y_height / 240.0;
+                      Y_dot1_UI_L = y_hei - (200.0 * y_ratio);
+                      Y_dot2_UI_L = y_hei - (100.0 * y_ratio);
+              
+                      LCD_DataDot_Buff(x_wdt + 1, Y_dot1_UI_L);
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 7   
+
+                      LCD_DataDot_Buff(x_wdt + 1, Y_dot2_UI_L);
+              
+                      if(gDp_flg_cs_vert == TRUE)
+                      {
+                          LCD_DataDot_LineVert(x_start + gDp_cursor_vert, y_start, y_hei);
+                          LCD_DataDot_Buff(x_start + gDp_cursor_vert - 2, y_start - 2);
+                          LCD_DataDot_Buff(x_start + gDp_cursor_vert - 1, y_start - 1);
+                          LCD_DataDot_Buff(x_start + gDp_cursor_vert + 1, y_start - 1);
+                          LCD_DataDot_Buff(x_start + gDp_cursor_vert + 2, y_start - 2);
+                      }
+                  }
+              #endif
+ 366   1      }
+ 367          
+ 368          // OLD: void Disp_Echo_graph(unsigned char *ptr_array_UC_L)
+ 369          void DspDrw_Echo(U08 *p_array)
+ 370          {
+ 371   1          U16 aux0, dist_0, dist_1;
+ 372   1        U16 empty = MnMSR_GetEmpty();
+ 373   1        U16 dead  = MnMSR_GetDead();
+ 374   1        U08 fTest = MnMSR_GetFgTest();
+ 375   1        U16 ms_empty = MsANL_GetEmpty();
+ 376   1        S16 dist_1st = MsANL_GetDist1st();
+ 377   1        S16 dist_mod = MsANL_GetDistMod();
+ 378   1      
+ 379   1          if(!MEAS_GetFgAdc())    dist_0 = dist_1st;
+ 380   1          else            dist_0 = dist_mod;
+ 381   1      
+ 382   1          if(fTest)     dist_1 = dist_1st;
+ 383   1          else      dist_1 = dist_0;
+ 384   1      
+ 385   1          if(dist_1 < dead)     dist_1 = dead;
+ 386   1          if(dist_1 > empty)      dist_1 = empty;
+ 387   1      
+ 388   1          aux0 = (220 * (U32)dist_1) / (U32)ms_empty;
+ 389   1          gDp_cursor_vert = aux0;
+ 390   1      
+ 391   1          gDp_flg_cs_vert = 1;
+ 392   1      
+ 393   1        switch(SCRN_GetScrnIdx())
+ 394   1        {
+ 395   2          case SCR_I02_GRP_LIVE:    aux0 = 220;       break;
+ 396   2          case SCR_I03_GRP_AVRG:    aux0 = ms_empty;    break;
+ 397   2        }
+ 398   1      
+ 399   1          DSP_DrawGraph(0, 16 + 2, 220, 85, p_array, 0, aux0, 256, DP_IDX_GRAPH_2);
+ 400   1          gDp_flg_cs_vert = 0;
+ 401   1      
+ 402   1          DpSTR_DrawLin(FT_EN_06x07, 0, 195, 16 + 2 + 85 + 2, "Empty");
+ 403   1      }
+ 404          
+ 405          // OLD: void Disp_Echo_Common(void)
+ 406          void DspScr_EchoComm(void)
+ 407          {
+ 408   1        int i;
+ 409   1        U08 pos_x1, pos_x2;
+ 410   1        U08 p_str[APP_STR_LENGTH] = {0,};
+ 411   1        U08 p_st2[APP_STR_LENGTH] = {0,};
+ 412   1        U08 lang = MnSYS_GetLang();
+ 413   1        U08 loca = MnSYS_GetLocFt();
+ 414   1        U08 unit = MnMSR_GetUnit();
+ 415   1        F32 calc = (MnMSR_GetEmpty() * MSR_CALC_M2F_CONST) + 0.5;
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 8   
+
+ 416   1        S16 feet = calc;
+ 417   1      
+ 418   1        switch(lang)
+ 419   1        {
+ 420   2      #if 1
+ 421   2          case MnSYS_LANG_LOC:
+ 422   2            switch(loca)
+ 423   2            {
+ 424   3              case MnSYS_LOC_CHN:
+ 425   3                FNT_SetStr(76, 117, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+ 426   3                DpSTR_DrawLin(FT_EN_08x16, FALSE, 40, 0, ":");
+ 427   3                break;
+ 428   3      
+ 429   3              case MnSYS_LOC_JPN:
+ 430   3                FNT_SetStr(77, 84, 89, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+ 431   3                DpSTR_DrawLin(FT_EN_08x16, FALSE, 60, 0, ":");
+ 432   3                break;
+ 433   3      
+ 434   3              case MnSYS_LOC_KOR:
+ 435   3              default:
+ 436   3                FNT_SetStr(94, 85, 1, 39, 72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+ 437   3                break;
+ 438   3            }
+ 439   2            LCD_WrStrBuff(5, 0, FT_LC_16x16, gFt_str, 0, 0);
+ 440   2      
+ 441   2            break;
+ 442   2      
+ 443   2      #else
+                  case MnSYS_LANG_KOR:
+                    FNT_SetStr(94, 85, 1, 39, 72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    LCD_WrStrBuff(5, 0, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              
+                  case MnSYS_LANG_CHN:
+                    FNT_SetStr(76, 117, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    LCD_WrStrBuff(5, 0, FT_LC_16x16, gFt_str, 0, 0);
+                    DpSTR_DrawLin(FT_EN_08x16, FALSE, 40, 0, ":");
+                    break;
+              
+                  case MnSYS_LANG_JPN:
+                    FNT_SetStr(94, 156, 96, 154, 157, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    LCD_WrStrBuff(5, 0, FT_LC_16x16, gFt_str, 0, 0);
+                    DpSTR_DrawLin(FT_EN_08x16, FALSE, 69, 0, ":");
+                    break;
+              
+              #endif
+ 462   2          case MnSYS_LANG_ENG:
+ 463   2          default:
+ 464   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 5, 0, "Empty:");
+ 465   2            break;
+ 466   2        }
+ 467   1      
+ 468   1        switch(unit)
+ 469   1        {
+ 470   2          case MnMSR_UNIT_FEET:
+ 471   2            APP_Num2Str(feet, p_str, 3, 1, FALSE);
+ 472   2      
+ 473   2            switch(lang)
+ 474   2            {
+ 475   3      #if 1
+ 476   3              case MnSYS_LANG_LOC:
+ 477   3                switch(loca)
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 9   
+
+ 478   3                {
+ 479   4                  case MnSYS_LOC_JPN:   pos_x1 = 78;  pos_x2 = 110;   break;
+ 480   4                  case MnSYS_LOC_CHN:
+ 481   4                  case MnSYS_LOC_KOR:
+ 482   4                  default:        pos_x1 = 80;  pos_x2 = 119;   break;
+ 483   4                }
+ 484   3                break;
+ 485   3      
+ 486   3      #else
+                      case MnSYS_LANG_KOR:  pos_x1 = 80;  pos_x2 = 119; break;
+                      case MnSYS_LANG_JPN:  pos_x1 = 78;  pos_x2 = 110; break;
+              
+              #endif
+ 491   3              case MnSYS_LANG_ENG:
+ 492   3              default:
+ 493   3                pos_x1 = 59;  pos_x2 = 95;
+ 494   3                break;
+ 495   3            }
+ 496   2      
+ 497   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, pos_x1, 0, p_str);
+ 498   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, pos_x2, 0, "ft");
+ 499   2            break;
+ 500   2      
+ 501   2          case MnMSR_UNIT_METER:
+ 502   2          default:
+ 503   2            APP_Num2Str(MnMSR_GetEmpty(), p_str, 4, 2, FALSE);
+ 504   2      
+ 505   2            switch(lang)
+ 506   2            {
+ 507   3      #if 1
+ 508   3              case MnSYS_LANG_LOC:
+ 509   3                switch(loca)
+ 510   3                {
+ 511   4                  case MnSYS_LOC_JPN:   pos_x1 = 78;  pos_x2 = 120;   break;
+ 512   4                  case MnSYS_LOC_CHN:
+ 513   4                  case MnSYS_LOC_KOR:
+ 514   4                  default:        pos_x1 = 80;  pos_x2 = 127;   break;
+ 515   4                }
+ 516   3                break;
+ 517   3      
+ 518   3      #else
+                      case MnSYS_LANG_KOR:  pos_x1 = 80;  pos_x2 = 127; break;
+                      case MnSYS_LANG_JPN:  pos_x1 = 78;  pos_x2 = 120; break;
+              #endif
+ 522   3              case MnSYS_LANG_ENG:
+ 523   3              default:        pos_x1 = 59;  pos_x2 = 104; break;
+ 524   3            }
+ 525   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, pos_x1, 0, p_str);
+ 526   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, pos_x2, 0, "m");
+ 527   2            break;
+ 528   2        }
+ 529   1      
+ 530   1        for(i=0; i<APP_STR_LENGTH; i++)
+ 531   1          p_str[i] = 0;
+ 532   1      
+ 533   1        if(MnMSR_GetTrhdMod() == MnMSR_TRHD_MOD_AUTO)
+ 534   1        {
+ 535   2          APP_Num2Str(MnMSR_GetTrhdPer(), p_str, 2, 0, FALSE);
+ 536   2      
+ 537   2          pos_x1 = 171;
+ 538   2          pos_x2 = 207;
+ 539   2      
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 10  
+
+ 540   2          DpSTR_DrawLin(FT_EN_08x16, FALSE, pos_x1, 0, "Thr.");
+ 541   2          DpSTR_DrawLin(FT_EN_08x16, FALSE, pos_x2, 0, p_str);
+ 542   2          DpSTR_DrawLin(FT_EN_08x16, FALSE, 225, 0, "%");
+ 543   2        }
+ 544   1        else
+ 545   1        {
+ 546   2          APP_Num2Str(MnMSR_GetTrhdFix(), p_str, 4, 2, FALSE);
+ 547   2      
+ 548   2          pos_x1 = 162;
+ 549   2          pos_x2 = 190;
+ 550   2      
+ 551   2          DpSTR_DrawLin(FT_EN_08x16, FALSE, pos_x1, 0, "Thr.");
+ 552   2          DpSTR_DrawLin(FT_EN_08x16, FALSE, pos_x2, 0, p_str);
+ 553   2        }
+ 554   1      
+ 555   1        for(i=0; i<APP_STR_LENGTH; i++)
+ 556   1        {
+ 557   2          p_str[i] = 0;
+ 558   2          p_st2[i] = 0;
+ 559   2        }
+ 560   1      
+ 561   1        DpSTR_DrawLin(FT_EN_08x16, FALSE, 5, 112, "D");
+ 562   1      
+ 563   1        switch(unit)
+ 564   1        {
+ 565   2          case MnMSR_UNIT_FEET:
+ 566   2            APP_Num2Str(MsANL_GetDistaFt(), p_str, 3, 1, FALSE);
+ 567   2            APP_Num2Str(MsANL_GetLevelFt(), p_st2, 3, 1, FALSE);
+ 568   2      
+ 569   2            DpSTR_DrawLin(FT_EN_08x16, FALSE,  16, 112, p_str);
+ 570   2            DpSTR_DrawLin(FT_EN_08x16, FALSE,  54, 112, "ft");
+ 571   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 163, 112, "S");
+ 572   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 174, 112, p_st2);
+ 573   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 212, 112, "ft");
+ 574   2            break;
+ 575   2      
+ 576   2          case MnMSR_UNIT_METER:
+ 577   2          default:
+ 578   2            APP_Num2Str(MsANL_GetDistaMt(), p_str, 4, 2, FALSE);
+ 579   2            APP_Num2Str(MsANL_GetLevelMt(), p_st2, 4, 2, FALSE);
+ 580   2      
+ 581   2            DpSTR_DrawLin(FT_EN_08x16, FALSE,  16, 112, p_str);
+ 582   2            DpSTR_DrawLin(FT_EN_08x16, FALSE,  62, 112, "m");
+ 583   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 163, 112, "S");
+ 584   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 174, 112, p_st2);
+ 585   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 220, 112, "m");
+ 586   2            break;
+ 587   2        }
+ 588   1      }
+ 589          
+ 590          void DpGRP_ProcMain(U08 idx)
+ 591          {
+ 592   1        U08 lang = MnSYS_GetLang();
+ 593   1        U08 loca = MnSYS_GetLocFt();
+ 594   1      
+ 595   1        switch(idx)
+ 596   1        {
+ 597   2          case SCR_I02_GRP_LIVE:
+ 598   2      #if 1
+ 599   2            switch(lang)
+ 600   2            {
+ 601   3              case MnSYS_LANG_LOC:
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 11  
+
+ 602   3                #if defined (_FT_LANG_KR)
+                        FNT_SetStr(114, 57, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        LCD_WrStrBuff(95, 111, FT_LC_16x16, gFt_str, 0, 0);
+                        break;
+                        #elif defined (_FT_LANG_CN)
+                        FNT_SetStr(132, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        LCD_WrStrBuff(104, 111, FT_LC_16x16, gFt_str, 0, 0);
+                        break;
+                        #elif defined (_FT_LANG_JP)
+ 611   3                #if 0
+                        FNT_SetStr(36, 3, 37, 17, 92, 31, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+                        LCD_WrStrBuff(60, 111, FT_LC_16x16, gFt_str, 0, 0); 
+                        #endif
+ 615   3                DpSTR_DrawLin(FT_EN_08x16, 0, 102, 112, "Real");
+ 616   3                break;
+ 617   3                #endif
+ 618   3              case MnSYS_LANG_ENG:
+ 619   3              default:
+ 620   3                DpSTR_DrawLin(FT_EN_08x16, 0, 102, 112, "Real");
+ 621   3                break;
+ 622   3            }
+ 623   2      #else
+                    if(lang == MnSYS_LANG_CHN)
+                    {
+                      FNT_SetStr(132, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                      LCD_WrStrBuff(104, 111, FT_LC_16x16, gFt_str, 0, 0);
+                    }
+                    else
+                      DpSTR_DrawLin(FT_EN_08x16, 0, 102, 112, "Real");
+              #endif
+ 632   2            DspDrw_Echo(gDp_buff_grp);
+ 633   2            break;
+ 634   2      
+ 635   2          case SCR_I03_GRP_AVRG:
+ 636   2      #if 1
+ 637   2            switch(lang)
+ 638   2            {
+ 639   3              case MnSYS_LANG_LOC:
+ 640   3                #if defined (_FT_LANG_KR)
+                        FNT_SetStr(117, 110, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        LCD_WrStrBuff(102, 111, FT_LC_16x16, gFt_str, 0, 0);
+                        break;
+                        #elif defined (_FT_LANG_CN)
+                        FNT_SetStr(163, 164, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        LCD_WrStrBuff(104, 111, FT_LC_16x16, gFt_str, 0, 0);
+                        break;
+                        #elif defined (_FT_LANG_JP)
+ 649   3                #if 0
+                        FNT_SetStr(93, 94, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+                        LCD_WrStrBuff(104, 111, FT_LC_16x16, gFt_str, 0, 0);
+                        #endif
+ 653   3                DpSTR_DrawLin(FT_EN_08x16, 0, 102, 112, "Avg.");
+ 654   3                break;          
+ 655   3                #endif
+ 656   3              case MnSYS_LANG_ENG:
+ 657   3              default:
+ 658   3                DpSTR_DrawLin(FT_EN_08x16, 0, 102, 112, "Avg.");
+ 659   3                break;
+ 660   3            }
+ 661   2      #else
+                    if(lang == MnSYS_LANG_CHN)
+                    {
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 12  
+
+                      FNT_SetStr(163, 164, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                      LCD_WrStrBuff(104, 111, FT_LC_16x16, gFt_str, 0, 0);
+                    }
+                    else
+                      DpSTR_DrawLin(FT_EN_08x16, 0, 102, 112, "Avg.");
+              #endif
+ 670   2      
+ 671   2            DspDrw_Echo(gAd_data);
+ 672   2            break;
+ 673   2      
+ 674   2          default:
+ 675   2            return;
+ 676   2        }
+ 677   1      
+ 678   1        DspScr_EchoComm();
+ 679   1      }
+ 680          
+ 681          void DspInfo_Init(void)
+ 682          {
+ 683   1          DpSTR_DrawLin(FT_EN_08x16, 0, 103,   0, ":");
+ 684   1          DpSTR_DrawLin(FT_EN_08x16, 0, 103,  16, ":");
+ 685   1          DpSTR_DrawLin(FT_EN_08x16, 0, 103,  32, ":");
+ 686   1          DpSTR_DrawLin(FT_EN_08x16, 0, 103,  48, ":");
+ 687   1          DpSTR_DrawLin(FT_EN_08x16, 0, 103,  64, ":");
+ 688   1          DpSTR_DrawLin(FT_EN_08x16, 0, 103,  80, ":");
+ 689   1          DpSTR_DrawLin(FT_EN_08x16, 0, 103,  96, ":");
+ 690   1          DpSTR_DrawLin(FT_EN_08x16, 0, 103, 112, ":");
+ 691   1      }
+ 692          
+ 693          void DspInfo_Empty(void)
+ 694          {
+ 695   1        S16 temp = 0;
+ 696   1        U16 empty = MnMSR_GetEmpty();
+ 697   1        U08 p_str[APP_STR_LENGTH] = {0,};
+ 698   1      
+ 699   1      #if 0
+                DpSTR_DrawLin(FT_EN_08x16, 0, 5, 0, "Empty");
+              
+              #else
+ 703   1        U08 lang = MnSYS_GetLang();
+ 704   1        switch(lang)
+ 705   1        {
+ 706   2          case MnSYS_LANG_LOC:
+ 707   2      #if defined (_FT_LANG_KR)
+                    FNT_SetStr(94, 85, 1, 39, 72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); // 측정 범위
+                    LCD_WrStrBuff(5, 0, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_CN)
+                    FNT_SetStr(76, 117, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); // 측정 범위
+                    LCD_WrStrBuff(5, 0, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_JP) 
+ 716   2            FNT_SetStr(77, 84, 89, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); //
+ 717   2            LCD_WrStrBuff(5, 0, FT_LC_16x16, gFt_str, 0, 0);
+ 718   2            break;
+ 719   2      #endif
+ 720   2          case MnSYS_LANG_ENG:
+ 721   2          default:
+ 722   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 0, "Empty");
+ 723   2            break;
+ 724   2        }
+ 725   1      #endif
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 13  
+
+ 726   1      
+ 727   1        switch(MnMSR_GetUnit())
+ 728   1        {
+ 729   2          case MnMSR_UNIT_FEET:
+ 730   2            temp = (empty * MSR_CALC_M2F_CONST) + 0.5;
+ 731   2      
+ 732   2            APP_Num2Str(temp, p_str, 3, 1, FALSE);
+ 733   2      
+ 734   2            DpSTR_DrawLin(FT_EN_08x16, 0, 119, 0, p_str);
+ 735   2            DpSTR_DrawLin(FT_EN_08x16, 0, 164, 0, "ft");
+ 736   2            break;
+ 737   2      
+ 738   2          case MnMSR_UNIT_METER:
+ 739   2          default:
+ 740   2            APP_Num2Str(empty, p_str, 4, 2, FALSE);
+ 741   2      
+ 742   2            DpSTR_DrawLin(FT_EN_08x16, 0, 119, 0, p_str);
+ 743   2            DpSTR_DrawLin(FT_EN_08x16, 0, 164, 0, "m");
+ 744   2            break;
+ 745   2        }
+ 746   1      }
+ 747          
+ 748          void DspInfo_DeadZone(void)
+ 749          {
+ 750   1        S16 temp = 0;
+ 751   1        U16 dead = MnMSR_GetDead();
+ 752   1        U08 p_str[APP_STR_LENGTH] = {0,};
+ 753   1      
+ 754   1      #if 0
+                DpSTR_DrawLin(FT_EN_08x16, 0, 5, 16, "Dead Zone");
+              #else
+ 757   1        U08 lang = MnSYS_GetLang();
+ 758   1      
+ 759   1        switch(lang)
+ 760   1        { 
+ 761   2          case MnSYS_LANG_LOC:
+ 762   2      #if defined (_FT_LANG_KR)
+                    FNT_SetStr(FKR_BUL,  FKR_GAM, FKR_DAE,  0,0,0,0,0,0,0,0,0,0,0,0); // 불감지 거리
+                    LCD_WrStrBuff(5, 16, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_CN)
+                    FNT_SetStr(70, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);  // 불감지 거리
+                    LCD_WrStrBuff(5, 16, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_JP)
+ 771   2            FNT_SetStr(43, 66, 62, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); // 불감지 거리
+ 772   2            LCD_WrStrBuff(5, 16, FT_LC_16x16, gFt_str, 0, 0);
+ 773   2            break;
+ 774   2      #endif
+ 775   2          case MnSYS_LANG_ENG:
+ 776   2          default:
+ 777   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 16, "Dead Zone");
+ 778   2            break;
+ 779   2        }
+ 780   1      #endif
+ 781   1      
+ 782   1        switch(MnMSR_GetUnit())
+ 783   1        {
+ 784   2          case MnMSR_UNIT_FEET:
+ 785   2            temp = (dead * MSR_CALC_M2F_CONST) + 0.5;
+ 786   2            APP_Num2Str(temp, p_str, 3, 1, FALSE);
+ 787   2      
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 14  
+
+ 788   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 119, 16, p_str);
+ 789   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 164, 16, "ft");
+ 790   2            break;
+ 791   2      
+ 792   2          case MnMSR_UNIT_METER:
+ 793   2          default:
+ 794   2            APP_Num2Str(dead, p_str, 4, 2, FALSE);
+ 795   2      
+ 796   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 119, 16, p_str);
+ 797   2            DpSTR_DrawLin(FT_EN_08x16, FALSE, 164, 16, "m");
+ 798   2            break;
+ 799   2        }
+ 800   1      }
+ 801          
+ 802          void DspInfo_CurrOut(void)
+ 803          {
+ 804   1        S16 temp = 0;
+ 805   1        U08 p_str[APP_STR_LENGTH] = {0,};
+ 806   1        U16 set04mA = MnOUT_GetSet04mA();
+ 807   1        U16 set20mA = MnOUT_GetSet20mA();
+ 808   1      
+ 809   1        // Title
+ 810   1        DpSTR_DrawLin(FT_EN_08x16, 0,  5, 32, "4mA");
+ 811   1        DpSTR_DrawLin(FT_EN_08x16, 0, 41, 32, "/");
+ 812   1        DpSTR_DrawLin(FT_EN_08x16, 0, 59, 32, "20mA");
+ 813   1      
+ 814   1      #if 1
+ 815   1        switch(MnMSR_GetUnit())
+ 816   1        {
+ 817   2          case MnMSR_UNIT_FEET:
+ 818   2            temp = (set04mA * MSR_CALC_M2F_CONST) + 0.5;
+ 819   2            APP_Num2Str(temp, p_str, 3, 1, FALSE);
+ 820   2      
+ 821   2            DpSTR_DrawLin(FT_EN_08x16, 0, 118, 32, p_str);
+ 822   2            DpSTR_DrawLin(FT_EN_08x16, 0, 156, 32, "ft");
+ 823   2            DpSTR_DrawLin(FT_EN_08x16, 0, 173, 32, "/");
+ 824   2      
+ 825   2            temp = (set20mA * MSR_CALC_M2F_CONST) + 0.5;
+ 826   2            APP_Num2Str(temp, p_str, 3, 1, FALSE);
+ 827   2      
+ 828   2            DpSTR_DrawLin(FT_EN_08x16, 0, 185, 32, p_str);
+ 829   2            DpSTR_DrawLin(FT_EN_08x16, 0, 221, 32, "ft");
+ 830   2            break;
+ 831   2      
+ 832   2          case MnMSR_UNIT_METER:
+ 833   2          default:
+ 834   2            APP_Num2Str(set04mA, p_str, 4, 2, FALSE);
+ 835   2      
+ 836   2            DpSTR_DrawLin(FT_EN_08x16, 0, 119, 32, p_str);
+ 837   2            DpSTR_DrawLin(FT_EN_08x16, 0, 164, 32, "m");
+ 838   2            DpSTR_DrawLin(FT_EN_08x16, 0, 175, 32, "/");
+ 839   2      
+ 840   2            APP_Num2Str(set20mA, p_str, 4, 2, FALSE);
+ 841   2      
+ 842   2            DpSTR_DrawLin(FT_EN_08x16, 0, 185, 32, p_str);
+ 843   2            DpSTR_DrawLin(FT_EN_08x16, 0, 229, 32, "m");
+ 844   2            break;
+ 845   2        }
+ 846   1      #else
+                  F32 temp;
+                  S16 feet = 0;
+              
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 15  
+
+                // Value - Current Output
+                if (lMnMsr.unit == MnMSR_UNIT_METER)
+                  {
+                  DpSTR_DrawLin(FT_EN_08x16, 0, 119, 32, LCD_WriteNum2Str(lMnOut.set_04mA, 4, 2, 0));
+                  DpSTR_DrawLin(FT_EN_08x16, 0, 164, 32, "m");
+                  DpSTR_DrawLin(FT_EN_08x16, 0, 175, 32, "/");
+                  DpSTR_DrawLin(FT_EN_08x16, 0, 185, 32, LCD_WriteNum2Str(lMnOut.set_20mA, 4, 2, 0));
+                  DpSTR_DrawLin(FT_EN_08x16, 0, 229, 32, "m");
+                }
+                  else
+                  {
+                  temp = (lMnOut.set_04mA * 0.3280839895) + 0.5;
+                  feet = temp;
+                  DpSTR_DrawLin(FT_EN_08x16, 0, 118, 32, LCD_WriteNum2Str(feet, 3, 1, 0));
+                  DpSTR_DrawLin(FT_EN_08x16, 0, 156, 32, "ft");
+                  DpSTR_DrawLin(FT_EN_08x16, 0, 173, 32, "/");
+                  temp = (lMnOut.set_20mA * 0.3280839895) + 0.5;
+                  feet = temp;
+                  DpSTR_DrawLin(FT_EN_08x16, 0, 185, 32, LCD_WriteNum2Str(feet, 3, 1, 0));
+                  DpSTR_DrawLin(FT_EN_08x16, 0, 221, 32, "ft");
+                }
+              #endif
+ 872   1      }
+ 873          
+ 874          void DspInfo_EchoAmp(void)
+ 875          {
+ 876   1      #if 0
+                U08 pStr[APP_STR_LENGTH] = {0,};
+              
+                APP_Num2Str(MnMSR_GetAmp(), pStr, 3, 0, FALSE);
+              
+              
+              #else
+ 883   1        U08 pStr[APP_STR_LENGTH] = {0,};
+ 884   1        // Title
+ 885   1        U08 lang = MnSYS_GetLang();
+ 886   1        switch(lang)
+ 887   1        { 
+ 888   2          case MnSYS_LANG_LOC:
+ 889   2      #if defined (_FT_LANG_KR)
+                    FNT_SetStr(55, 58, 1, 3, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); // ECHO AMP 19.08.26 PETER
+                    LCD_WrStrBuff(5, 48, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_CN)
+                    FNT_SetStr(7, 22, 47, 27, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);  // 수신  // 19.08.26 PETER
+                    LCD_WrStrBuff(5, 48, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_JP)
+ 898   2            FNT_SetStr(6, 12, 42, 3, 41, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0);  // 수신  // 19.08.26 PETER
+ 899   2            LCD_WrStrBuff(5, 48, FT_LC_16x16, gFt_str, 0, 0);
+ 900   2      
+ 901   2            break;
+ 902   2      #endif
+ 903   2          case MnSYS_LANG_ENG:
+ 904   2          default:
+ 905   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 48, "Echo Amp");
+ 906   2            break;
+ 907   2        }
+ 908   1        APP_Num2Str(MnMSR_GetAmp(), pStr, 3, 0, FALSE);
+ 909   1        DpSTR_DrawLin(FT_EN_08x16, 0, 127, 48, pStr);
+ 910   1      #endif
+ 911   1      }
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 16  
+
+ 912          
+ 913          void DspInfo_Asf(void)    // Abnormal Signal Filter
+ 914          {
+ 915   1        U08 p_str[APP_STR_LENGTH] = {0,};
+ 916   1      
+ 917   1      #if 0
+                DpSTR_DrawLin(FT_EN_08x16, 0, 5, 64, "ASF Value");
+              
+                APP_Num2Str(MnMSR_GetAsf(), p_str, 4, 0, FALSE);
+                DpSTR_DrawLin(FT_EN_08x16, 0, 120, 64, p_str);
+              #else
+ 923   1      
+ 924   1      
+ 925   1        U08 lang = MnSYS_GetLang();
+ 926   1        switch(lang)
+ 927   1        { 
+ 928   2          case MnSYS_LANG_LOC:
+ 929   2      #if defined (_FT_LANG_KR)
+                    FNT_SetStr(1, 1, 1, 1, 50, 85, 0, 0, 0, 0, 0, 0, 0, 0, 0);  // ASF 설정
+                    LCD_WrStrBuff(5, 64, FT_LC_16x16, gFt_str, 0, 0);
+                    DpSTR_DrawLin(FT_EN_08x16, 0, 5, 64, "ASF");
+                    break;
+              #elif defined (_FT_LANG_CN)
+                    FNT_SetStr(1, 1, 15, 83, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);  // ASF 설정
+                    LCD_WrStrBuff(5, 64, FT_LC_16x16, gFt_str, 0, 0);
+                    DpSTR_DrawLin(FT_EN_08x16, 0, 5, 64, "ASF");
+                    break;
+              #elif defined (_FT_LANG_JP)
+ 940   2            FNT_SetStr(1, 1, 82, 61, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);  // ASF 설정
+ 941   2            LCD_WrStrBuff(5, 64, FT_LC_16x16, gFt_str, 0, 0);
+ 942   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 64, "ASF");
+ 943   2            break;
+ 944   2      #endif
+ 945   2          case MnSYS_LANG_ENG:
+ 946   2          default:
+ 947   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 64, "ASF Value");
+ 948   2            break;
+ 949   2        }
+ 950   1        
+ 951   1        APP_Num2Str(MnMSR_GetAsf(), p_str, 4, 0, FALSE);
+ 952   1        DpSTR_DrawLin(FT_EN_08x16, 0, 120, 64, p_str);
+ 953   1      
+ 954   1      #endif
+ 955   1      }
+ 956          
+ 957          void DspInfo_Offset(void)
+ 958          {
+ 959   1          F32 temp;
+ 960   1          U16 aux0;
+ 961   1          S16 feet = 0;
+ 962   1        U08 p_str[APP_STR_LENGTH] = {0,};
+ 963   1        S16 offset = MnMSR_GetOffs();
+ 964   1        U08 lang = MnSYS_GetLang();
+ 965   1      
+ 966   1        switch(lang)
+ 967   1        { 
+ 968   2          case MnSYS_LANG_LOC:
+ 969   2      #if defined (_FT_LANG_KR)
+                    FNT_SetStr(FKR_MI_,    FKR_SE_,   FKR_JO_,  FKR_JEONG, 0,0,0,0,0,0,0,0,0,0,0);  // ASF 설정
+                    LCD_WrStrBuff(5, 80, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_CN)
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 17  
+
+                    FNT_SetStr( 87,  120,   0,  0,   0,   0,0,0,0,0,0,0,0,0,0); // ASF 설정
+                    LCD_WrStrBuff(5, 80, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_JP)
+ 978   2            FNT_SetStr( 7, 27, 16, 19, 22,   0,   0,   0, 0,0, 0,0, 0,0, 0);  // ASF 설정
+ 979   2            LCD_WrStrBuff(5, 80, FT_LC_16x16, gFt_str, 0, 0);
+ 980   2            break;
+ 981   2      #endif
+ 982   2          case MnSYS_LANG_ENG:
+ 983   2          default:
+ 984   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 80, "Offset");
+ 985   2            break;
+ 986   2        }
+ 987   1      
+ 988   1        if(offset < 0)
+ 989   1          {
+ 990   2          aux0 = offset*-1;
+ 991   2          DpSTR_DrawLin(FT_EN_08x16, 0, 114, 80, "-");
+ 992   2        }
+ 993   1          else if(offset > 0)
+ 994   1          {
+ 995   2          aux0 = offset;
+ 996   2          DpSTR_DrawLin(FT_EN_08x16, 0, 114, 80, "+");
+ 997   2        }
+ 998   1          else
+ 999   1          aux0 = offset;
+1000   1      
+1001   1        if(MnMSR_GetUnit() == MnMSR_UNIT_METER)
+1002   1          {
+1003   2          APP_Num2Str(aux0, p_str, 4, 2, FALSE);
+1004   2          DpSTR_DrawLin(FT_EN_08x16, 0, 120, 80, p_str);
+1005   2          DpSTR_DrawLin(FT_EN_08x16, 0, 165, 80, "m");
+1006   2        }
+1007   1          else
+1008   1          {
+1009   2          temp = (aux0 * MSR_CALC_M2F_CONST);
+1010   2      
+1011   2          if(temp >= 0)   temp += 0.5;
+1012   2          else        temp -= 0.5;
+1013   2      
+1014   2          feet = temp;
+1015   2      
+1016   2          APP_Num2Str(feet, p_str, 3, 1, FALSE);
+1017   2          DpSTR_DrawLin(FT_EN_08x16, 0, 120, 80, p_str);
+1018   2          DpSTR_DrawLin(FT_EN_08x16, 0, 165, 80, "ft");
+1019   2        }
+1020   1      }
+1021          
+1022          void DspInfo_TestMode(void)
+1023          {
+1024   1      #if 0
+                DpSTR_DrawLin(FT_EN_08x16, 0, 5, 96, "Test mode");
+              
+                switch(MnMSR_GetFgTest())
+                {
+                  case MnMSR_F_DEMO_OFF:    DpSTR_DrawLin(FT_EN_08x16, 0, 127, 96, "OFF");    break;
+                  case MnMSR_F_DEMO_ONN:    DpSTR_DrawLin(FT_EN_08x16, 0, 127, 96, " ON");    break;
+                }
+              #else
+1033   1      
+1034   1        U08 lang = MnSYS_GetLang();
+1035   1      
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 18  
+
+1036   1        switch(lang)
+1037   1        { 
+1038   2          case MnSYS_LANG_LOC:
+1039   2      #if defined (_FT_LANG_KR)
+                    FNT_SetStr(FKR_TE_,   FKR_SEU,   FKR_TEU,1,FKR_MO_, FKR_DEU,0,0,0,0,0,0,0,0,0); // 테스트 모드
+                    LCD_WrStrBuff(5, 96, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_CN)
+                    FNT_SetStr(66, 92,  60,  38,  0, 0,0,0,0,0,0,0,0,0,0); // 테스트 모드
+                    LCD_WrStrBuff(5, 96, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_JP)
+1048   2            FNT_SetStr(20, 15, 22, 32, 42, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0); // 테스트 모드
+1049   2            LCD_WrStrBuff(5, 96, FT_LC_16x16, gFt_str, 0, 0);
+1050   2            break;
+1051   2      #endif
+1052   2          case MnSYS_LANG_ENG:
+1053   2          default:
+1054   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 96, "Test Mode");
+1055   2            break;
+1056   2        }
+1057   1      
+1058   1        switch(MnMSR_GetFgTest())
+1059   1        {
+1060   2          case MnMSR_F_DEMO_OFF:    DpSTR_DrawLin(FT_EN_08x16, 0, 127, 96, "OFF");    break;
+1061   2          case MnMSR_F_DEMO_ONN:    DpSTR_DrawLin(FT_EN_08x16, 0, 127, 96, " ON");    break;
+1062   2        }
+1063   1      
+1064   1      #endif
+1065   1      }
+1066          
+1067          void DspInfo_Density(void)
+1068          {
+1069   1      #if 0
+                DpSTR_DrawLin(FT_EN_08x16, 0, 5, 112, "Frequency");
+                DpSTR_FreqUpd(MnMSR_GetFreq(), 127, 112);
+              
+              #else
+1074   1        U08 lang = MnSYS_GetLang();
+1075   1      
+1076   1        switch(lang)
+1077   1        { 
+1078   2          case MnSYS_LANG_LOC:
+1079   2      #if defined (_FT_LANG_KR)
+                    FNT_SetStr(FKR_JU_,   FKR_PA,    FKR_SU_,0,0,0,0,0,0,0,0,0,0,0,0);
+                    LCD_WrStrBuff(5, 112, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_CN)
+                    FNT_SetStr(156, 145, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    LCD_WrStrBuff(5, 112, FT_LC_16x16, gFt_str, 0, 0);
+                    break;
+              #elif defined (_FT_LANG_JP)
+1088   2            FNT_SetStr(57, 71, 67, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+1089   2            LCD_WrStrBuff(5, 112, FT_LC_16x16, gFt_str, 0, 0);
+1090   2            break;
+1091   2      #endif
+1092   2          case MnSYS_LANG_ENG:
+1093   2          default:
+1094   2            DpSTR_DrawLin(FT_EN_08x16, 0, 5, 112, "Frequency");
+1095   2            break;
+1096   2        }
+1097   1        DpSTR_FreqUpd(MnMSR_GetFreq(), 127, 112);
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 19  
+
+1098   1      #endif
+1099   1      }
+1100          
+1101          void DpINF_ProcMain(void)
+1102          {
+1103   1        DspInfo_Init();
+1104   1        DspInfo_Empty();
+1105   1        DspInfo_DeadZone();
+1106   1        DspInfo_CurrOut();
+1107   1        DspInfo_EchoAmp();
+1108   1        DspInfo_Asf();
+1109   1        DspInfo_Offset();
+1110   1        DspInfo_TestMode();
+1111   1        DspInfo_Density();
+1112   1      }
+1113          
+1114          
+1115          //--------------------------------------------------------------------------------------------------
+1116          //  Global APIs - Ext. Only
+1117          //--------------------------------------------------------------------------------------------------
+1118          void DSP_SetBuff(U16 width, U08 *p_val, U16 start, U32 end)
+1119          {
+1120   1          U16 i;
+1121   1          U32 aux;
+1122   1          F32 interval;
+1123   1          F32 idx = 0;
+1124   1          U08 old = SFRPAGE;
+1125   1      
+1126   1          SFRPAGE = CONFIG_PAGE;
+1127   1      
+1128   1          interval = (end - start) / (width * 1.0);
+1129   1      
+1130   1          for(i=0; i<width; i++)
+1131   1          {
+1132   2            aux = idx;
+1133   2            gDp_buff_grp[i] = *(p_val + aux);
+1134   2            idx += interval;
+1135   2          }
+1136   1      
+1137   1          SFRPAGE = old;
+1138   1      }
+1139          
+1140          U16 DSP_GetCurrent(void)
+1141          {
+1142   1          U16 current;
+1143   1        U16 curr_04ma, curr_20ma;
+1144   1          F32 dg_c;
+1145   1          F32 dg_data  = MEAS_GetSgThick();
+1146   1        U16 set04mA  = MnOUT_GetSet04mA();
+1147   1        U16 set20mA  = MnOUT_GetSet20mA();
+1148   1        U08 echo_out = MnOUT_GetEchoOut();
+1149   1      
+1150   1        switch(MnMSR_GetUnit())
+1151   1        {
+1152   2          case MnMSR_UNIT_METER:
+1153   2            curr_04ma = set04mA;
+1154   2            curr_20ma = set20mA;
+1155   2            break;
+1156   2          case MnMSR_UNIT_FEET:
+1157   2            curr_04ma = (U16)((F32)set04mA * MSR_CALC_M2F_CONST); //+ 0.5;
+1158   2            curr_20ma = (U16)((F32)set20mA * MSR_CALC_M2F_CONST); //+ 0.5;
+1159   2            break;
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 20  
+
+1160   2        }
+1161   1      
+1162   1        dg_c = (16.0 / (curr_20ma - curr_04ma)) * (dg_data - curr_04ma) + 4.0;
+1163   1        
+1164   1          if (dg_c < 4)       dg_c = 4;
+1165   1          if (dg_c > 20)      dg_c = 20;
+1166   1      
+1167   1          current = dg_c * 100;
+1168   1      
+1169   1          if(MsANL_GetFgErr())
+1170   1          {
+1171   2              if(echo_out == MnOUT_ECHO_OUT_38mA)     current = 380;
+1172   2              if(echo_out == MnOUT_ECHO_OUT_21mA)     current = 2100;
+1173   2          }
+1174   1      
+1175   1          return current;
+1176   1      }
+1177          
+1178          void DSP_ConfigBox(U08 lang, U16 column, U08 row, U08 *p_str, U08 sel)
+1179          {
+1180   1          U08 old = SFRPAGE;
+1181   1        U16 top = MnBOX_TOP+10;
+1182   1        U16 bot = MnBOX_BOTTOM+10;
+1183   1        
+1184   1          SFRPAGE = CONFIG_PAGE;
+1185   1        
+1186   1          // clear window
+1187   1          LDT_ClrBuff((MnBOX_LEFT-2)-3, top-3, MnBOX_RIGHT+3, bot+3);
+1188   1      
+1189   1          // window frame
+1190   1          LDT_DrawBox((MnBOX_LEFT-2)-1, top-1, MnBOX_RIGHT+1, bot+1);
+1191   1          LDT_DrawBox((MnBOX_LEFT-2), top, MnBOX_RIGHT, bot);
+1192   1      
+1193   1      #if 1
+1194   1        switch(lang)
+1195   1        {
+1196   2          case MnSYS_LANG_ENG:  DpSTR_DrawLin(FT_EN_08x16, sel, column, row, p_str);    break;
+1197   2          default:        LCD_WrStrBuff(column, row, FT_LC_16x16, p_str, sel, 0);   break;
+1198   2        }
+1199   1      
+1200   1      #else
+                if     (lang == MnSYS_LANG_ENG)   DpSTR_DrawLin(FT_EN_08x16, sel, column, row, p_str);
+                else if(lang == MnSYS_LANG_CHN)   LCD_WrStrBuff(column, row, FT_LC_16x16, p_str, sel, 0);
+                else if(lang == MnSYS_LANG_KOR)   LCD_WrStrBuff(column, row, FT_LC_16x16, p_str, sel, 0);
+              #endif
+1205   1      
+1206   1          LDT_UpdBuff(LCD_Y_START,LCD_Y_END);
+1207   1      
+1208   1          SFRPAGE = old;
+1209   1      }
+1210          
+1211          void DSP_DrawGraph(U16 x_start, U16 y_start, U16 x_width, U16 y_height, U08* p_val,
+1212                     U16 idx_start, U32 idx_end, U16 max, U08 type)
+1213          {
+1214   1          U32 aux;
+1215   1          U16 i, dat1, height, deadzone;
+1216   1        F32 dat2;
+1217   1          F32 ratio_y, interval, idx_aux;
+1218   1          U08 old = SFRPAGE;
+1219   1      
+1220   1          SFRPAGE = CONFIG_PAGE;
+1221   1        
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 21  
+
+1222   1          height   = y_start + y_height;
+1223   1          ratio_y  = y_height / (max * 1.0);
+1224   1          interval = (idx_end - idx_start) / (x_width * 1.0);
+1225   1          idx_aux  = 0;
+1226   1      
+1227   1          dat2     = MsANL_GetTrhdPct() * (y_height / 240.0);
+1228   1          deadzone = (220 * (U32)MnMSR_GetDead()) / (U32)MsANL_GetEmpty();
+1229   1      
+1230   1          for(i=x_start; i<(x_start+x_width); i++)
+1231   1          {
+1232   2              aux = idx_aux;
+1233   2              dat1 = *(p_val + aux) * ratio_y;
+1234   2              idx_aux += interval;
+1235   2      
+1236   2          LDT_LineVert(i, y_start, height, LDT_LINE_CLEAR);
+1237   2      
+1238   2              switch(type)
+1239   2              {
+1240   3                  case DP_IDX_GRAPH_1:
+1241   3                      if(i > deadzone)
+1242   3                LDT_LineVert(i, height-dat1, height, LDT_LINE_DATA);
+1243   3                      break;
+1244   3      
+1245   3                  case DP_IDX_GRAPH_2: 
+1246   3                      if(i > deadzone)
+1247   3                      {
+1248   4                LDT_LineVert(i, height-dat1, height, LDT_LINE_DATA);
+1249   4      
+1250   4                        if((i % 2) == 0)
+1251   4                          {
+1252   5                              if(dat1 > dat2)         LDT_ClearDot(i, height - dat2);
+1253   5                              else                    LCD_DataDot_Buff(i, height - dat2);
+1254   5                          }
+1255   4                      }
+1256   3                    break;
+1257   3      
+1258   3                  case DP_IDX_GRAPH_3:
+1259   3                      LCD_DataDot_Buff(i, height - dat1);
+1260   3                      break;
+1261   3                  case DP_IDX_GRAPH_4:
+1262   3              LDT_LineVert(i, height-dat1, height, LDT_LINE_DATA);
+1263   3      
+1264   3              #if 1
+1265   3              if((i % 2) == 0)
+1266   3              {
+1267   4                if(dat1 > dat2)     LDT_ClearDot(i, height - dat2);
+1268   4                else          LCD_DataDot_Buff(i, height - dat2);
+1269   4              }
+1270   3              #endif
+1271   3              break;
+1272   3              }
+1273   2          }
+1274   1      
+1275   1          DspDrw_AxisY(x_start, y_start, x_width, y_height, type);
+1276   1      
+1277   1          SFRPAGE = old;
+1278   1      }
+1279          
+1280          void DSP_DrawEchoQ(U08 *pArr) 
+1281          {
+1282   1        ANZ_SetEmptyPct(110);
+1283   1      
+C51 COMPILER V9.55   DISP_MAIN                                                             04/29/2026 17:22:20 PAGE 22  
+
+1284   1        gDp_flg_cs_vert = 0;
+1285   1      
+1286   1        DSP_DrawGraph(0, 30 + 2, 220, 85, pArr, 0, MsANL_GetEmpty(), 256, DP_IDX_GRAPH_1);
+1287   1        DpSTR_DrawLin(FT_EN_06x07, 0, 195, 30 + 2 + 85 + 2, "Empty");
+1288   1      }
+1289          
+1290          
+1291          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1292          //  Global APIs - Public
+1293          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1294          void DISP_InitVari(void)
+1295          {
+1296   1        S16 i;
+1297   1      
+1298   1        gDp.f_err_tprt = FALSE;
+1299   1        gDp_flg_log = 0;
+1300   1      
+1301   1        for(i=0; i<220; i++)
+1302   1          gDp_buff_grp[i] = 0;
+1303   1      }
+1304          
+1305          void DISP_ClearScr(void)
+1306          {
+1307   1          LDT_ClrBuff (LCD_X_START, LCD_Y_START, LCD_X_END, LCD_Y_END);
+1308   1          LDT_UpdBuff(LCD_Y_START, LCD_Y_END);
+1309   1      }
+1310          
+1311          void DISP_IntroScr(void)
+1312          {
+1313   1        LDT_ClrBuff(LCD_X_START, LCD_Y_START, LCD_X_END, LCD_Y_END);
+1314   1        DpSTR_LineUpd(FT_EN_08x16, 0, 84, 56, "Start...");    
+1315   1      }
+1316          
+1317          
+1318          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1319          //  EOF
+1320          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1321          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   9619    ----
+   CONSTANT SIZE    =    409    ----
+   XDATA SIZE       =    242     437
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

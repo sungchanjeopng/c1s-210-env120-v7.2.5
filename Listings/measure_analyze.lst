@@ -1,0 +1,688 @@
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MEASURE_ANALYZE
+OBJECT MODULE PLACED IN .\Objects\measure_analyze.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\measure\measure_analyze.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0
+                    -_comm;.\_Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) P
+                    -RINT(.\Listings\measure_analyze.lst) TABS(2) OBJECT(.\Objects\measure_analyze.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // lib
+  15          #include "compiler_defs.h"
+  16          #include "C8051F120_defs.h"
+  17          // sys
+  18          #include "sys_def.h"
+  19          // self
+  20          #include "measure_analyze.h"
+  21          // bsp
+  22          #include "bsp_main.h"
+  23          #include "dly_main.h"
+  24          #include "flash_main.h"
+  25          #include "gpio_main.h"
+  26          #include "tmr_main.h"
+  27          #include "mem_main.h"
+  28          #include "btn_main.h"
+  29          #include "adc_main.h"
+  30          #include "lcd_main.h"
+  31          #include "lcd_data.h"
+  32          // app
+  33          #include "font_def.h"
+  34          #include "app_main.h"
+  35          #include "isr_main.h"
+  36          // disp
+  37          #include "disp_main.h"
+  38          #include "disp_menu.h"
+  39          #include "disp_string.h"
+  40          // msr
+  41          #include "measure_main.h"
+  42          // menu
+  43          #include "menu_box.h"
+  44          #include "menu_system.h"
+  45          #include "menu_measure.h"
+  46          #include "menu_output.h"
+  47          #include "menu_engineer.h"
+  48          
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 2   
+
+  49          #include "modbus_main.h"
+  50          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  51          //  Global variables
+  52          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  53          
+  54          
+  55          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  56          //  Local variables
+  57          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  58          LS_MsANL lMsAnl;
+  59          
+  60          
+  61          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  62          //  Local Funtions
+  63          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  64          
+  65          
+  66          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  67          //  Global APIs - Access Local Variables
+  68          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  69          // Get Flag
+  70          U08 MsANL_GetFgTimWin(void)     { return lMsAnl.fTim_win;   }
+  71          U08 MsANL_GetFgEcoDly(void)     { return lMsAnl.fEco_dly;   }
+  72          U08 MsANL_GetFgEcoDtt(void)     { return lMsAnl.fEco_dtt;   }
+  73          U08 MsANL_GetFgEcoTrk(void)     { return lMsAnl.fEco_trk;   }
+  74          U08 MsANL_GetFgEcoChk(void)   { return lMsAnl.fEco_chk;   }
+  75          U08 MsANL_GetFgErr(void)      { return lMsAnl.fErr;     }
+  76          // Get Counter
+  77          U08 MsANL_GetCtEcho(void)     { return lMsAnl.cEcho;    }
+  78          // Get Value
+  79          S16 MsANL_GetLevelMt(void)      { return lMsAnl.level_mt;   }
+  80          S16 MsANL_GetLevelFt(void)      { return lMsAnl.level_ft;   }
+  81          S16 MsANL_GetDistaMt(void)      { return lMsAnl.dista_mt;   }
+  82          S16 MsANL_GetDistaFt(void)      { return lMsAnl.dista_ft;   }
+  83          S16 MsANL_GetDist1st(void)      { return lMsAnl.dist_1st;   }
+  84          S16 MsANL_GetDistMod(void)      { return lMsAnl.dist_mod;   }
+  85          U16 MsANL_GetEmpty(void)      { return lMsAnl.empty;    }
+  86          U16 MsANL_GetTrhdPct(void)      { return lMsAnl.trhd_pct;   }
+  87          U08 MsANL_GetErrStat(void)      { return lMsAnl.err_stat;   }
+  88          // Set Flag
+  89          void MsANL_SetFgTimWin(U08 flg)   { lMsAnl.fTim_win = flg;    }
+  90          // Set Counter
+  91          void MsANL_SetCtEcho(U08 cnt)   { lMsAnl.cEcho = cnt;     }
+  92          // Set Value
+  93          void MsANL_SetDistaMt(S16 val)    { lMsAnl.dista_mt = val;    }
+  94          void MsANL_SetDistMod(S16 val)    { lMsAnl.dist_mod = val;    }
+  95          
+  96          
+  97          
+  98          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  99          //  Global APIs - Public
+ 100          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 3   
+
+ 101          void MsANL_ResetFlag(void)
+ 102          {
+ 103   1        lMsAnl.fMty_ovr = FALSE;
+ 104   1        lMsAnl.fTim_win = FALSE;
+ 105   1      
+ 106   1        lMsAnl.cEco_wt = 0;
+ 107   1        lMsAnl.cErr_tw = 0;
+ 108   1        lMsAnl.cErr_eco0 = 0;
+ 109   1        lMsAnl.cEcho = 1;
+ 110   1      
+ 111   1        lMsAnl.damp_num = 0;
+ 112   1      }
+ 113          
+ 114          void MsANL_ResetTimer(void) 
+ 115          {
+ 116   1        int i;
+ 117   1      
+ 118   1        for(i=0; i<10; i++)     //DZ_min_UC_G = 10;
+ 119   1            gAd_data[i] = 0;
+ 120   1      
+ 121   1        lMsAnl.fEco_dtt = FALSE;
+ 122   1        lMsAnl.fEco_trk = 0;
+ 123   1        lMsAnl.fEco_chk = 0;
+ 124   1      
+ 125   1        SFRPAGE = PCA0_PAGE;
+ 126   1        PCA0H = 0;
+ 127   1        PCA0L = 0;              //PCA0CN = 0x00;  //CR = 0;
+ 128   1        SFRPAGE = TMR2_PAGE;
+ 129   1        TF2 = 0;                //TMR2H = 0; TMR2L = 0;
+ 130   1      }
+ 131          
+ 132          void MsANL_InitVari(void)
+ 133          {
+ 134   1        // flag
+ 135   1        lMsAnl.fMty_ovr = FALSE;
+ 136   1        lMsAnl.fTim_win = FALSE;
+ 137   1        lMsAnl.fEco_dly = FALSE;
+ 138   1        lMsAnl.fEco_chk = FALSE;
+ 139   1        lMsAnl.fEco_dtt = FALSE;
+ 140   1        lMsAnl.fEco_trk = FALSE;
+ 141   1        lMsAnl.fErr     = FALSE;
+ 142   1        // counter
+ 143   1        lMsAnl.cEco_wt = 0;
+ 144   1        lMsAnl.cErr_tw = 0;
+ 145   1        lMsAnl.cErr_eco0 = 0;
+ 146   1        lMsAnl.cEcho = 1;
+ 147   1        // value
+ 148   1        lMsAnl.level_mt = 0;
+ 149   1        lMsAnl.level_ft = 0;
+ 150   1        lMsAnl.dista_mt = 0;
+ 151   1        lMsAnl.dista_ft = 0;
+ 152   1        lMsAnl.dist_1st = 0;
+ 153   1        lMsAnl.dist_mod = 0;
+ 154   1        lMsAnl.trhd_pct = 127;
+ 155   1        lMsAnl.damp_num = 0;  // Damp_Array_UI_G[600],
+ 156   1        lMsAnl.err_stat = MsANL_ERR_NONE;
+ 157   1      }
+ 158          
+ 159          void ANZ_SetEmptyPct(U08 pct)     // OLD: void Set_Empty_110_percent(void)
+ 160          {
+ 161   1        lMsAnl.empty = (MnMSR_GetEmpty() * (pct/10)) / 10;
+ 162   1      }
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 4   
+
+ 163          
+ 164          // OLD: void TW_Set(void)
+ 165          void ANZ_SetTw(void)  // Time Window
+ 166          {
+ 167   1        U08 i;
+ 168   1        U32 max_idx = 0;
+ 169   1        U32 max_wdt = 0;
+ 170   1        U16 max_val = 0;
+ 171   1        U32 tmp_wdt = 0;
+ 172   1        U16 signal  = MEM_ReadWord(MEM_MRAM, M_ADDR_ECHO_START);
+ 173   1        U08 tw_rng  = MnMSR_GetTwRng();
+ 174   1      
+ 175   1        if(signal == 0)
+ 176   1          return;
+ 177   1      
+ 178   1        if(!MnEGN_GetFgTwMod())
+ 179   1        { // First Echo TW Mode
+ 180   2          if((signal + tw_rng) < lMsAnl.empty)    lMsAnl.tm_wd_hi = signal + tw_rng;
+ 181   2          else                    lMsAnl.tm_wd_hi = lMsAnl.empty;
+ 182   2      
+ 183   2          if(signal > tw_rng)     lMsAnl.tm_wd_lo = signal - tw_rng;
+ 184   2          else            lMsAnl.tm_wd_lo = signal;
+ 185   2      
+ 186   2          lMsAnl.dist_mod = signal;
+ 187   2        }
+ 188   1        else
+ 189   1        { // Maximum Echo TW Mode
+ 190   2          for(i=0; i<32; i+=2) 
+ 191   2          {
+ 192   3            tmp_wdt = MEM_ReadWord(MEM_MRAM, M_ADDR_ECHO_END + i);
+ 193   3            
+ 194   3            if (tmp_wdt > max_wdt)
+ 195   3            {
+ 196   4              max_wdt = tmp_wdt;
+ 197   4              max_idx = M_ADDR_ECHO_START + i;
+ 198   4            }
+ 199   3          }
+ 200   2      
+ 201   2          max_val = MEM_ReadWord(MEM_MRAM, max_idx);
+ 202   2      
+ 203   2          // TW High Level Set
+ 204   2          if((max_val + tw_rng) < lMsAnl.empty)   lMsAnl.tm_wd_hi = max_val + tw_rng;
+ 205   2          else                    lMsAnl.tm_wd_hi = lMsAnl.empty;
+ 206   2          // TW Low Level Set
+ 207   2          if(max_val > tw_rng)    lMsAnl.tm_wd_lo = max_val - tw_rng;
+ 208   2          else            lMsAnl.tm_wd_lo = max_val;
+ 209   2      
+ 210   2          lMsAnl.dist_mod = max_val;
+ 211   2        }
+ 212   1      
+ 213   1        lMsAnl.fTim_win = TRUE;
+ 214   1        lMsAnl.fEco_trk = TRUE;
+ 215   1      }
+ 216          
+ 217          void MsANL_Proc1Sec(void)
+ 218          {
+ 219   1      
+ 220   1        if(lMsAnl.fEco_dly)
+ 221   1        {
+ 222   2          if(++lMsAnl.cEco_wt < 30)
+ 223   2            return;
+ 224   2        }
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 5   
+
+ 225   1        else 
+ 226   1        {
+ 227   2          lMsAnl.cEco_wt = 0;
+ 228   2          return;
+ 229   2        }
+ 230   1      
+ 231   1      
+ 232   1      
+ 233   1        lMsAnl.cEco_wt = 0;
+ 234   1        lMsAnl.fEco_dly = FALSE;
+ 235   1        lMsAnl.cErr_eco0 = 0;
+ 236   1      }
+ 237          
+ 238          void MsANL_CheckErr(void)   
+ 239          {
+ 240   1      
+ 241   1        if(!lMsAnl.fEco_chk)
+ 242   1          lMsAnl.cErr_eco0++;
+ 243   1      
+ 244   1        if(gDp.f_err_tprt)
+ 245   1        {
+ 246   2          lMsAnl.err_stat = MsANL_ERR_TPRT;
+ 247   2          lMsAnl.fErr = TRUE;
+ 248   2          return;
+ 249   2        }
+ 250   1      
+ 251   1      
+ 252   1        if(lMsAnl.cErr_eco0 > MnOUT_GetEchoDly())
+ 253   1        {
+ 254   2          
+ 255   2          lMsAnl.err_stat = MsANL_ERR_ECHO;
+ 256   2          lMsAnl.fErr = TRUE;
+ 257   2          if(lMsAnl.fEco_chk)
+ 258   2            lMsAnl.fEco_dly = TRUE;
+ 259   2          return;
+ 260   2        }
+ 261   1        
+ 262   1        if(lMsAnl.cErr_eco0 > (MnMSR_GetIntv()+3))
+ 263   1        {
+ 264   2          if(lMsAnl.fEco_chk)
+ 265   2          {
+ 266   3            lMsAnl.fEco_dly = TRUE;
+ 267   3            return;
+ 268   3          }
+ 269   2        }
+ 270   1      
+ 271   1        lMsAnl.err_stat = MsANL_ERR_NONE;
+ 272   1        lMsAnl.fErr = FALSE;
+ 273   1      }
+ 274          
+ 275          void ANZ_ChkEcho_Level(void)
+ 276          {
+ 277   1          int i;
+ 278   1        #if 1
+ 279   1          for(i=MnMSR_GetDead(); i<lMsAnl.empty; i++) 
+ 280   1          {
+ 281   2              if(gAd_data[i] > MnEGN_GetTrhdMin())
+ 282   2                  lMsAnl.fEco_chk = TRUE;
+ 283   2          }
+ 284   1        #else
+                  for(i=MSR_NUM_ECHO_CHK_START; i<lMsAnl.empty; i++) 
+                  {
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 6   
+
+                      if(gAd_data[i] > MnEGN_GetTrhdMin())
+                          lMsAnl.fEco_chk = TRUE;
+                  }
+                #endif
+ 291   1      }
+ 292          
+ 293          void ANZ_CalcTrshd(void)      // Threshold
+ 294          {
+ 295   1        U16 i;
+ 296   1        F32 aux0;
+ 297   1        F32 temp;
+ 298   1        U16 start, end;
+ 299   1        U16 min = 255;
+ 300   1        U16 max = 0;
+ 301   1        U16 range = 0;
+ 302   1        U16 dist = 0;
+ 303   1        U16 calc = 0;
+ 304   1        U32 empty  = MnMSR_GetEmpty();
+ 305   1        U16 dead   = MnMSR_GetDead();
+ 306   1        U08 tw_rng = MnMSR_GetTwRng();
+ 307   1        U08 ftest  = MnMSR_GetFgTest();
+ 308   1        U16 trhd_gab = MnEGN_GetTrhdGab();
+ 309   1        U08 trhd_low = MnEGN_GetTrhdLow();
+ 310   1        U08 th_st_rg = MnEGN_GetThStRng();
+ 311   1      
+ 312   1        if(lMsAnl.fEco_chk == TRUE)
+ 313   1          lMsAnl.cEcho++;
+ 314   1      
+ 315   1        if(th_st_rg == 0)
+ 316   1          empty = lMsAnl.empty;
+ 317   1        else
+ 318   1        {
+ 319   2          temp  = 1 - (th_st_rg * 0.01);
+ 320   2          empty = MnMSR_GetEmpty() * temp;
+ 321   2        }
+ 322   1      
+ 323   1        if(!MnEGN_GetFgThMod()) 
+ 324   1        {
+ 325   2          start = dead;
+ 326   2          end   = lMsAnl.dist_mod + MnEGN_GetTrhdRng();
+ 327   2        } 
+ 328   1        else 
+ 329   1        {
+ 330   2              dist = lMsAnl.dist_mod;
+ 331   2              temp = MnMSR_GetEmpty() / 100;
+ 332   2              calc = temp * (U16)MnEGN_GetThTwRng();
+ 333   2              range = tw_rng + calc;
+ 334   2              start = dist - range;
+ 335   2              end   = dist + range;
+ 336   2        }
+ 337   1        
+ 338   1        if(ftest)
+ 339   1          start = dead;
+ 340   1      
+ 341   1        if((start < dead) || (start > lMsAnl.empty))
+ 342   1          start = dead;
+ 343   1      
+ 344   1        if(end > lMsAnl.empty)
+ 345   1          end = lMsAnl.empty;
+ 346   1      
+ 347   1        if(lMsAnl.fTim_win && !ftest)
+ 348   1        {
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 7   
+
+ 349   2          for(i=start; i<end; i++) 
+ 350   2          {
+ 351   3            if(gAd_data[i] > max)     max = gAd_data[i];
+ 352   3            if(gAd_data[i] < min)     min = gAd_data[i];
+ 353   3          }
+ 354   2        } 
+ 355   1          else 
+ 356   1          {
+ 357   2              for(i=dead; i<empty; i++) 
+ 358   2              {
+ 359   3                if(gAd_data[i] > max)     max = gAd_data[i];
+ 360   3                if(gAd_data[i] < min)     min = gAd_data[i];
+ 361   3              }
+ 362   2          }
+ 363   1          aux0 = MnMSR_GetTrhdPer();
+ 364   1      
+ 365   1        if(MnEGN_GetFgDzMod())
+ 366   1        {
+ 367   2          if((lMsAnl.dist_mod - dead) < 15)
+ 368   2            min = 22;
+ 369   2        }
+ 370   1      
+ 371   1        if(min > 229)     // 255*90% = 229.5
+ 372   1        {
+ 373   2          aux0 = (max * aux0) / 100.0;
+ 374   2          lMsAnl.trhd_pct = aux0;
+ 375   2        } 
+ 376   1        else if ((max - min) < trhd_gab)
+ 377   1        {
+ 378   2          if ((255 - min) < trhd_gab) 
+ 379   2          {
+ 380   3            aux0 = (max * aux0) / 100.0;
+ 381   3            lMsAnl.trhd_pct = aux0;
+ 382   3          } 
+ 383   2          else 
+ 384   2            lMsAnl.trhd_pct = min + trhd_gab;
+ 385   2        } 
+ 386   1        else 
+ 387   1        {
+ 388   2          aux0 = ((max - min) * aux0) / 100.0;
+ 389   2          lMsAnl.trhd_pct = min + aux0;
+ 390   2        }
+ 391   1      
+ 392   1        if(lMsAnl.trhd_pct < trhd_low)
+ 393   1          lMsAnl.trhd_pct = trhd_low;
+ 394   1      
+ 395   1        if(MnMSR_GetTrhdMod() == MnMSR_TRHD_MOD_AUTO)   lMsAnl.trhd_pct = lMsAnl.trhd_pct;
+ 396   1        else                        lMsAnl.trhd_pct = MnMSR_GetTrhdFix();
+ 397   1      }
+ 398          
+ 399          void ANZ_CalcDamp(void) 
+ 400          {
+ 401   1        U32 i;
+ 402   1        U16 num;
+ 403   1        U32 sum;
+ 404   1        U32 addr_s;
+ 405   1        U32 addr_e;
+ 406   1        U32 addr_n;
+ 407   1      
+ 408   1        switch(MnMSR_GetDamp())
+ 409   1        {                               //  OLD
+ 410   2          case MnMSR_DAMP_I01_T0001:    num = 1;    break;    //  1 sec    1
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 8   
+
+ 411   2          case MnMSR_DAMP_I02_T0010:    num = 10;   break;    // 30 sec   30
+ 412   2          case MnMSR_DAMP_I03_T0020:    num = 20;   break;    //  1 min   60
+ 413   2          case MnMSR_DAMP_I04_T0040:    num = 40;   break;    //  2 min  120  
+ 414   2          case MnMSR_DAMP_I05_T0100:    num = 100;    break;    //  5 min    300
+ 415   2          case MnMSR_DAMP_I06_T0200:    num = 200;    break;    // 10 min    600
+ 416   2          case MnMSR_DAMP_I07_T0600:    num = 600;    break;    // 30 min   1800
+ 417   2          case MnMSR_DAMP_I08_T1200:    num = 1200;   break;    // 60 min   3600
+ 418   2        }
+ 419   1      
+ 420   1        lMsAnl.damp_num++;
+ 421   1      
+ 422   1        addr_s = M_ADDR_DAMP_START;
+ 423   1        addr_e = M_ADDR_DAMP_END;
+ 424   1      
+ 425   1        for(i=addr_s+2; i<=addr_e; i+=2)
+ 426   1        {
+ 427   2          MEM_WriteWord(MEM_MRAM, i - 2, MEM_ReadWord(MEM_MRAM, i));
+ 428   2          MDB_PrcMain();
+ 429   2        }
+ 430   1        MDB_PrcMain();
+ 431   1        MEM_WriteWord(MEM_MRAM, addr_e, lMsAnl.dist_mod);
+ 432   1      
+ 433   1        MDB_PrcMain();
+ 434   1      
+ 435   1        if(lMsAnl.damp_num >= num) 
+ 436   1        {
+ 437   2          lMsAnl.damp_num = num;
+ 438   2          sum = 0;
+ 439   2          
+ 440   2          for(i=(addr_e - ((num - 1) * 2)); i<=addr_e; i += 2) 
+ 441   2          {
+ 442   3            sum += MEM_ReadWord(MEM_MRAM, i);
+ 443   3            MDB_PrcMain();
+ 444   3          }
+ 445   2          lMsAnl.dista_mt = sum / lMsAnl.damp_num;
+ 446   2        } 
+ 447   1        else
+ 448   1        {
+ 449   2          addr_n = addr_e;
+ 450   2          sum = 0;
+ 451   2          
+ 452   2          for(i=0; i<lMsAnl.damp_num; i++)
+ 453   2          {
+ 454   3            sum += MEM_ReadWord(MEM_MRAM, addr_n);
+ 455   3            addr_n -= 2;
+ 456   3            MDB_PrcMain();
+ 457   3          }
+ 458   2          
+ 459   2          lMsAnl.dista_mt = sum / lMsAnl.damp_num;
+ 460   2        }
+ 461   1      }
+ 462          
+ 463          void MsANL_CalcLevel(void) 
+ 464          {
+ 465   1        F32 feet = 0;
+ 466   1        U16 empty  = MnMSR_GetEmpty();
+ 467   1        U16 dead   = MnMSR_GetDead();
+ 468   1        S16 offset = MnMSR_GetOffs();
+ 469   1      
+ 470   1        if(MnMSR_GetOper() == MnMSR_OPER_LEVEL)   lMsAnl.dista_mt -= offset;
+ 471   1        else                    lMsAnl.dista_mt += offset;
+ 472   1      
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 9   
+
+ 473   1        if(lMsAnl.dista_mt < dead)
+ 474   1          lMsAnl.dista_mt = dead;
+ 475   1        
+ 476   1        if(lMsAnl.dista_mt > empty)
+ 477   1        {
+ 478   2          lMsAnl.fMty_ovr = TRUE;
+ 479   2          lMsAnl.dista_mt = empty;
+ 480   2        } 
+ 481   1        else
+ 482   1          lMsAnl.fMty_ovr = FALSE;
+ 483   1        
+ 484   1        lMsAnl.level_mt = empty - lMsAnl.dista_mt;
+ 485   1      
+ 486   1        if(MnMSR_GetUnit() == MnMSR_UNIT_FEET) 
+ 487   1        {
+ 488   2          feet = (lMsAnl.dista_mt * MSR_CALC_M2F_CONST) + 0.5;
+ 489   2          lMsAnl.dista_ft = feet;
+ 490   2      
+ 491   2          feet = (lMsAnl.level_mt * MSR_CALC_M2F_CONST) + 0.5;
+ 492   2          lMsAnl.level_ft = feet;
+ 493   2        }
+ 494   1      }
+ 495          
+ 496          void MsANL_TrackingSignal(void) 
+ 497          {
+ 498   1        U16 i;
+ 499   1        U16 tmp1;     // OLD: unsigned int dummy_1_UI_L;
+ 500   1        U32 addr_stt = M_ADDR_ECHO_START;
+ 501   1        U08 tw_rng = MnMSR_GetTwRng();
+ 502   1      
+ 503   1        for(i=0; i<MsANL_SIG_NUM; i++) 
+ 504   1        {
+ 505   2          tmp1 = i * 2;
+ 506   2          if((MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) < lMsAnl.tm_wd_hi) &&
+ 507   2             (MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) > lMsAnl.tm_wd_lo)) 
+ 508   2          {
+ 509   3            lMsAnl.dist_mod = MEM_ReadWord(MEM_MRAM, addr_stt + tmp1);
+ 510   3      
+ 511   3            if ((MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) + tw_rng) < (lMsAnl.empty))
+ 512   3              lMsAnl.tm_wd_hi = MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) + tw_rng;
+ 513   3            else
+ 514   3              lMsAnl.tm_wd_hi = lMsAnl.empty;
+ 515   3      
+ 516   3            if (MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) > tw_rng)
+ 517   3              lMsAnl.tm_wd_lo = MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) - tw_rng;
+ 518   3            else
+ 519   3              lMsAnl.tm_wd_lo = 10;
+ 520   3      
+ 521   3            i = MsANL_SIG_NUM;
+ 522   3            lMsAnl.fEco_trk = TRUE;
+ 523   3          }
+ 524   2        }
+ 525   1        MDB_PrcMain();
+ 526   1      
+ 527   1        if  (lMsAnl.fEco_trk) lMsAnl.cErr_tw = 0;
+ 528   1        else          lMsAnl.cErr_tw++;
+ 529   1      
+ 530   1        if(lMsAnl.cErr_tw > MnMSR_GetTwDly()) 
+ 531   1        {
+ 532   2          lMsAnl.fTim_win = FALSE;
+ 533   2          lMsAnl.cErr_tw  = 0;
+ 534   2          lMsAnl.damp_num = 0;
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 10  
+
+ 535   2      
+ 536   2          MEAS_ResetFlag();
+ 537   2        }
+ 538   1      }
+ 539          
+ 540          void MsANL_ProcSignal(void) 
+ 541          {
+ 542   1        U16 i;
+ 543   1        U32 num = 0;    // OLD: unsigned long Cnt_Sig_num_UL_L;
+ 544   1        U32 cnt = 0;
+ 545   1        U16 w_sig = 0;    // OLD: unsigned int Width_sig_UI_L;
+ 546   1        U08 f_lvl = 0;    // OLD: unsigned char Flag_level_condition_UC_L;
+ 547   1        U32 c_width = 0;  // OLD: unsigned long Cnt_Index_width_UL_L;
+ 548   1        U32 stt = M_ADDR_ECHO_START;
+ 549   1        U32 end = M_ADDR_ECHO_END;
+ 550   1        F32 veloc = MEAS_GetVeloc();
+ 551   1      
+ 552   1        // Analysis Frequency
+ 553   1        MEM_Reset_Status();
+ 554   1        
+ 555   1        for(i=0; i<MsANL_SIG_NUM; i++) 
+ 556   1        {
+ 557   2          MDB_PrcMain();
+ 558   2          MEM_WriteWord(MEM_MRAM, stt+cnt, 0);
+ 559   2          MEM_WriteWord(MEM_MRAM, end+cnt, 0);
+ 560   2          cnt += 2;
+ 561   2        }
+ 562   1      
+ 563   1        for(i=MnMSR_GetDead(); i<ADC_DATA_MAX; i++)   // Threshold over Index, Width save
+ 564   1        {
+ 565   2          MDB_PrcMain();
+ 566   2          if(f_lvl == FALSE)
+ 567   2          {
+ 568   3            if(gAd_data[i] > lMsAnl.trhd_pct) 
+ 569   3            {
+ 570   4              f_lvl = TRUE;
+ 571   4              MEM_WriteWord(MEM_MRAM, stt+num, i);
+ 572   4      
+ 573   4              c_width++;
+ 574   4            }
+ 575   3          }
+ 576   2          else 
+ 577   2          {
+ 578   3            if(gAd_data[i] > lMsAnl.trhd_pct)
+ 579   3              c_width++;
+ 580   3            else
+ 581   3            {
+ 582   4              w_sig = ((c_width * 2 * 10000) / veloc);
+ 583   4      
+ 584   4              if(w_sig > (MnMSR_GetAsf() + 20)) 
+ 585   4              {
+ 586   5                MEM_WriteWord(MEM_MRAM, end + num, w_sig);
+ 587   5                num += 2;
+ 588   5              } 
+ 589   4              else 
+ 590   4                MEM_WriteWord(MEM_MRAM, stt + num, 0);
+ 591   4      
+ 592   4              f_lvl = FALSE;
+ 593   4              c_width = 0;
+ 594   4      
+ 595   4              if(num > (MsANL_SIG_NUM - 1) * 2) 
+ 596   4              {
+C51 COMPILER V9.55   MEASURE_ANALYZE                                                       04/29/2026 17:22:33 PAGE 11  
+
+ 597   5                i   = ADC_DATA_MAX;
+ 598   5                num = (MsANL_SIG_NUM - 1) * 2;
+ 599   5              }
+ 600   4            }
+ 601   3          }
+ 602   2      
+ 603   2          if(f_lvl == FALSE && i > lMsAnl.empty)
+ 604   2            i = ADC_DATA_MAX;
+ 605   2        }
+ 606   1        MDB_PrcMain();
+ 607   1      
+ 608   1        if(f_lvl == TRUE)
+ 609   1        {
+ 610   2          w_sig = ((c_width * 2 * 10000) / veloc);
+ 611   2      
+ 612   2          if(w_sig > (MnMSR_GetAsf() + 20))   MEM_WriteWord(MEM_MRAM, end+num, w_sig);
+ 613   2          else                  MEM_WriteWord(MEM_MRAM, stt+num, 0);
+ 614   2        }
+ 615   1      
+ 616   1        lMsAnl.dist_1st = MEM_ReadWord(MEM_MRAM, stt);
+ 617   1      
+ 618   1        if(MEM_ReadWord(MEM_MRAM, stt) != 0)
+ 619   1          lMsAnl.fEco_dtt = TRUE;
+ 620   1      }
+ 621          
+ 622          
+ 623          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 624          //  EOF
+ 625          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 626          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   5048    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     38     126
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

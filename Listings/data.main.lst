@@ -1,0 +1,1152 @@
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE DATA_MAIN
+OBJECT MODULE PLACED IN .\Objects\data.main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\app\data.main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_W
+                    -ess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Lis
+                    -tings\data.main.lst) TABS(2) OBJECT(.\Objects\data.main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // lib
+  15          #include "compiler_defs.h"
+  16          #include "C8051F120_defs.h"
+  17          // sys
+  18          #include "sys_def.h"
+  19          // bsp
+  20          #include "bsp_main.h"
+  21          #include "flash_main.h"
+  22          #include "uart_main.h"
+  23          #include "gpio_main.h"
+  24          #include "mem_main.h"
+  25          #include "lcd_main.h"
+  26          #include "lcd_data.h"
+  27          #include "btn_main.h"
+  28          // app
+  29          #include "app_main.h"
+  30          #include "dly_main.h"
+  31          #include "rtc_ds1302.h"
+  32          #include "data_main.h"
+  33          #include "prtc_main.h"
+  34          #include "measure_main.h"
+  35          #include "measure_temperature.h"
+  36          // disp
+  37          #include "disp_main.h"
+  38          #include "disp_string.h"
+  39          // menu
+  40          #include "menu_measure.h"
+  41          #include "menu_output.h"
+  42          #include "menu_data.h"
+  43          // font
+  44          #include "font_def.h"
+  45          
+  46          
+  47          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 2   
+
+  48          //  Global variables
+  49          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  50          LS_DAT lDat;
+  51          
+  52          BIT gTd_f_en;
+  53          
+  54          U08 gLg_page;               // OLD: unsigned char Log_Trend_page_UC_G;
+  55          
+  56          U32 gLg_addr_main;          // OLD: unsigned long Log_addr_UL_G;
+  57          U32 gLg_addr_start;         // OLD: unsigned long Log_Trend_start_addr_0_UL_G;
+  58          U32 gLg_addr_end;           // OLD: unsigned long Log_Trend_end_addr_0_UL_G;
+  59          U32 gLg_addr_tx_start;    // unsigned long Log_Tx_start_addr_UL_G;
+  60          U32 gLg_addr_dat1;          // OLD: unsigned long Log_addr_dat_1_UL_G;
+  61          U32 gLg_addr_dat2;        // OLD: unsigned long Log_addr_dat_2_UL_G;
+  62          U32 gLg_addr_dat3;        // OLD: unsigned long Log_addr_dat_3_UL_G;
+  63          U32 gLg_ad_n_start;         // OLD: unsigned long Log_Trend_start_addr_n_UL_G;
+  64          U32 gLg_ad_n_end;           // OLD: unsigned long Log_Trend_end_addr_n_UL_G;
+  65          
+  66          U32 gLg_scale_y;            // OLD: unsigned long Log_Trend_Y_scale_UL_G;
+  67          U08 gLg_min;                // OLD: unsigned char Log_Min_UC_G;
+  68          U08 gLg_hour;             // OLD: unsigned char Log_Hr_UC_G;
+  69          
+  70          U08 gLg_flg_ovf3;       // OLD: unsigned char Log_Flag_OVF_3_UC_G;
+  71          
+  72          
+  73          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  74          //  Local variables
+  75          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  76          
+  77          
+  78          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  79          //  Local Funtions
+  80          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  81          
+  82          
+  83          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  84          //  Global APIs - Access Local Variables
+  85          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  86          // Get
+  87          U08 DAT_GetMskOvf1(void)    { return lDat.flg_ovf1;   }
+  88          // Set
+  89          
+  90          
+  91          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  92          //  Global APIs - Public
+  93          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  94          void LOG_ResetAddr(void)    // OLD: void Log_addr_reset(void)
+  95          {
+  96   1          lDat.flg_ovf1 = 0xa0;
+  97   1          lDat.flg_ovf2 = 0xa0;
+  98   1        #if 1
+  99   1          gLg_addr_main = MEM_ADDR_LOG_DATA_START;
+ 100   1          gLg_addr_dat1 = MEM_ADDR_LOG_DATA_START;
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 3   
+
+ 101   1          gLg_addr_dat2 = MEM_ADDR_LOG_DATA_START;
+ 102   1          gLg_addr_dat3 = MEM_ADDR_LOG_DATA_START;
+ 103   1        #else
+                  gLg_addr_main = 150001;
+                  gLg_addr_dat1 = 150001;
+                  gLg_addr_dat2 = 150001;
+                  gLg_addr_dat3 = 150001;
+                #endif
+ 109   1          gLg_flg_ovf3 = 0xa0;
+ 110   1      }
+ 111          
+ 112          void LOG_InitAddr(void)     // OLD: void Log_Init_addr(void)
+ 113          {
+ 114   1          U32 read[3];
+ 115   1          U32 result;
+ 116   1        
+ 117   1          MEM_ReadSeq_StartAddr(MEM_MRAM, MEM_ADDR_LOG_ADDR_1_START);
+ 118   1          read[0] = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 119   1          read[1] = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 120   1          read[2] = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 121   1          MEM_RwSeq_End(MEM_MRAM);
+ 122   1      
+ 123   1          result = 0;
+ 124   1          result = result + ((read[0] & 0x000000FF) << 16);
+ 125   1          result = result + ((read[1] & 0x000000FF) << 8);
+ 126   1          result = result +  (read[2] & 0x000000FF);
+ 127   1          gLg_addr_dat1 = result;
+ 128   1      
+ 129   1          lDat.flg_ovf1 = MEM_ReadByte(MEM_MRAM, MEM_ADDR_LOG_ADDR_1_END);
+ 130   1      
+ 131   1          MEM_ReadSeq_StartAddr(MEM_MRAM, MEM_ADDR_LOG_ADDR_2_START);
+ 132   1          read[0] = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 133   1          read[1] = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 134   1          read[2] = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 135   1          MEM_RwSeq_End(MEM_MRAM);
+ 136   1      
+ 137   1          result = 0;
+ 138   1          result = result + ((read[0] & 0x000000FF) << 16);
+ 139   1          result = result + ((read[1] & 0x000000FF) << 8);
+ 140   1          result = result +  (read[2] & 0x000000FF);
+ 141   1          gLg_addr_dat2 = result;
+ 142   1      
+ 143   1          lDat.flg_ovf2 = MEM_ReadByte(MEM_MRAM, MEM_ADDR_LOG_ADDR_2_END);
+ 144   1      
+ 145   1        MEM_ReadSeq_StartAddr(MEM_MRAM, MEM_ADDR_LOG_ADDR_3_START);
+ 146   1          read[0] = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 147   1          read[1] = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 148   1          read[2] = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 149   1        MEM_RwSeq_End(MEM_MRAM);
+ 150   1      
+ 151   1          result = 0;
+ 152   1          result = result + ((read[0] & 0x000000FF) << 16);
+ 153   1          result = result + ((read[1] & 0x000000FF) << 8);
+ 154   1          result = result +  (read[2] & 0x000000FF);
+ 155   1        gLg_addr_dat3 = result;
+ 156   1      
+ 157   1        gLg_flg_ovf3 = MEM_ReadByte(MEM_MRAM, MEM_ADDR_LOG_ADDR_3_END);
+ 158   1      
+ 159   1          if((gLg_addr_dat1 == gLg_addr_dat2) && (gLg_addr_dat1 == gLg_addr_dat3))
+ 160   1          {
+ 161   2              if(lDat.flg_ovf1 == lDat.flg_ovf2 && lDat.flg_ovf1 == gLg_flg_ovf3)
+ 162   2                gLg_addr_main = gLg_addr_dat1;
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 4   
+
+ 163   2          }
+ 164   1          else if (gLg_addr_dat1 == gLg_addr_dat2)
+ 165   1          {
+ 166   2              if (lDat.flg_ovf1 == lDat.flg_ovf2)
+ 167   2              {
+ 168   3                  gLg_addr_main = gLg_addr_dat1;
+ 169   3                  gLg_addr_dat3 = gLg_addr_dat1;
+ 170   3                  gLg_flg_ovf3 = lDat.flg_ovf1;
+ 171   3              }
+ 172   2          }
+ 173   1          else if (gLg_addr_dat2 == gLg_addr_dat3)
+ 174   1          {
+ 175   2              if (lDat.flg_ovf2 == gLg_flg_ovf3)
+ 176   2              {
+ 177   3                  gLg_addr_main = gLg_addr_dat2;
+ 178   3                  gLg_addr_dat1 = gLg_addr_dat2;
+ 179   3                  lDat.flg_ovf1 = lDat.flg_ovf2;
+ 180   3              }
+ 181   2          }
+ 182   1          else
+ 183   1              LOG_ResetAddr();
+ 184   1      
+ 185   1          if (gLg_addr_main < MEM_ADDR_LOG_DATA_START || gLg_addr_main > MEM_ADDR_LOG_DATA_END)
+ 186   1              LOG_ResetAddr();
+ 187   1      
+ 188   1          gLg_min  = gRt.min;
+ 189   1          gLg_hour = gRt.hour;
+ 190   1      }
+ 191          
+ 192          void LOG_SetDpAddr(void)
+ 193          {
+ 194   1        U32 addr_dat0, addr_dat1;
+ 195   1        U32 inter;
+ 196   1      
+ 197   1        switch(MnDAT_GetSavIntv())
+ 198   1        {
+ 199   2          case MnDAT_INTV_01M:
+ 200   2            switch(MnDAT_GetDisp01m())
+ 201   2            {
+ 202   3              case MnDAT_DISP_I0:   inter = 7200;   break;     //((12 * 60) / 1) * 10;
+ 203   3              case MnDAT_DISP_I1:   inter = 14400;    break;     //((24 * 60) / 1) * 10;
+ 204   3            }
+ 205   2            break;
+ 206   2      
+ 207   2          case MnDAT_INTV_10M:
+ 208   2            switch(MnDAT_GetDisp10m())
+ 209   2            {
+ 210   3              case MnDAT_DISP_I0:   inter = 1440;   break;     //((24 * 60) / 10) * 10;
+ 211   3              case MnDAT_DISP_I1:   inter = 10080;    break;     //((7 * 24 * 60) / 10) * 10;
+ 212   3            }
+ 213   2            break;
+ 214   2      
+ 215   2          case MnDAT_INTV_60M:
+ 216   2            switch(MnDAT_GetDisp60m())
+ 217   2            {
+ 218   3              case MnDAT_DISP_I0:   inter = 3360;   break;     //((14 * 24 * 60) / 60) * 10;
+ 219   3              case MnDAT_DISP_I1:   inter = 7200;   break;     //((30 * 24 * 60) / 60) * 10;
+ 220   3            }
+ 221   2            break;
+ 222   2        }
+ 223   1      
+ 224   1        gDp_flg_log = 0;
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 5   
+
+ 225   1      
+ 226   1        if(lDat.flg_ovf1 == 0xa1 && gLg_addr_end != 250006)
+ 227   1          {
+ 228   2          addr_dat0 = gLg_addr_start - (inter * (U32)gLg_page);
+ 229   2      
+ 230   2          if(addr_dat0 >= 250006)
+ 231   2              {
+ 232   3            gLg_ad_n_start = addr_dat0;
+ 233   3            addr_dat0 = gLg_addr_start - (inter * ((U32)gLg_page + 1));
+ 234   3      
+ 235   3            if(addr_dat0 >= 250006)
+ 236   3              gLg_ad_n_end = addr_dat0;
+ 237   3                  else
+ 238   3                  {
+ 239   4              addr_dat1 = 250006 - addr_dat0;
+ 240   4              addr_dat0 = 349996 - addr_dat1;
+ 241   4      
+ 242   4              if(addr_dat0 < gLg_addr_end)    gLg_ad_n_end = gLg_addr_end;
+ 243   4                      else                            gLg_ad_n_end = addr_dat0;
+ 244   4            }
+ 245   3          }
+ 246   2              else
+ 247   2              {
+ 248   3            addr_dat1 = 250006 - addr_dat0;
+ 249   3            addr_dat0 = 349996 - addr_dat1;
+ 250   3      
+ 251   3            if (addr_dat0 < gLg_addr_end)
+ 252   3              gDp_flg_log = 1;
+ 253   3                  else
+ 254   3                  {
+ 255   4              gLg_ad_n_start = addr_dat0;
+ 256   4              addr_dat0 = gLg_ad_n_start - inter;
+ 257   4      
+ 258   4              if(addr_dat0 >= gLg_addr_end)   gLg_ad_n_end = addr_dat0;
+ 259   4                      else                            gLg_ad_n_end = gLg_addr_end;
+ 260   4            }
+ 261   3          }
+ 262   2        }
+ 263   1          else
+ 264   1          {
+ 265   2          addr_dat0 = gLg_addr_start - (inter * (U32)gLg_page);
+ 266   2      
+ 267   2          if(addr_dat0 < 250006)
+ 268   2            gDp_flg_log = 1;
+ 269   2              else
+ 270   2              {
+ 271   3            gLg_ad_n_start = addr_dat0;
+ 272   3            addr_dat0 = gLg_addr_start - (inter * ((U32) gLg_page + 1));
+ 273   3      
+ 274   3            if(addr_dat0 < 250006)      gLg_ad_n_end = 250006;
+ 275   3                  else                        gLg_ad_n_end = addr_dat0;
+ 276   3          }
+ 277   2        }
+ 278   1      }
+ 279          
+ 280          // OLD: void Disp_Log_time(void)
+ 281          void LOG_DpTime(void)
+ 282          {
+ 283   1        U08 *p_mm;
+ 284   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 285   1        U08 p_st2[APP_STR_LENGTH] = {0, };
+ 286   1      
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 6   
+
+ 287   1          RTC_GetTime();
+ 288   1      
+ 289   1        switch(gRt.mm)
+ 290   1          {
+ 291   2              case 1:     p_mm = "JAN";       break;
+ 292   2              case 2:     p_mm = "FEB";       break;
+ 293   2              case 3:     p_mm = "MAR";       break;
+ 294   2              case 4:     p_mm = "APR";       break;
+ 295   2              case 5:     p_mm = "MAY";       break;
+ 296   2              case 6:     p_mm = "JUN";       break;
+ 297   2              case 7:     p_mm = "JUL";       break;
+ 298   2              case 8:     p_mm = "AUG";       break;
+ 299   2              case 9:     p_mm = "SEP";       break;
+ 300   2              case 10:    p_mm = "OCT";       break;
+ 301   2              case 11:    p_mm = "NOV";       break;
+ 302   2              case 12:    p_mm = "DEC";       break;
+ 303   2        }
+ 304   1      
+ 305   1        APP_Num2Str(gRt.date, p_str, 2, 0, FALSE);
+ 306   1        APP_Num2Str(gRt.yy, p_st2, 2, 0, FALSE);
+ 307   1      
+ 308   1        DpSTR_DrawLin(FT_EN_08x16, FALSE,  4, 16, p_mm);
+ 309   1        DpSTR_DrawLin(FT_EN_08x16, FALSE, 36, 16, p_str);
+ 310   1      
+ 311   1        DpSTR_DrawLin(FT_EN_08x16, FALSE, 60, 16, "20");
+ 312   1        DpSTR_DrawLin(FT_EN_08x16, FALSE, 76, 16, p_st2);
+ 313   1      }
+ 314          
+ 315          U32 LogDp_Intv01m(void)
+ 316          {
+ 317   1        U32 point;
+ 318   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 319   1        U08 p_st2[APP_STR_LENGTH] = {0, };
+ 320   1      
+ 321   1        switch(MnDAT_GetDisp01m())
+ 322   1        {
+ 323   2          case MnDAT_DISP_I0:
+ 324   2            point = 360;
+ 325   2      
+ 326   2            APP_Num2Str(12 * (gLg_page+1), p_str, 3, 0, FALSE);
+ 327   2            APP_Num2Str(12 * gLg_page, p_st2, 3, 0, FALSE);
+ 328   2      
+ 329   2            DpSTR_LineUpd(FT_EN_08x16, 0, 4,   0, "Scale 12hrs");
+ 330   2            DpSTR_LineUpd(FT_EN_08x16, 0, 0, 112, "-");
+ 331   2            DpSTR_LineUpd(FT_EN_08x16, 0, 9, 112, p_str);
+ 332   2            DpSTR_LineUpd(FT_EN_08x16, 0,    36, 112, "hrs");
+ 333   2            DpSTR_LineUpd(FT_EN_08x16, 0, 87+96, 112, "-");
+ 334   2            DpSTR_LineUpd(FT_EN_08x16, 0, 96+96, 112, p_st2);
+ 335   2            DpSTR_LineUpd(FT_EN_08x16, 0, 123 + 96, 112, "hrs");
+ 336   2            break;
+ 337   2      
+ 338   2          case MnDAT_DISP_I1:
+ 339   2            point = 720;
+ 340   2      
+ 341   2            APP_Num2Str(24 * (gLg_page + 1), p_str, 3, 0, FALSE);
+ 342   2            APP_Num2Str(24 * gLg_page, p_st2,      3,   0, FALSE);
+ 343   2      
+ 344   2            DpSTR_LineUpd(FT_EN_08x16, 0, 4, 0, "Scale 24hrs");
+ 345   2            DpSTR_LineUpd(FT_EN_08x16, 0, 0, 112, "-");
+ 346   2            DpSTR_LineUpd(FT_EN_08x16, 0,     9, 112, p_str);
+ 347   2            DpSTR_LineUpd(FT_EN_08x16, 0,    36, 112, "hrs");
+ 348   2            DpSTR_LineUpd(FT_EN_08x16, 0, 87+96, 112, "-");
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 7   
+
+ 349   2            DpSTR_LineUpd(FT_EN_08x16, 0,  96+96, 112, p_st2);
+ 350   2            DpSTR_LineUpd(FT_EN_08x16, 0, 123+96, 112, "hrs");
+ 351   2            break;
+ 352   2        }
+ 353   1      
+ 354   1        return point;
+ 355   1      }
+ 356          
+ 357          U32 LogDp_Intv10m(void)
+ 358          {
+ 359   1        U32 point;
+ 360   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 361   1        U08 p_st2[APP_STR_LENGTH] = {0, };
+ 362   1      
+ 363   1        switch(MnDAT_GetDisp10m())
+ 364   1        {
+ 365   2          case MnDAT_DISP_I0:
+ 366   2            point = 72;
+ 367   2        
+ 368   2            APP_Num2Str(24*(gLg_page+1), p_str, 3, 0, FALSE);
+ 369   2            APP_Num2Str(24*(gLg_page+0), p_st2, 3, 0, FALSE);
+ 370   2      
+ 371   2            DpSTR_LineUpd(FT_EN_08x16, 0, 4, 0, "Scale 24hrs");
+ 372   2            DpSTR_LineUpd(FT_EN_08x16, 0, 0, 112, "-");
+ 373   2            DpSTR_LineUpd(FT_EN_08x16, 0,      9, 112, p_str);
+ 374   2            DpSTR_LineUpd(FT_EN_08x16, 0,     36, 112, "hrs");
+ 375   2            DpSTR_LineUpd(FT_EN_08x16, 0,  87+96, 112, "-");
+ 376   2            DpSTR_LineUpd(FT_EN_08x16, 0,  96+96, 112, p_st2);
+ 377   2            DpSTR_LineUpd(FT_EN_08x16, 0, 123+96, 112, "hrs");
+ 378   2            break;
+ 379   2        
+ 380   2          case MnDAT_DISP_I1:
+ 381   2            point = 504;
+ 382   2        
+ 383   2            APP_Num2Str(7*(gLg_page+1), p_str, 3, 0, FALSE);
+ 384   2            APP_Num2Str(7*(gLg_page+0), p_st2, 3, 0, FALSE);
+ 385   2      
+ 386   2            DpSTR_LineUpd(FT_EN_08x16, 0, 4, 0, "Scale 7days");
+ 387   2            DpSTR_LineUpd(FT_EN_08x16, 0, 0, 112, "-");
+ 388   2            DpSTR_LineUpd(FT_EN_08x16, 0,      9, 112, p_str);
+ 389   2            DpSTR_LineUpd(FT_EN_08x16, 0,     36, 112, "days");
+ 390   2            DpSTR_LineUpd(FT_EN_08x16, 0,  81+96, 112, "-");
+ 391   2            DpSTR_LineUpd(FT_EN_08x16, 0,  90+96, 112, p_st2);
+ 392   2            DpSTR_LineUpd(FT_EN_08x16, 0, 117+96, 112, "days");
+ 393   2            break;
+ 394   2        }
+ 395   1      
+ 396   1        return point;
+ 397   1      }
+ 398          
+ 399          U32 LogDp_Intv60m(void)
+ 400          {
+ 401   1        U32 point;
+ 402   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 403   1        U08 p_st2[APP_STR_LENGTH] = {0, };
+ 404   1      
+ 405   1        switch(MnDAT_GetDisp60m())
+ 406   1        {
+ 407   2          case MnDAT_DISP_I0:
+ 408   2            point = 168;
+ 409   2      
+ 410   2            APP_Num2Str(14*(gLg_page+1), p_str, 3, 0, FALSE);
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 8   
+
+ 411   2            APP_Num2Str(14*(gLg_page+0), p_st2, 3, 0, FALSE);
+ 412   2        
+ 413   2            DpSTR_LineUpd(FT_EN_08x16, 0, 4, 0, "Scale 14days");
+ 414   2            DpSTR_LineUpd(FT_EN_08x16, 0, 0, 112, "-");
+ 415   2            DpSTR_LineUpd(FT_EN_08x16, 0,      9, 112, p_str);
+ 416   2            DpSTR_LineUpd(FT_EN_08x16, 0,     36, 112, "days");
+ 417   2            DpSTR_LineUpd(FT_EN_08x16, 0,  81+96, 112, "-");
+ 418   2            DpSTR_LineUpd(FT_EN_08x16, 0,  90+96, 112, p_st2);
+ 419   2            DpSTR_LineUpd(FT_EN_08x16, 0, 117+96, 112, "days");
+ 420   2            break;
+ 421   2      
+ 422   2          case MnDAT_DISP_I1:
+ 423   2            point = 360;     //(Para_Trend_inter_UI_L / 200) * 10;
+ 424   2      
+ 425   2            APP_Num2Str(30*(gLg_page+1), p_str, 3, 0, FALSE);
+ 426   2            APP_Num2Str(30*(gLg_page+0), p_st2, 3, 0, FALSE);
+ 427   2        
+ 428   2            DpSTR_LineUpd(FT_EN_08x16, 0, 4,   0, "Scale 30days");
+ 429   2            DpSTR_LineUpd(FT_EN_08x16, 0, 0, 112, "-");
+ 430   2            DpSTR_LineUpd(FT_EN_08x16, 0,      9, 112, p_str);
+ 431   2            DpSTR_LineUpd(FT_EN_08x16, 0,     36, 112, "days");
+ 432   2            DpSTR_LineUpd(FT_EN_08x16, 0,  81+96, 112, "-");
+ 433   2            DpSTR_LineUpd(FT_EN_08x16, 0,  90+96, 112, p_st2);
+ 434   2            DpSTR_LineUpd(FT_EN_08x16, 0, 117+96, 112, "days");
+ 435   2            break;
+ 436   2        }
+ 437   1      
+ 438   1        return point;
+ 439   1      }
+ 440          
+ 441          void ScTRD_InitVai(void)
+ 442          {
+ 443   1        gTd_f_en = 0;
+ 444   1      }
+ 445          
+ 446          void ScTrdDp_ProcUpd(void)
+ 447          {
+ 448   1        U08 x;
+ 449   1        U32 addr_dat0, addr_dat1;
+ 450   1        U16 remain, trend, cnt;
+ 451   1        U32 point;
+ 452   1          F32 temp;
+ 453   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 454   1        U08 p_st2[APP_STR_LENGTH] = {0, };
+ 455   1      
+ 456   1        LOG_DpTime();
+ 457   1      
+ 458   1        if (lDat.flg_ovf1 == 0xa0)       remain = (gLg_addr_main - 10 - MEM_ADDR_LOG_DATA_START) / 10;
+ 459   1        else                            remain = 10000;
+ 460   1      
+ 461   1        DpSTR_LineUpd(FT_EN_08x16, 0, 175, 0, "R:");
+ 462   1        APP_Num2Str(10000-remain, p_str, 5, 0, FALSE);
+ 463   1      
+ 464   1        DpSTR_DrawLin(FT_EN_08x16, FALSE, 195, 0, p_str);
+ 465   1      
+ 466   1        switch(MnDAT_GetSavIntv())
+ 467   1        {
+ 468   2          case MnDAT_INTV_01M:    point = LogDp_Intv01m();    break;
+ 469   2          case MnDAT_INTV_10M:    point = LogDp_Intv10m();    break;
+ 470   2          case MnDAT_INTV_60M:    point = LogDp_Intv60m();    break;
+ 471   2        }
+ 472   1      
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 9   
+
+ 473   1        trend = 0;
+ 474   1        gLg_scale_y = 0;
+ 475   1        cnt = 0;
+ 476   1      
+ 477   1        addr_dat0 = gLg_ad_n_start;
+ 478   1        addr_dat1 = 0;
+ 479   1      
+ 480   1        for (x = 200; x >= 1; x--)
+ 481   1          {
+ 482   2          if (lDat.flg_ovf1 == 0xa1 && gLg_addr_end != 250006)
+ 483   2              {
+ 484   3            if (gLg_ad_n_end < gLg_ad_n_start)
+ 485   3                  {
+ 486   4              if (addr_dat0 >= gLg_ad_n_end)
+ 487   4                      {
+ 488   5                trend = MEM_ReadWord(MEM_MRAM, addr_dat0);
+ 489   5                addr_dat1 = addr_dat1 + point;
+ 490   5                addr_dat0 = ((gLg_ad_n_start * 10) - addr_dat1) / 10;
+ 491   5                if (addr_dat0 % 10 != 6)
+ 492   5                  addr_dat0 = addr_dat0 + (6 - (addr_dat0 % 10));
+ 493   5                gLg_scale_y = gLg_scale_y + (unsigned long) trend;
+ 494   5                cnt++;
+ 495   5      
+ 496   5                gDp_buff_grp[x - 1] = trend >> 2;
+ 497   5              }
+ 498   4                      else
+ 499   4                      {
+ 500   5                gDp_buff_grp[x - 1] = 0;
+ 501   5              }
+ 502   4            }
+ 503   3                  else
+ 504   3                  {
+ 505   4              if (addr_dat0 <= gLg_ad_n_start && addr_dat0 >= 250006)
+ 506   4                      {
+ 507   5                trend = MEM_ReadWord(MEM_MRAM, addr_dat0);
+ 508   5                addr_dat1 = addr_dat1 + point;
+ 509   5                addr_dat0 = ((gLg_ad_n_start * 10) - addr_dat1) / 10;
+ 510   5                if (addr_dat0 % 10 != 6)
+ 511   5                  addr_dat0 = addr_dat0 + (6 - (addr_dat0 % 10));
+ 512   5                gLg_scale_y = gLg_scale_y + (U32) trend;
+ 513   5                cnt++;
+ 514   5      
+ 515   5                gDp_buff_grp[x - 1] = trend >> 2;
+ 516   5      
+ 517   5                if (addr_dat0 < 250006)
+ 518   5                          {
+ 519   6                  addr_dat1 = 250006 - addr_dat0;
+ 520   6                  addr_dat0 = 349996 - addr_dat1;
+ 521   6                  addr_dat1 *= 10;
+ 522   6                }
+ 523   5              }
+ 524   4                      else if (addr_dat0 >= gLg_ad_n_end)
+ 525   4                      {
+ 526   5                trend = MEM_ReadWord(MEM_MRAM, addr_dat0);
+ 527   5                addr_dat1 = addr_dat1 + point;
+ 528   5                addr_dat0 = ((349996 * 10) - addr_dat1) / 10;
+ 529   5                if(addr_dat0 % 10 != 6)
+ 530   5                  addr_dat0 = addr_dat0 + (6 - (addr_dat0 % 10));
+ 531   5                gLg_scale_y = gLg_scale_y + (U32) trend;
+ 532   5                cnt++;
+ 533   5      
+ 534   5                gDp_buff_grp[x - 1] = trend >> 2;
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 10  
+
+ 535   5              } else {
+ 536   5                gDp_buff_grp[x - 1] = 0;
+ 537   5              }
+ 538   4            }
+ 539   3          }
+ 540   2              else
+ 541   2              {
+ 542   3            if (addr_dat0 >= 250006)
+ 543   3                  {
+ 544   4              trend = MEM_ReadWord(MEM_MRAM, addr_dat0);
+ 545   4              addr_dat1 = addr_dat1 + point;
+ 546   4              addr_dat0 = ((gLg_ad_n_start * 10) - addr_dat1) / 10;
+ 547   4              if (addr_dat0 % 10 != 6)
+ 548   4                addr_dat0 = addr_dat0 + (6 - (addr_dat0 % 10));
+ 549   4              gLg_scale_y = gLg_scale_y + (U32) trend;
+ 550   4              cnt++;
+ 551   4      
+ 552   4              gDp_buff_grp[x - 1] = trend >> 2;
+ 553   4            }
+ 554   3                  else
+ 555   3              gDp_buff_grp[x - 1] = 0;
+ 556   3          }
+ 557   2        }
+ 558   1      
+ 559   1        gLg_scale_y = gLg_scale_y / (U32) cnt;
+ 560   1      
+ 561   1        if(MnMSR_GetUnit() == MnMSR_UNIT_METER)
+ 562   1          {
+ 563   2          APP_Num2Str(gLg_scale_y*2, p_st2, 4, 2, FALSE);
+ 564   2      
+ 565   2          DpSTR_LineUpd(FT_EN_08x16, 0, 180, 16, p_st2);
+ 566   2          DpSTR_LineUpd(FT_EN_08x16, 0, 230, 16, "m");
+ 567   2        }
+ 568   1        else
+ 569   1          {
+ 570   2          temp = (gLg_scale_y * MSR_CALC_M2F_CONST) + 0.5;
+ 571   2          APP_Num2Str((U32)temp*2, p_st2, 3, 1, FALSE);
+ 572   2      
+ 573   2          DpSTR_LineUpd(FT_EN_08x16, 0, 180, 16, p_st2);
+ 574   2          DpSTR_LineUpd(FT_EN_08x16, 0, 220, 16, "ft");
+ 575   2        }
+ 576   1      
+ 577   1        addr_dat0 = gLg_ad_n_start;
+ 578   1        addr_dat1 = 0;
+ 579   1      
+ 580   1        DSP_DrawGraph(20, 32, 200, 78, gDp_buff_grp, 0, 200, (gLg_scale_y >> 2) * 2, DP_IDX_GRAPH_3);
+ 581   1        LDT_UpdBuff(LCD_Y_START, LCD_Y_END);
+ 582   1      }
+ 583          
+ 584          void LogTx_Normal(void)
+ 585          {
+ 586   1        U32 cnt0, cnt1, cnt_tx, mem_end;
+ 587   1        U08 tmp1, tmp2;
+ 588   1        U08 dat, yy, mm, date, hour, min;
+ 589   1        U16 dat0, level, dat1, dat2;
+ 590   1        S16 tmp3;
+ 591   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 592   1        U08 old = SFRPAGE;
+ 593   1        U08 unit = MnMSR_GetUnit();
+ 594   1      
+ 595   1        UAT_SetBaudrate(MnOUT_MDB_BAUD_19200);
+ 596   1      
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 11  
+
+ 597   1        DISP_ClearScr();
+ 598   1        DpSTR_LineUpd(FT_EN_08x16, 0, 60, 16, "Data downloding");
+ 599   1      
+ 600   1        if (lDat.flg_ovf1 == 0xa0)
+ 601   1          cnt0 = (gLg_addr_main - 10 - MEM_ADDR_LOG_DATA_START) / 10;
+ 602   1        else
+ 603   1        {
+ 604   2          cnt0 = 10000;
+ 605   2          mem_end = ((349991 - gLg_addr_tx_start) / 10) + 1;
+ 606   2        }
+ 607   1      
+ 608   1        if (cnt0 > 0)
+ 609   1        {
+ 610   2          cnt1 = cnt0 * 18;
+ 611   2      
+ 612   2          SFRPAGE = UART0_PAGE;
+ 613   2      
+ 614   2          UT0_TxByte(0x5b);       // ' [ '
+ 615   2          UT0_TxByte(0x44);       // ' D '
+ 616   2      
+ 617   2          dat =  cnt1      & 0x0f;    UT0_TxByte(dat+0x30);   //low byte  Transfer data_cnt
+ 618   2          dat = (cnt1 >>  4) & 0x0f;    UT0_TxByte(dat+0x30);   // 4 byte
+ 619   2          dat = (cnt1 >>  8) & 0x0f;    UT0_TxByte(dat+0x30);   // 8 byte
+ 620   2          dat = (cnt1 >> 12) & 0x0f;    UT0_TxByte(dat+0x30);
+ 621   2          dat = (cnt1 >> 16) & 0x0f;    UT0_TxByte(dat+0x30);
+ 622   2          dat = (cnt1 >> 20) & 0x0f;    UT0_TxByte(dat+0x30);
+ 623   2          dat = (cnt1 >> 24) & 0x0f;    UT0_TxByte(dat+0x30);
+ 624   2          dat = (cnt1 >> 28) & 0x0f;    UT0_TxByte(dat+0x30);
+ 625   2      
+ 626   2          tmp2 =  unit & 0x0f;      UT0_TxByte(tmp2+0x30);    // low byte  Transfer Sel_Unit_UC_G
+ 627   2          tmp2 = (unit >> 4) & 0x0f;    UT0_TxByte(tmp2 + 0x30);  // middle byte
+ 628   2          
+ 629   2          cnt_tx = 0;
+ 630   2      
+ 631   2          DpSTR_LineUpd(FT_EN_08x16, 0, 141, 48, "%");
+ 632   2          MEM_ReadSeq_StartAddr(MEM_MRAM, gLg_addr_tx_start);
+ 633   2      
+ 634   2          do 
+ 635   2          {
+ 636   3            cnt_tx++;
+ 637   3      
+ 638   3            dat0 = (cnt_tx * 1000) / cnt0;
+ 639   3      
+ 640   3            if(dat0 % 10 == 0)
+ 641   3            {
+ 642   4              APP_Num2Str(dat0/10, p_str, 3, 0, FALSE);
+ 643   4              DpSTR_LineUpd(FT_EN_08x16, 0, 114, 48, p_str);
+ 644   4            }
+ 645   3      
+ 646   3            // Log data read
+ 647   3            yy   = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 648   3            mm   = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 649   3            date = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 650   3            hour = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 651   3            min  = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 652   3      
+ 653   3            dat1 = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 654   3            dat2 = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 655   3      
+ 656   3            level = dat1 & 0x00FF;
+ 657   3            level = (level << 8) + (dat2 & 0x00FF);
+ 658   3      
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 12  
+
+ 659   3            dat1 = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 660   3            dat2 = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 661   3      
+ 662   3            tmp3 = dat1 & 0x00FF;
+ 663   3            tmp3 = (tmp3 << 8) + (dat2 & 0x00FF);
+ 664   3      
+ 665   3            tmp1 = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 666   3      
+ 667   3            // Log data tx
+ 668   3            dat =  yy & 0x0f;     UT0_TxByte(dat + 0x30);
+ 669   3            dat = (yy >> 4) & 0x0f;   UT0_TxByte(dat + 0x30);
+ 670   3      
+ 671   3            dat =  mm & 0x0f;     UT0_TxByte(dat + 0x30);
+ 672   3            dat = (mm >> 4) & 0x0f;   UT0_TxByte(dat + 0x30);
+ 673   3      
+ 674   3            dat =  date & 0x0f;     UT0_TxByte(dat + 0x30);
+ 675   3            dat = (date >> 4) & 0x0f; UT0_TxByte(dat + 0x30);
+ 676   3      
+ 677   3            dat =  hour & 0x0f;     UT0_TxByte(dat + 0x30);
+ 678   3            dat = (hour >> 4) & 0x0f; UT0_TxByte(dat + 0x30);
+ 679   3      
+ 680   3            dat =  min & 0x0f;      UT0_TxByte(dat + 0x30);
+ 681   3            dat = (min >> 4) & 0x0f;  UT0_TxByte(dat + 0x30);
+ 682   3      
+ 683   3            dat =  level & 0x0f;    UT0_TxByte(dat + 0x30);
+ 684   3            dat = (level >> 4) & 0x0f;  UT0_TxByte(dat + 0x30);
+ 685   3            dat = (level >> 8) & 0x0f;  UT0_TxByte(dat + 0x30);
+ 686   3            dat = (level >> 12) & 0x0f; UT0_TxByte(dat + 0x30);
+ 687   3      
+ 688   3            dat =  tmp3 & 0x0f;     UT0_TxByte(dat + 0x30);
+ 689   3            dat = (tmp3 >> 4) & 0x0f; UT0_TxByte(dat + 0x30);
+ 690   3            dat = (tmp3 >> 8) & 0x0f; UT0_TxByte(dat + 0x30);
+ 691   3            dat = (tmp3 >> 12) & 0x0f;  UT0_TxByte(dat + 0x30);
+ 692   3      
+ 693   3            if(lDat.flg_ovf1 == 0xa1)
+ 694   3            {
+ 695   4              if(mem_end == cnt_tx)
+ 696   4              {
+ 697   5                MEM_RwSeq_End(MEM_MRAM);
+ 698   5                MEM_ReadSeq_StartAddr(MEM_MRAM, MEM_ADDR_LOG_DATA_START);
+ 699   5              }
+ 700   4            }
+ 701   3      
+ 702   3            old = SFRPAGE;
+ 703   3            SFRPAGE = CONFIG_PAGE;
+ 704   3      
+ 705   3            if(_SBIT_BTN_EXIT == BTN_STT_PRESS)
+ 706   3              cnt_tx = cnt0;
+ 707   3      
+ 708   3            SFRPAGE = old;
+ 709   3          } while(cnt0 > cnt_tx);
+ 710   2      
+ 711   2          MEM_RwSeq_End(MEM_MRAM);
+ 712   2      
+ 713   2          UT0_TxByte(0x5d);
+ 714   2          SFRPAGE = old;
+ 715   2        }
+ 716   1      
+ 717   1        DISP_ClearScr();
+ 718   1      
+ 719   1      }
+ 720          
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 13  
+
+ 721          void LogTx_Rf(void)
+ 722          {
+ 723   1        int i;
+ 724   1        U32 cnt0, cnt_tx, mem_end;
+ 725   1        U08 yy, mm, date, hour, min;
+ 726   1        U16 dat0, level, dat1, dat2;
+ 727   1        U16 dmy;
+ 728   1        S16 tmp3, tmp4;
+ 729   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 730   1      
+ 731   1        U08 old = SFRPAGE;
+ 732   1      
+ 733   1        UAT_SetBaudrate(MnOUT_MDB_BAUD_19200);
+ 734   1        
+ 735   1        DISP_ClearScr();
+ 736   1        DpSTR_LineUpd(FT_EN_08x16, 0, 60, 16, "Data downloding");
+ 737   1        
+ 738   1        if(lDat.flg_ovf1 == 0xa0)
+ 739   1          cnt0 = (gLg_addr_main - 10 - MEM_ADDR_LOG_DATA_START) / 10;
+ 740   1        else
+ 741   1        {
+ 742   2          cnt0 = 10000;
+ 743   2          mem_end = ((349991 - gLg_addr_tx_start) / 10) + 1;
+ 744   2        }
+ 745   1        
+ 746   1        cnt_tx = 0;
+ 747   1      
+ 748   1        DpSTR_LineUpd(FT_EN_08x16, 0, 141, 48, "%");
+ 749   1        MEM_ReadSeq_StartAddr(MEM_MRAM, gLg_addr_tx_start);
+ 750   1        
+ 751   1        do
+ 752   1        {
+ 753   2          cnt_tx++;
+ 754   2          dat0 = (cnt_tx * 1000) / cnt0;
+ 755   2          
+ 756   2          if(dat0 % 10 == 0)
+ 757   2          {
+ 758   3            APP_Num2Str(dat0/10, p_str, 3, 0, FALSE);
+ 759   3            DpSTR_LineUpd(FT_EN_08x16, 0, 114, 48, p_str);
+ 760   3          }
+ 761   2      
+ 762   2          // Log data read
+ 763   2          yy   = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 764   2          mm   = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 765   2          date = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 766   2          hour = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 767   2          min  = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 768   2        
+ 769   2          dat1 = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 770   2          dat2 = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 771   2        
+ 772   2          level = dat1 & 0x00FF;
+ 773   2          level = (level << 8) + (dat2 & 0x00FF);
+ 774   2        
+ 775   2          dat1 = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 776   2          dat2 = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 777   2        
+ 778   2          tmp3 = dat1 & 0x00FF;
+ 779   2          tmp3 = (tmp3 << 8) + (dat2 & 0x00FF);
+ 780   2        
+ 781   2          dmy = MEM_ReadSeq_ByteData(MEM_MRAM);
+ 782   2        
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 14  
+
+ 783   2          UT0_TxAscii(yy);
+ 784   2          UT0_TxAscii(mm);
+ 785   2          UT0_TxAscii(date);
+ 786   2          UT0_TxAscii(hour);
+ 787   2          UT0_TxAscii(min);
+ 788   2          
+ 789   2          UT0_TxByte(0x2c);
+ 790   2          
+ 791   2          gDp_buff_str[0] = (level/1000) % 10 + '0';
+ 792   2          gDp_buff_str[1] = (level/100) % 10 + '0';
+ 793   2          gDp_buff_str[2] = (level/10) % 10 + '0';
+ 794   2          gDp_buff_str[3] =  level%10 + '0';
+ 795   2           
+ 796   2          for(i=0; i<4; i++)
+ 797   2            UT0_TxByte(gDp_buff_str[i]);
+ 798   2        
+ 799   2          UT0_TxByte(0x2c);
+ 800   2        
+ 801   2          tmp4 = tmp3;     //Trasnfer Temperature, 00unit 1'
+ 802   2          
+ 803   2          if(tmp4 < 0)
+ 804   2          {
+ 805   3            gDp_buff_str[0] = 0x2d;    //'-'
+ 806   3            tmp4 = tmp4*-1;
+ 807   3          }
+ 808   2          else
+ 809   2            gDp_buff_str[0] = 0x2b;    //'+'
+ 810   2        
+ 811   2          gDp_buff_str[1] = (tmp4/100) % 10 + '0';
+ 812   2          gDp_buff_str[2] = (tmp4/10) % 10 + '0';
+ 813   2          gDp_buff_str[3] =  tmp4%10 + '0';
+ 814   2        
+ 815   2          for(i=0; i<4; i++) 
+ 816   2            UT0_TxByte(gDp_buff_str[i]);
+ 817   2          
+ 818   2          UT0_TxByte(0x0d);
+ 819   2          UT0_TxByte(0x0a);
+ 820   2        
+ 821   2          if (lDat.flg_ovf1 == 0xa1) 
+ 822   2          {
+ 823   3            if (mem_end == cnt_tx) 
+ 824   3            {
+ 825   4              MEM_RwSeq_End(MEM_MRAM);
+ 826   4              MEM_ReadSeq_StartAddr(MEM_MRAM, MEM_ADDR_LOG_DATA_START);
+ 827   4            }
+ 828   3          }
+ 829   2        
+ 830   2          old = SFRPAGE;
+ 831   2          SFRPAGE = CONFIG_PAGE;
+ 832   2          
+ 833   2          if(_SBIT_BTN_EXIT == BTN_STT_PRESS)
+ 834   2            cnt_tx = cnt0;
+ 835   2          
+ 836   2          SFRPAGE = old;
+ 837   2        } 
+ 838   1        while (cnt0 > cnt_tx);
+ 839   1        
+ 840   1        MEM_RwSeq_End(MEM_MRAM);
+ 841   1        
+ 842   1        UT0_TxByte(0x5d);
+ 843   1        SFRPAGE = old;
+ 844   1        
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 15  
+
+ 845   1        DISP_ClearScr();
+ 846   1      
+ 847   1      }
+ 848          
+ 849          // OLD: void Out_Log_data(void)
+ 850          void LOG_OutData(void)
+ 851          {
+ 852   1        U08 old = SFRPAGE;
+ 853   1        U08 protocol = MnOUT_GetProtocol();
+ 854   1      
+ 855   1        if(lDat.flg_ovf1 == 0xa1) gLg_addr_tx_start = gLg_addr_main;
+ 856   1        else            gLg_addr_tx_start = MEM_ADDR_LOG_DATA_START;
+ 857   1      
+ 858   1        SFRPAGE = CONFIG_PAGE;
+ 859   1        SBIT_RS485_TR = PRT_485_TX_ON;
+ 860   1      
+ 861   1        if((protocol == MnOUT_PROT_STD) || (protocol == MnOUT_PROT_MDBS))     LogTx_Normal();
+ 862   1        else                                    LogTx_Rf();
+ 863   1      
+ 864   1        SFRPAGE = CONFIG_PAGE;
+ 865   1        SBIT_RS485_TR = PRT_485_RX_ON;
+ 866   1      
+ 867   1        SFRPAGE = old;
+ 868   1      }
+ 869          
+ 870          void LOG_ProcData(void) 
+ 871          {
+ 872   1        S16 sludge = MEAS_GetSgThick();
+ 873   1        S16 tmpr   = gTp_now;
+ 874   1      
+ 875   1        MEM_WriteSeq_StartAddr(MEM_MRAM, gLg_addr_main);
+ 876   1        MEM_WriteSeq_Byte(MEM_MRAM, gRt.yy);
+ 877   1        MEM_WriteSeq_Byte(MEM_MRAM, gRt.mm);
+ 878   1        MEM_WriteSeq_Byte(MEM_MRAM, gRt.date);
+ 879   1        MEM_WriteSeq_Byte(MEM_MRAM, gRt.hour);
+ 880   1        MEM_WriteSeq_Byte(MEM_MRAM, gRt.min);
+ 881   1      
+ 882   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08)((sludge >> 8) & 0xFF));
+ 883   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08)(sludge & 0xFF));
+ 884   1      
+ 885   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08)((tmpr >> 8) & 0xFF));
+ 886   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08)(tmpr & 0xFF));
+ 887   1      
+ 888   1        MEM_RwSeq_End(MEM_MRAM);
+ 889   1      
+ 890   1        switch(MnDAT_GetSavIntv())
+ 891   1        {
+ 892   2          case MnDAT_INTV_01M:
+ 893   2            if(++gLg_min > 59)
+ 894   2            {
+ 895   3              gLg_hour++;
+ 896   3              gLg_min = 0;
+ 897   3            }
+ 898   2      
+ 899   2            if(gLg_hour > 23)
+ 900   2              gLg_hour = 0;
+ 901   2            break;
+ 902   2      
+ 903   2          case MnDAT_INTV_10M:
+ 904   2            gLg_min = gLg_min + 10;
+ 905   2      
+ 906   2            if(gLg_min > 59)
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 16  
+
+ 907   2            {
+ 908   3              gLg_hour++;
+ 909   3              gLg_min = gLg_min - 60;
+ 910   3            }
+ 911   2      
+ 912   2            if(gLg_hour > 23)
+ 913   2              gLg_hour = 0;
+ 914   2            break;
+ 915   2      
+ 916   2          case MnDAT_INTV_60M:
+ 917   2            if(++gLg_hour > 23)
+ 918   2              gLg_hour = 0;
+ 919   2            break;
+ 920   2        }
+ 921   1      
+ 922   1        gLg_addr_main += 10;
+ 923   1      
+ 924   1        if(gLg_addr_main >= MEM_ADDR_LOG_DATA_END)
+ 925   1        {
+ 926   2          gLg_addr_main = MEM_ADDR_LOG_DATA_START;
+ 927   2          lDat.flg_ovf1 = 0xa1;
+ 928   2        }
+ 929   1        gLg_addr_dat1 = gLg_addr_main;
+ 930   1      
+ 931   1        MEM_WriteSeq_StartAddr(MEM_MRAM, MEM_ADDR_LOG_ADDR_1_START);
+ 932   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08)((gLg_addr_dat1 >> 16) & 0xFF));
+ 933   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08)((gLg_addr_dat1 >> 8) & 0xFF));
+ 934   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08)(gLg_addr_dat1 & 0xFF));
+ 935   1        MEM_RwSeq_End(MEM_MRAM);
+ 936   1      
+ 937   1        MEM_WriteByte(MEM_MRAM, MEM_ADDR_LOG_ADDR_1_END, lDat.flg_ovf1);
+ 938   1      }
+ 939          
+ 940          // OLD: void Log_addr_save_1(void)
+ 941          void LOG_SaveAddr1(void)
+ 942          {
+ 943   1        gLg_addr_dat2 = gLg_addr_dat1;
+ 944   1        lDat.flg_ovf2  = lDat.flg_ovf1;
+ 945   1      
+ 946   1        MEM_WriteSeq_StartAddr(MEM_MRAM, MEM_ADDR_LOG_ADDR_2_START);
+ 947   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08) ((gLg_addr_dat2 >> 16) & 0xFF));
+ 948   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08) ((gLg_addr_dat2 >> 8) & 0xFF));
+ 949   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08) (gLg_addr_dat2 & 0xFF));
+ 950   1        MEM_RwSeq_End(MEM_MRAM);
+ 951   1      
+ 952   1        MEM_WriteByte(MEM_MRAM, MEM_ADDR_LOG_ADDR_2_END, lDat.flg_ovf2);
+ 953   1      }
+ 954          
+ 955          // OLD: void Log_addr_save_2(void)
+ 956          void LOG_SaveAddr2(void)
+ 957          {
+ 958   1        gLg_addr_dat3 = gLg_addr_dat2;
+ 959   1        gLg_flg_ovf3  = lDat.flg_ovf2;
+ 960   1      
+ 961   1        MEM_WriteSeq_StartAddr(MEM_MRAM, MEM_ADDR_LOG_ADDR_3_START);
+ 962   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08) ((gLg_addr_dat3 >> 16) & 0xFF));
+ 963   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08) ((gLg_addr_dat3 >> 8) & 0xFF));
+ 964   1        MEM_WriteSeq_Byte(MEM_MRAM, (U08) (gLg_addr_dat3 & 0xFF));
+ 965   1        MEM_RwSeq_End(MEM_MRAM);
+ 966   1      
+ 967   1        MEM_WriteByte(MEM_MRAM, MEM_ADDR_LOG_ADDR_3_END, gLg_flg_ovf3);
+ 968   1      }
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 17  
+
+ 969          
+ 970          void DAT_ProcSave(void)
+ 971          {
+ 972   1        if(!MnDAT_GetFgSave())
+ 973   1          return;
+ 974   1      
+ 975   1        if(MnDAT_GetSavIntv() == MnDAT_INTV_60M)
+ 976   1        {
+ 977   2          if((gLg_hour == gRt.hour) && (gLg_min == gRt.min))
+ 978   2          {
+ 979   3            LOG_ProcData();
+ 980   3            LOG_SaveAddr1();
+ 981   3            LOG_SaveAddr2();
+ 982   3          }
+ 983   2        }
+ 984   1        else if((gLg_hour == gRt.hour) && (gLg_min == gRt.min))
+ 985   1        {
+ 986   2          LOG_ProcData();
+ 987   2          LOG_SaveAddr1();
+ 988   2          LOG_SaveAddr2();
+ 989   2        }
+ 990   1      }
+ 991          
+ 992          
+ 993          void ScTRD_ProcMain(void)
+ 994          {
+ 995   1        if(!gTd_f_en)
+ 996   1          return;
+ 997   1      
+ 998   1        switch(BTN_GetIdx())
+ 999   1        {
+1000   2          case BTN_IDX_LEFT:
+1001   2            gLg_page++;
+1002   2            break;
+1003   2      
+1004   2          case BTN_IDX_RIGHT:
+1005   2            if(gLg_page > 0)
+1006   2              gLg_page--;
+1007   2            break;
+1008   2      
+1009   2          case BTN_IDX_EXIT:
+1010   2            gLg_page = 0;
+1011   2            DISP_ClearScr();
+1012   2            gTd_f_en = 0;
+1013   2            break;
+1014   2      
+1015   2          default:
+1016   2            break;
+1017   2        }
+1018   1      
+1019   1        switch(BTN_GetIdx())
+1020   1        {
+1021   2          case BTN_IDX_LEFT:
+1022   2          case BTN_IDX_RIGHT:
+1023   2            LOG_SetDpAddr();
+1024   2            
+1025   2            if(gDp_flg_log == FALSE)
+1026   2            {
+1027   3              ScTrdDp_ProcUpd();
+1028   3              DLY_RunMsec(300);
+1029   3            } 
+1030   2            else
+C51 COMPILER V9.55   DATA_MAIN                                                             04/29/2026 17:23:11 PAGE 18  
+
+1031   2              gLg_page--;
+1032   2            break;
+1033   2      
+1034   2          default:
+1035   2            break;
+1036   2        }
+1037   1      }
+1038          
+1039          void ScTRD_ProcEnter(void)
+1040          {
+1041   1        if(!BTN_ChkLong(BTN_IDX_SET, 1000))
+1042   1          return;
+1043   1      
+1044   1        gTd_f_en = TRUE;
+1045   1        gLg_page = 0;
+1046   1      
+1047   1        if(DAT_GetMskOvf1() == 0xa1) 
+1048   1        {
+1049   2          if(gLg_addr_main == MEM_ADDR_LOG_DATA_START)  gLg_addr_start = 349996;
+1050   2          else              gLg_addr_start = gLg_addr_main - 5;
+1051   2          
+1052   2          gLg_addr_end = gLg_addr_main + 5;
+1053   2      
+1054   2          gLg_ad_n_start = gLg_addr_start;
+1055   2          LOG_SetDpAddr();
+1056   2        }
+1057   1        else
+1058   1        {
+1059   2          gLg_addr_start = gLg_addr_main - 5;
+1060   2          gLg_addr_end = MEM_ADDR_LOG_DATA_START + 5;
+1061   2      
+1062   2          gLg_ad_n_start = gLg_addr_start;
+1063   2        }
+1064   1      
+1065   1        DISP_ClearScr();
+1066   1        ScTrdDp_ProcUpd();
+1067   1      
+1068   1        while(_SBIT_BTN_SET == BTN_STT_PRESS);
+1069   1      }
+1070          
+1071          
+1072          
+1073          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1074          //  EOF
+1075          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+1076          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =  10377    ----
+   CONSTANT SIZE    =    342    ----
+   XDATA SIZE       =     46     318
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

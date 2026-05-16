@@ -1,0 +1,101 @@
+C51 COMPILER V9.55   GPIO_MAIN                                                             04/29/2026 17:21:58 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE GPIO_MAIN
+OBJECT MODULE PLACED IN .\Objects\gpio_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\bsp\gpio_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_W
+                    -ess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Lis
+                    -tings\gpio_main.lst) TABS(2) OBJECT(.\Objects\gpio_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------
+   2          //
+   3          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   4          //
+   5          //  The information contained herein is confidential property of
+   6          //  WESS-Global Inc. The use, copying, transfer or disclosure of
+   7          //  such information is prohibited except by express written agreement
+   8          //  with WESS-Global Co.,LTD
+   9          //
+  10          //  $Id: templet_format.c 1 2020-07-13 12:00:00Z eddie $
+  11          //  $Date: 2020-07-13 12:00:00 +0900 
+  12          //  $Author: eddie $
+  13          //  $Rev: 1.0 $
+  14          //
+  15          //--------------------------------------------------------------------
+  16          
+  17          
+  18          //--------------------------------------------------------------------
+  19          //  Includes
+  20          //--------------------------------------------------------------------
+  21          // chipset
+  22          #include "compiler_defs.h"
+  23          #include "C8051F120_defs.h"
+  24          // sys
+  25          #include "sys_def.h"
+  26          // bsp
+  27          // app
+  28          // self
+  29          #include "gpio_main.h"
+  30          
+  31          
+  32          //--------------------------------------------------------------------
+  33          //  Local Macros
+  34          //--------------------------------------------------------------------
+  35          
+  36          
+  37          //--------------------------------------------------------------------
+  38          //  Local Type definitions
+  39          //--------------------------------------------------------------------
+  40          
+  41          
+  42          //--------------------------------------------------------------------
+  43          //  Global variables
+  44          //--------------------------------------------------------------------
+  45          
+  46          
+  47          //--------------------------------------------------------------------
+  48          //  Local variables
+  49          //--------------------------------------------------------------------
+  50          
+  51          
+  52          //--------------------------------------------------------------------
+  53          // Funtion Definitions
+C51 COMPILER V9.55   GPIO_MAIN                                                             04/29/2026 17:21:58 PAGE 2   
+
+  54          //--------------------------------------------------------------------
+  55          // OLD: void Init_Port_IO_ENV100_S(void)
+  56          void GIO_InitBoot(void)
+  57          {
+  58   1        SFRPAGE = CONFIG_PAGE;
+  59   1        P0MDOUT = 0xf5;
+  60   1        P1MDOUT = 0x01;
+  61   1        P2MDOUT = 0xff;
+  62   1        P3MDOUT = 0xff;
+  63   1        P4MDOUT = 0x03;
+  64   1        P5MDOUT = 0xfe;
+  65   1        P6MDOUT = 0xff;
+  66   1        P7MDOUT = 0xfc;
+  67   1      
+  68   1        XBR0 = 0x06;  //0x04;
+  69   1        XBR2 = 0x44;  //uart1 
+  70   1      }
+  71          
+  72          
+  73          // EOF
+  74          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     34    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

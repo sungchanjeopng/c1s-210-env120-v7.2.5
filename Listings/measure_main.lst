@@ -1,0 +1,838 @@
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MEASURE_MAIN
+OBJECT MODULE PLACED IN .\Objects\measure_main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\measure\measure_main.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_co
+                    -mm;.\_Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRIN
+                    -T(.\Listings\measure_main.lst) TABS(2) OBJECT(.\Objects\measure_main.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // chipset
+  15          #include "compiler_defs.h"
+  16          #include "C8051F120_defs.h"
+  17          // sys
+  18          #include "sys_def.h"
+  19          // bsp
+  20          #include "bsp_main.h"
+  21          #include "flash_main.h"
+  22          #include "uart_main.h"
+  23          #include "gpio_main.h"
+  24          #include "mem_main.h"
+  25          #include "btn_main.h"
+  26          #include "adc_main.h"
+  27          #include "dac_main.h"
+  28          #include "dly_main.h"
+  29          #include "pcd_main.h"
+  30          // app
+  31          #include "app_main.h"
+  32          #include "data_main.h"
+  33          #include "modbus_main.h"
+  34          #include "prtc_main.h"
+  35          // screen
+  36          #include "screen_main.h"
+  37          // measure
+  38          #include "measure_analyze.h"
+  39          #include "measure_temperature.h"
+  40          // disp
+  41          #include "disp_main.h"
+  42          // menu
+  43          #include "menu_box.h"
+  44          #include "menu_measure.h"
+  45          #include "menu_output.h"
+  46          #include "menu_quick.h"
+  47          #include "menu_engineer.h"
+  48          // self
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 2   
+
+  49          #include "measure_main.h"
+  50          
+  51          #include "modbus_main.h"
+  52          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  53          //  Global variables
+  54          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  55          //U08 lMsr_cAvrg;         // Raw Data Count for Average // OLD: unsigned char NUM_AD_AVG_UC_G[4];
+  56          
+  57          
+  58          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  59          //  Local variables
+  60          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  61          LS_MEAS lMsr;
+  62          
+  63          U16 lMsr_aTvg[MnMSR_TVG_IDX_MAX][60] = {
+  64            {   1,   4,   8,  12,  16,  20,  24,  28,  32,  36,  40,  44,  48,  52,  56,  60,  64,  68,  72,  76,
+  65               80,  84,  88,  92,  96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156,    
+  66              160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 224, 228, 232, 236,   },
+  67            {   1,   7,  10,  13,  16,  20,  24,  28,  32,  36,  40,  44,  48,  52,  56,  60,  64,  68,  72,  76,
+  68               80,  84,  88,  92,  96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156,
+  69              160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 224, 228, 232, 236,   },
+  70            {   1,  14,  16,  18,  20,  22,  24,  28,  32,  36,  40,  44,  48,  52,  56,  60,  64,  68,  72,  76,
+  71               80,  84,  88,  92,  96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156,    
+  72              160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 224, 228, 232, 236,   },
+  73            {   1,  18,  20,  22,  24,  26,  28,  30,  32,  36,  40,  44,  48,  52,  56,  60,  64,  68,  72,  76,
+  74               80,  84,  88,  92,  96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156,
+  75              160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 224, 228, 232, 236,   },
+  76            {   1,  22,  24,  26,  28,  30,  32,  34,  36,  38,  40,  44,  48,  52,  56,  60,  64,  68,  72,  76,
+  77               80,  84,  88,  92,  96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156,
+  78              160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 224, 228, 232, 236,   },
+  79            {   1,  26,  28,  30,  32,  34,  36,  38,  40,  42,  44,  46,  48,  52,  56,  60,  64,  68,  72,  76,
+  80               80,  84,  88,  92,  96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 148, 152, 156,
+  81              160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 224, 228, 232, 236,   },
+  82          };
+  83          
+  84          
+  85          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  86          //  Local Funtions
+  87          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  88          void MsrCfg_SetTx(U08 set)
+  89          {
+  90   1          U08 old = SFRPAGE;
+  91   1      
+  92   1          SFRPAGE = CONFIG_PAGE;
+  93   1      
+  94   1        // TR
+  95   1          switch(set)
+  96   1          {
+  97   2              case 0:     lMsr.tr_step = 1;    break; //old - TR: 1, ES: 2
+  98   2              case 1:     lMsr.tr_step = 2;    break; //old - TR: 2, ES: 2
+  99   2              case 2:     lMsr.tr_step = 3;    break; //old - TR: 2, ES: 2
+ 100   2              case 3:     lMsr.tr_step = 4;    break; //old - TR: 3, ES: 3
+ 101   2              case 4:     lMsr.tr_step = 5;    break; //old - TR: 3, ES: 3
+ 102   2          }
+ 103   1      
+ 104   1        // ES (Echo Strength)
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 3   
+
+ 105   1        switch(set)   // 19.08.22 pter  level 2 -> 5
+ 106   1        {
+ 107   2          case 0:     _GIO_VC_A3 = 1;   _GIO_VC_A2 = 0;   _GIO_VC_A1 = 1;   _GIO_VC_A0 = 1;   break; //old - TR: 1
+             -, ES: 2
+ 108   2          case 1:     _GIO_VC_A3 = 1;   _GIO_VC_A2 = 0;   _GIO_VC_A1 = 1;   _GIO_VC_A0 = 1;   break; //old - TR: 2
+             -, ES: 2
+ 109   2          case 2:     _GIO_VC_A3 = 1;   _GIO_VC_A2 = 0;   _GIO_VC_A1 = 1;   _GIO_VC_A0 = 1;   break; //old - TR: 2
+             -, ES: 2
+ 110   2          case 3:     _GIO_VC_A3 = 1;   _GIO_VC_A2 = 0;   _GIO_VC_A1 = 1;   _GIO_VC_A0 = 1;   break; //old - TR: 3
+             -, ES: 3
+ 111   2          case 4:     _GIO_VC_A3 = 0;   _GIO_VC_A2 = 1;   _GIO_VC_A1 = 1;   _GIO_VC_A0 = 1;   break; //old - TR: 3
+             -, ES: 3
+ 112   2        }
+ 113   1      
+ 114   1          SFRPAGE = old;
+ 115   1      }
+ 116          
+ 117          // OLD: void HW_Set(void) 
+ 118          void MsrCfg_HwAll(void) 
+ 119          {
+ 120   1        U08 old = SFRPAGE;
+ 121   1      
+ 122   1        SFRPAGE = CONFIG_PAGE;
+ 123   1      
+ 124   1        SBIT_MSR_GAIN = GIO_SET_HI;   // 1: 100k, 0: 47K
+ 125   1      
+ 126   1        MsrCfg_SetTx(MSR_ES_S01);
+ 127   1      
+ 128   1      
+ 129   1        if(lMsr.freq < MnMSR_FREQ_500K)   SBIT_MSR_BPF = 1; 
+ 130   1        else                          SBIT_MSR_BPF = 0; 
+ 131   1      
+ 132   1      
+ 133   1        SFRPAGE = old;
+ 134   1      }
+ 135          
+ 136          void MsrCfg_AdcTiming(void) 
+ 137          {
+ 138   1        F32 dmy_0, dmy_1;
+ 139   1        U32 dummy;
+ 140   1      
+ 141   1        dmy_1 = lMsr.veloc;
+ 142   1        dmy_0 = (100.0 * 2.0 * 10000000.0) / (SYS_CLK * dmy_1);
+ 143   1      
+ 144   1        dummy = dmy_0;
+ 145   1        lMsr.dly10cm_h = dummy / 2560;
+ 146   1        lMsr.dly10cm_l = (dummy % 2560) / 10;
+ 147   1      
+ 148   1        dmy_1 = lMsr.veloc;
+ 149   1        dmy_0 = (10.0 * 120.0 * 10000.0) / dmy_1; // 1480m/s  1Cm = 13.5135us
+ 150   1      
+ 151   1        SFRPAGE = TMR2_PAGE;
+ 152   1        TMR2CF = 0x08;
+ 153   1      
+ 154   1        RCAP2H = (655360 - dmy_0) / 2560;
+ 155   1        RCAP2L = ((655360 - dmy_0) / 10) - (RCAP2H * 256);
+ 156   1      
+ 157   1        TF2 = 0;
+ 158   1        TMR2H = RCAP2H;
+ 159   1        TMR2L = RCAP2L;
+ 160   1      
+ 161   1        //////////  ADC0 set : SPS, CH, Start of Conversion Mode(Timer2 overflow) //////////
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 4   
+
+ 162   1        SFRPAGE = ADC0_PAGE;
+ 163   1        ADC0CF = 0x98;    // SAR CLK : 2.5 MHz
+ 164   1        AMX0SL = 7;
+ 165   1        ADC0CN = 0x8D;    //0xCD
+ 166   1      }
+ 167          
+ 168          
+ 169          void MsrCfg_CalcSos(void)      // Sound Of Speed
+ 170          {
+ 171   1        F32 dmy_0, dmy_1;
+ 172   1      
+ 173   1        //-------------- temperature correction --------------//
+ 174   1        // c = 1410+ temp_c*4.6 - temp_c*temp_c*0.055 + temp_c*temp_c*0.00029*temp_c;
+ 175   1      
+ 176   1        if(gTp_deg < -250 || gTp_deg > 1000)
+ 177   1            gTp_deg = 200;
+ 178   1      
+ 179   1        dmy_0 = gTp_deg / 10.0;
+ 180   1        dmy_1 = 1410 + dmy_0 * 4.6 - dmy_0 * dmy_0 * 0.055 + dmy_0 * dmy_0 * 0.00029 * dmy_0;
+ 181   1      
+ 182   1        lMsr.veloc = dmy_1;   // SOS
+ 183   1      }
+ 184          
+ 185          void MsrCfg_TxClk(U08 tx_cnt) 
+ 186          {
+ 187   1        SFRPAGE = CONFIG_PAGE;
+ 188   1      
+ 189   1        switch(MnMSR_GetFreq())
+ 190   1        {
+ 191   2          case MnMSR_FREQ_130K: // 130 kHz
+ 192   2            while(tx_cnt)
+ 193   2            {
+ 194   3              
+ 195   3              //GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 196   3              //_nop_();    _nop_();        _nop_();
+ 197   3              //_nop_();    _nop_();        _nop_();
+ 198   3              
+ 199   3              GIO_PORT_TXCLK = GIO_TXCLK_ON1;
+ 200   3              DLY_001usec();
+ 201   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 202   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 203   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 204   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 205   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 206   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 207   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 208   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 209   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 210   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 211   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 212   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 213   3              SBIT_P6_B6 = 0;
+ 214   3      
+ 215   3              //GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 216   3              //_nop_();    _nop_();        _nop_();
+ 217   3              //_nop_();    _nop_();        _nop_();
+ 218   3      
+ 219   3              GIO_PORT_TXCLK = GIO_TXCLK_ON2;
+ 220   3              DLY_001usec();
+ 221   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 222   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 223   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 5   
+
+ 224   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 225   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 226   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 227   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 228   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 229   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 230   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 231   3      
+ 232   3              tx_cnt--;
+ 233   3            }
+ 234   2            GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 235   2            break;
+ 236   2      
+ 237   2          case MnMSR_FREQ_160K: // 160 kHz
+ 238   2            while(tx_cnt) 
+ 239   2            {
+ 240   3      
+ 241   3              //GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 242   3              //_nop_();    _nop_();        _nop_();
+ 243   3              //_nop_();    _nop_();        _nop_();
+ 244   3      
+ 245   3              GIO_PORT_TXCLK = GIO_TXCLK_ON1;
+ 246   3              DLY_001usec();
+ 247   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 248   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 249   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 250   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 251   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 252   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 253   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 254   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 255   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 256   3      
+ 257   3              //GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 258   3              //_nop_();    _nop_();        _nop_();
+ 259   3              //_nop_();    _nop_();        _nop_();
+ 260   3      
+ 261   3              GIO_PORT_TXCLK = GIO_TXCLK_ON2;
+ 262   3              DLY_001usec();
+ 263   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 264   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 265   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 266   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 267   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 268   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 269   3      
+ 270   3              tx_cnt--;
+ 271   3            }
+ 272   2            GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 273   2            break;
+ 274   2      
+ 275   2          case MnMSR_FREQ_270K: // 270 kHz
+ 276   2            while(tx_cnt) 
+ 277   2            {
+ 278   3      
+ 279   3              //GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 280   3              //_nop_();    _nop_();        _nop_();  
+ 281   3              //_nop_();    _nop_();        _nop_();
+ 282   3      
+ 283   3                  GIO_PORT_TXCLK = GIO_TXCLK_ON1;
+ 284   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 285   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 6   
+
+ 286   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 287   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 288   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 289   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 290   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 291   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 292   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 293   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 294   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 295   3                  _nop_();        _nop_();        _nop_();
+ 296   3      
+ 297   3              //GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 298   3              //_nop_();    _nop_();        _nop_();
+ 299   3              //_nop_();    _nop_();        _nop_();
+ 300   3      
+ 301   3                  GIO_PORT_TXCLK = GIO_TXCLK_ON2;
+ 302   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 303   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 304   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 305   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 306   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 307   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 308   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 309   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 310   3                  _nop_();        _nop_();        _nop_();
+ 311   3      
+ 312   3                  tx_cnt--;
+ 313   3              }
+ 314   2              GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 315   2              break;
+ 316   2      
+ 317   2          case MnMSR_FREQ_380K: // 380 kHz
+ 318   2              while(tx_cnt) 
+ 319   2              {
+ 320   3                  GIO_PORT_TXCLK = GIO_TXCLK_ON1;
+ 321   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 322   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 323   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 324   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 325   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 326   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 327   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 328   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 329   3                  _nop_();        _nop_();        _nop_();
+ 330   3      
+ 331   3                  GIO_PORT_TXCLK = GIO_TXCLK_ON2;
+ 332   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 333   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 334   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 335   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 336   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 337   3                  SBIT_P6_B6 = 0;
+ 338   3                  _nop_();        _nop_();        _nop_();
+ 339   3      
+ 340   3                  tx_cnt--;
+ 341   3              }
+ 342   2              GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 343   2              break;
+ 344   2      
+ 345   2            
+ 346   2          case MnMSR_FREQ_500K: // 500 kHz
+ 347   2              while (tx_cnt) 
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 7   
+
+ 348   2              {
+ 349   3                  GIO_PORT_TXCLK = GIO_TXCLK_ON1;
+ 350   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 351   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 352   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 353   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 354   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 355   3                  _nop_();        _nop_();        _nop_();
+ 356   3      
+ 357   3                  GIO_PORT_TXCLK = GIO_TXCLK_ON2;
+ 358   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 359   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 360   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 361   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 362   3                  _nop_();        _nop_();        _nop_();
+ 363   3      
+ 364   3                  tx_cnt--;
+ 365   3              }
+ 366   2              GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 367   2              break;
+ 368   2      
+ 369   2          case MnMSR_FREQ_620K: // 620 kHz
+ 370   2              while(tx_cnt)
+ 371   2              {
+ 372   3                  GIO_PORT_TXCLK = GIO_TXCLK_ON1;
+ 373   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 374   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 375   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 376   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 377   3                  _nop_();        _nop_();        _nop_();
+ 378   3      
+ 379   3                  GIO_PORT_TXCLK = GIO_TXCLK_ON2;
+ 380   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 381   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 382   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 383   3                  _nop_();        _nop_();        _nop_();
+ 384   3      
+ 385   3                  tx_cnt--;
+ 386   3              }
+ 387   2              GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 388   2              break;
+ 389   2      
+ 390   2          case MnMSR_FREQ_750K: // 750 kHz
+ 391   2              while (tx_cnt) 
+ 392   2              {
+ 393   3                  GIO_PORT_TXCLK = GIO_TXCLK_ON1;
+ 394   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 395   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 396   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 397   3                  _nop_();        _nop_();    _nop_();
+ 398   3      
+ 399   3                  GIO_PORT_TXCLK = GIO_TXCLK_ON2;
+ 400   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 401   3              SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0; SBIT_P6_B6 = 0;
+ 402   3                  SBIT_P6_B6 = 0;
+ 403   3                  _nop_();        _nop_();        _nop_();
+ 404   3      
+ 405   3                  tx_cnt--;
+ 406   3              }
+ 407   2              GIO_PORT_TXCLK = GIO_TXCLK_OFF;
+ 408   2              break;
+ 409   2        }
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 8   
+
+ 410   1      }
+ 411          
+ 412          // OLD: void Transmission(unsigned char Sel_Tx_UC_L) 
+ 413          void MsrCfg_ProcTx(U08 tx_sel) 
+ 414          {
+ 415   1        U08 tx_num;
+ 416   1        U08 old = SFRPAGE;
+ 417   1      
+ 418   1        MsrCfg_SetTx(MSR_ES_S01); // Echo Stregth
+ 419   1      
+ 420   1        if(MnMSR_GetFreq() < MnMSR_FREQ_380K) tx_num = (lMsr.tr_step * 5) + 5;
+ 421   1        else                  tx_num = (lMsr.tr_step + 2) * 5; 
+ 422   1      
+ 423   1        lMsr.tvg_idx = 0;
+ 424   1        MEAS_SetDacTvg();
+ 425   1      
+ 426   1        SFRPAGE = TIMER01_PAGE;
+ 427   1        TH0 = 0xFE;
+ 428   1        TL0 = 0xAD;
+ 429   1        TR0 = 1;                      // TVG curve
+ 430   1      
+ 431   1        SFRPAGE = PCA0_PAGE;
+ 432   1        PCA0CN = 0x40;  //CR = 1;     // Tx interval
+ 433   1      
+ 434   1        ES0 = 0;
+ 435   1      
+ 436   1        if(tx_sel == MSR_TX_RUN)
+ 437   1          MsrCfg_TxClk(tx_num);
+ 438   1      
+ 439   1        ES0 = 1;
+ 440   1      
+ 441   1        SFRPAGE = old;
+ 442   1      }
+ 443          
+ 444          void MsrCfg_Dly10cm(void) 
+ 445          {
+ 446   1          U08 pca0l = 0;
+ 447   1          U08 pca0h = 0;
+ 448   1      
+ 449   1          SFRPAGE = PCA0_PAGE;
+ 450   1      
+ 451   1          while(pca0l < lMsr.dly10cm_l || pca0h < lMsr.dly10cm_h) // 10Cm hold
+ 452   1          {
+ 453   2            pca0l = PCA0L;
+ 454   2            pca0h = PCA0H;
+ 455   2          }
+ 456   1      }
+ 457          
+ 458          // OLD: void End_of_Capture(void) 
+ 459          void MsrCfg_EndCapture(void) 
+ 460          {
+ 461   1        SFRPAGE = PCA0_PAGE;
+ 462   1        PCA0CN = 0x00;        //CR = 0;
+ 463   1        SFRPAGE = TIMER01_PAGE;
+ 464   1        TR0 = 0;
+ 465   1      
+ 466   1        DAC_WriteVal(0);
+ 467   1      }
+ 468          
+ 469          
+ 470          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 9   
+
+ 471          //  Global APIs - Access Local Variables
+ 472          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 473          // Get
+ 474          S16 MEAS_GetSgThick(void)   { return lMsr.sg_thick;   }
+ 475          U08 MEAS_GetFgAdc(void)     { return lMsr.fAdc_full;    }
+ 476          U08 MEAS_GetCtAvrg(void)    { return lMsr.cAvrg;      }
+ 477          F32 MEAS_GetVeloc(void)     { return lMsr.veloc;      }
+ 478          
+ 479          U16 MEAS_GetTvg(U08 num, U08 idx)
+ 480          {
+ 481   1        if( (idx < 0) || (idx > 59))
+ 482   1          return 0;
+ 483   1      
+ 484   1        return lMsr_aTvg[num][idx];
+ 485   1      }
+ 486          
+ 487          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 488          //  Global APIs - Public
+ 489          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 490          void MEAS_CfgSens(U08 idx) 
+ 491          {
+ 492   1        if((idx >= 0) && (idx <= 3))    lMsr.intv = MnMSR_GetIntv();
+ 493   1        if((idx >= 0) && (idx <= 4))    lMsr.freq = MnMSR_GetFreq();
+ 494   1      }
+ 495          
+ 496          void MEAS_InitVari(void)
+ 497          {
+ 498   1        lMsr.fAdc_full = FALSE;
+ 499   1        lMsr.cIntv = 0;
+ 500   1        lMsr.sg_thick  = 0;
+ 501   1      }
+ 502          
+ 503          void MEAS_SetDacTvg(void)   // TVG: Time Variable Gain
+ 504          {
+ 505   1        U08 tvg = MnEGN_GetTvgNumb();
+ 506   1        U08 amp = MnMSR_GetAmp();
+ 507   1        U32 gain = 0;
+ 508   1      
+ 509   1          lMsr.tvg_idx++;
+ 510   1      
+ 511   1          if(lMsr.tvg_idx > 59)
+ 512   1            lMsr.tvg_idx = 59;
+ 513   1      
+ 514   1      #if 1
+ 515   1        if(tvg >= MnMSR_TVG_IDX_MAX)
+ 516   1          tvg = MnMSR_TVG_I00_IDLE;
+ 517   1      
+ 518   1        if  (MnEGN_GetFTvgCst())  gain = MnEGN_GetCstTvg(lMsr.tvg_idx) * amp;
+ 519   1        else            gain = lMsr_aTvg[tvg][lMsr.tvg_idx] * amp;
+ 520   1      #else
+                if(!MnEGN_GetFgTvgSel())  tvg= MnMSR_TVG_I06_CST;
+              
+                if(tvg >= MnMSR_TVG_IDX_MAX)
+                  tvg = MnMSR_TVG_I00_IDLE;
+              
+                switch(tvg)
+                {
+                  case MnMSR_TVG_I06_CST:
+                  case MnMSR_TVG_I00_IDLE:
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 10  
+
+                  default:
+                    if(MnEGN_GetFTvgCst())    gain = MnEGN_GetCstTvg(lMsr.tvg_idx) * amp;
+                    else            gain = lMsr_aTvg[tvg][lMsr.tvg_idx] * amp;
+                    break;
+                }
+              #endif
+ 536   1        if(gain > 2000)
+ 537   1          gain = 2000;
+ 538   1          
+ 539   1        DAC_WriteVal(gain);
+ 540   1      }
+ 541          
+ 542          void MEAS_CfgThreshold(void)
+ 543          {
+ 544   1        U08 trhd_mod = MnMSR_GetTrhdMod();
+ 545   1        U08 trhd_per = MnMSR_GetTrhdPer();
+ 546   1        U08 trhd_fix = MnMSR_GetTrhdFix();
+ 547   1        U08 save_per = trhd_per;
+ 548   1      
+ 549   1        if(trhd_mod == MnMSR_TRHD_MOD_AUTO)
+ 550   1        {
+ 551   2          if(!_SBIT_BTN_UP) 
+ 552   2          {
+ 553   3            MnMSR_SetTrhdPer(trhd_per + MnMSR_TRHD_PCT_STP);
+ 554   3            
+ 555   3            if(MnMSR_GetTrhdPer() > MnMSR_TRHD_PCT_MAX)
+ 556   3              MnMSR_SetTrhdPer(MnMSR_TRHD_PCT_MAX);
+ 557   3          }
+ 558   2          
+ 559   2          if(!_SBIT_BTN_DOWN) 
+ 560   2          {
+ 561   3            MnMSR_SetTrhdPer(trhd_per - MnMSR_TRHD_PCT_STP);
+ 562   3            
+ 563   3            if(MnMSR_GetTrhdPer() < MnMSR_TRHD_PCT_MIN)
+ 564   3              MnMSR_SetTrhdPer(MnMSR_TRHD_PCT_MIN);
+ 565   3          }
+ 566   2        }
+ 567   1        else
+ 568   1        {
+ 569   2          if(!_SBIT_BTN_UP) 
+ 570   2          {
+ 571   3            if(trhd_fix > 200)    MnMSR_SetTrhdFix(220);
+ 572   3            else          MnMSR_SetTrhdFix(trhd_fix + 20);
+ 573   3          }
+ 574   2          
+ 575   2          if(!_SBIT_BTN_DOWN)
+ 576   2          {
+ 577   3            if(trhd_fix < 40)   MnMSR_SetTrhdPer(20);
+ 578   3            else          MnMSR_SetTrhdFix(trhd_fix - 20);
+ 579   3          }
+ 580   2        }
+ 581   1      
+ 582   1        ANZ_CalcTrshd();
+ 583   1        SCRN_ProcDisp();
+ 584   1        
+ 585   1        FLS_WriteAll();
+ 586   1        BTN_DelayMsec(300);
+ 587   1        
+ 588   1        if(save_per != MnMSR_GetTrhdPer())
+ 589   1          MsANL_SetFgTimWin(FALSE);
+ 590   1      }
+ 591          
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 11  
+
+ 592          F32 MEAS_CalcFeet2Meter(U16 feet)
+ 593          {
+ 594   1        return (feet * MSR_CALC_F2M_CONST) + 0.5;
+ 595   1      }
+ 596          
+ 597          F32 MEAS_CalcMeter2Feet(U16 meter)
+ 598          {
+ 599   1        return (meter * MSR_CALC_M2F_CONST) + 0.5;
+ 600   1      }
+ 601          
+ 602          void MEAS_ResetFlag(void) 
+ 603          {
+ 604   1        lMsr.fAdc_full  = 0;
+ 605   1        lMsr.cIntv = 0;
+ 606   1      
+ 607   1        MsANL_ResetFlag();
+ 608   1        
+ 609   1        ANZ_SetEmptyPct(110);
+ 610   1      }
+ 611          
+ 612          void MEAS_SetOpr(void)
+ 613          {
+ 614   1        U08 unit = MnMSR_GetUnit();
+ 615   1        U08 oper = MnMSR_GetOper();
+ 616   1      
+ 617   1        switch(oper)
+ 618   1        {
+ 619   2          case MnMSR_OPER_LEVEL:
+ 620   2            if(unit == MnMSR_UNIT_FEET)   lMsr.sg_thick = MsANL_GetLevelFt();
+ 621   2            else              lMsr.sg_thick = MsANL_GetLevelMt();
+ 622   2            break;
+ 623   2      
+ 624   2          case MnMSR_OPER_DISTA:
+ 625   2          default:
+ 626   2            if(unit == MnMSR_UNIT_FEET)   lMsr.sg_thick = MsANL_GetDistaFt();
+ 627   2            else              lMsr.sg_thick = MsANL_GetDistaMt();
+ 628   2            break;
+ 629   2        }
+ 630   1      }
+ 631          
+ 632          void MEAS_PrcEcho(void) 
+ 633          {
+ 634   1        MsTPR_CalcVal();
+ 635   1      
+ 636   1        MsrCfg_HwAll();
+ 637   1        MsANL_ResetTimer();
+ 638   1      
+ 639   1        MsrCfg_CalcSos();
+ 640   1        MDB_PrcMain();
+ 641   1        MsrCfg_AdcTiming();
+ 642   1        MsrCfg_ProcTx(MSR_TX_RUN);
+ 643   1        MsrCfg_Dly10cm();
+ 644   1      
+ 645   1        ADC_PrcEcho();
+ 646   1        MDB_PrcMain();
+ 647   1        MsrCfg_EndCapture();
+ 648   1      }
+ 649          
+ 650          void MEAS_PrcSub1(void) 
+ 651          {
+ 652   1        if(MsANL_GetCtEcho() > lMsr.cAvrg)
+ 653   1        {
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 12  
+
+ 654   2          MsANL_SetCtEcho(1);
+ 655   2          lMsr.fAdc_full = TRUE;
+ 656   2        }
+ 657   1      
+ 658   1        MEAS_PrcEcho();
+ 659   1      
+ 660   1        if(gTd_f_en == FALSE)
+ 661   1          DSP_SetBuff(220, gAd_data, 0, MsANL_GetEmpty());
+ 662   1      
+ 663   1        ES0 = 0;
+ 664   1      
+ 665   1        ANZ_ChkEcho_Level();
+ 666   1      
+ 667   1        if(MnOUT_GetProtocol() == MnOUT_PROT_MDBS)
+ 668   1            ES0 = 1;
+ 669   1      
+ 670   1        SFRPAGE = UART0_PAGE;
+ 671   1        RI0 = 0;
+ 672   1      
+ 673   1        if(PCD_GetFgRun()==TRUE || MsANL_GetFgEcoDly()==TRUE || MsANL_GetFgEcoChk()==FALSE)
+ 674   1        {
+ 675   2          ADC_AvrgRaw();
+ 676   2          return;
+ 677   2        }
+ 678   1        ADC_WriteRaw();
+ 679   1        //MDB_PrcMain();
+ 680   1        ADC_AvrgRaw();
+ 681   1        ADC_ProcSmooth(MnEGN_GetSmthCnt(), MnEGN_GetSmthRng());
+ 682   1      
+ 683   1        ANZ_CalcTrshd();
+ 684   1      }
+ 685          
+ 686          void MEAS_ProcMain(void) 
+ 687          {
+ 688   1        U08 fTest = MnMSR_GetFgTest();
+ 689   1        U08 fEco_dtt = MsANL_GetFgEcoDtt();
+ 690   1        S16 dist_1st = MsANL_GetDist1st();
+ 691   1        S16 dist_mod = MsANL_GetDistMod();
+ 692   1      
+ 693   1      
+ 694   1        
+ 695   1        if(fTest) lMsr.cAvrg = 1;
+ 696   1        else    lMsr.cAvrg = MnEGN_GetAdcNumb();
+ 697   1      
+ 698   1        lMsr.intv = MnMSR_GetIntv();
+ 699   1        lMsr.freq = MnMSR_GetFreq();
+ 700   1      
+ 701   1        if(++lMsr.cIntv < lMsr.intv)
+ 702   1          return;
+ 703   1      
+ 704   1        if(PCD_GetFgRun()==TRUE)
+ 705   1          return;
+ 706   1      
+ 707   1      
+ 708   1        lMsr.cIntv = 0;
+ 709   1      
+ 710   1      
+ 711   1        MEAS_PrcSub1();
+ 712   1      
+ 713   1        MDB_PrcMain();
+ 714   1      
+ 715   1      
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 13  
+
+ 716   1      
+ 717   1      
+ 718   1      
+ 719   1        if(MsANL_GetFgEcoDly()==TRUE)
+ 720   1          return;
+ 721   1      
+ 722   1        if(MsANL_GetFgEcoChk()==TRUE)
+ 723   1        {
+ 724   2      
+ 725   2          MsANL_ProcSignal();
+ 726   2      
+ 727   2          if(lMsr.fAdc_full)
+ 728   2          {
+ 729   3            if(fEco_dtt)
+ 730   3            {
+ 731   4              if(MsANL_GetFgTimWin())   MsANL_TrackingSignal();
+ 732   4              else            ANZ_SetTw();
+ 733   4            }
+ 734   3          }
+ 735   2          else
+ 736   2          {
+ 737   3            if(MsANL_GetCtEcho() <= 3)
+ 738   3            {
+ 739   4              MsANL_CheckErr();
+ 740   4              return;
+ 741   4            }
+ 742   3      
+ 743   3            MsANL_SetDistMod(dist_1st);
+ 744   3          }
+ 745   2      
+ 746   2          if(fTest)
+ 747   2          {
+ 748   3            MsANL_SetDistaMt(dist_1st);
+ 749   3          }
+ 750   2          else
+ 751   2          {
+ 752   3            if(dist_mod != 0)
+ 753   3              ANZ_CalcDamp();
+ 754   3          }
+ 755   2          
+ 756   2          MsANL_CalcLevel();
+ 757   2        }
+ 758   1        MsANL_CheckErr();
+ 759   1      }
+ 760          
+ 761          
+ 762          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 763          //  EOF
+ 764          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 765          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3077    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    736      38
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+C51 COMPILER V9.55   MEASURE_MAIN                                                          04/29/2026 17:22:29 PAGE 14  
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

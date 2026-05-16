@@ -1,0 +1,626 @@
+//------------------------------------------------------------------------------------------------------------------------------
+//  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+//
+//  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transfer or disclosure of
+//  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+//
+//  $ Date: 2020-07-13 12:00:00 +0900 $
+//------------------------------------------------------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------------------------------------------------------
+//  Includes
+//------------------------------------------------------------------------------------------------------------------------------
+// lib
+#include "compiler_defs.h"
+#include "C8051F120_defs.h"
+// sys
+#include "sys_def.h"
+// self
+#include "measure_analyze.h"
+// bsp
+#include "bsp_main.h"
+#include "dly_main.h"
+#include "flash_main.h"
+#include "gpio_main.h"
+#include "tmr_main.h"
+#include "mem_main.h"
+#include "btn_main.h"
+#include "adc_main.h"
+#include "lcd_main.h"
+#include "lcd_data.h"
+// app
+#include "font_def.h"
+#include "app_main.h"
+#include "isr_main.h"
+// disp
+#include "disp_main.h"
+#include "disp_menu.h"
+#include "disp_string.h"
+// msr
+#include "measure_main.h"
+// menu
+#include "menu_box.h"
+#include "menu_system.h"
+#include "menu_measure.h"
+#include "menu_output.h"
+#include "menu_engineer.h"
+
+#include "modbus_main.h"
+//------------------------------------------------------------------------------------------------------------------------------
+//  Global variables
+//------------------------------------------------------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------------------------------------------------------
+//  Local variables
+//------------------------------------------------------------------------------------------------------------------------------
+LS_MsANL lMsAnl;
+
+
+//------------------------------------------------------------------------------------------------------------------------------
+//  Local Funtions
+//------------------------------------------------------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------------------------------------------------------
+//  Global APIs - Access Local Variables
+//------------------------------------------------------------------------------------------------------------------------------
+// Get Flag
+U08 MsANL_GetFgTimWin(void)			{	return lMsAnl.fTim_win;		}
+U08 MsANL_GetFgEcoDly(void)			{	return lMsAnl.fEco_dly;		}
+U08 MsANL_GetFgEcoDtt(void)			{	return lMsAnl.fEco_dtt;		}
+U08 MsANL_GetFgEcoTrk(void)			{	return lMsAnl.fEco_trk;		}
+U08 MsANL_GetFgEcoChk(void)		{	return lMsAnl.fEco_chk;		}
+U08 MsANL_GetFgErr(void)			{	return lMsAnl.fErr;			}
+// Get Counter
+U08 MsANL_GetCtEcho(void)			{	return lMsAnl.cEcho;		}
+// Get Value
+S16 MsANL_GetLevelMt(void)			{	return lMsAnl.level_mt;		}
+S16 MsANL_GetLevelFt(void)			{	return lMsAnl.level_ft;		}
+S16 MsANL_GetDistaMt(void)			{	return lMsAnl.dista_mt;		}
+S16 MsANL_GetDistaFt(void)			{	return lMsAnl.dista_ft;		}
+S16 MsANL_GetDist1st(void)			{	return lMsAnl.dist_1st;		}
+S16 MsANL_GetDistMod(void)			{	return lMsAnl.dist_mod;		}
+U16 MsANL_GetEmpty(void)			{	return lMsAnl.empty;		}
+U16 MsANL_GetTrhdPct(void)			{	return lMsAnl.trhd_pct;		}
+U08 MsANL_GetErrStat(void)			{	return lMsAnl.err_stat;		}
+// Set Flag
+void MsANL_SetFgTimWin(U08 flg)		{	lMsAnl.fTim_win = flg;		}
+// Set Counter
+void MsANL_SetCtEcho(U08 cnt)		{	lMsAnl.cEcho = cnt;			}
+// Set Value
+void MsANL_SetDistaMt(S16 val)		{	lMsAnl.dista_mt = val;		}
+void MsANL_SetDistMod(S16 val)		{	lMsAnl.dist_mod = val;		}
+
+
+
+//------------------------------------------------------------------------------------------------------------------------------
+//  Global APIs - Public
+//------------------------------------------------------------------------------------------------------------------------------
+void MsANL_ResetFlag(void)
+{
+	lMsAnl.fMty_ovr = FALSE;
+	lMsAnl.fTim_win = FALSE;
+
+	lMsAnl.cEco_wt = 0;
+	lMsAnl.cErr_tw = 0;
+	lMsAnl.cErr_eco0 = 0;
+	lMsAnl.cEcho = 1;
+
+	lMsAnl.damp_num = 0;
+}
+
+void MsANL_ResetTimer(void) 
+{
+	int i;
+
+	for(i=0; i<10; i++)     //DZ_min_UC_G = 10;
+	    gAd_data[i] = 0;
+
+	lMsAnl.fEco_dtt = FALSE;
+	lMsAnl.fEco_trk = 0;
+	lMsAnl.fEco_chk = 0;
+
+	SFRPAGE = PCA0_PAGE;
+	PCA0H = 0;
+	PCA0L = 0;              //PCA0CN = 0x00;	//CR = 0;
+	SFRPAGE = TMR2_PAGE;
+	TF2 = 0;                //TMR2H = 0; TMR2L = 0;
+}
+
+void MsANL_InitVari(void)
+{
+	// flag
+	lMsAnl.fMty_ovr = FALSE;
+	lMsAnl.fTim_win = FALSE;
+	lMsAnl.fEco_dly = FALSE;
+	lMsAnl.fEco_chk = FALSE;
+	lMsAnl.fEco_dtt = FALSE;
+	lMsAnl.fEco_trk = FALSE;
+	lMsAnl.fErr     = FALSE;
+	// counter
+	lMsAnl.cEco_wt = 0;
+	lMsAnl.cErr_tw = 0;
+	lMsAnl.cErr_eco0 = 0;
+	lMsAnl.cEcho = 1;
+	// value
+	lMsAnl.level_mt = 0;
+	lMsAnl.level_ft = 0;
+	lMsAnl.dista_mt = 0;
+	lMsAnl.dista_ft = 0;
+	lMsAnl.dist_1st = 0;
+	lMsAnl.dist_mod = 0;
+	lMsAnl.trhd_pct = 127;
+	lMsAnl.damp_num = 0;	// Damp_Array_UI_G[600],
+	lMsAnl.err_stat = MsANL_ERR_NONE;
+}
+
+void ANZ_SetEmptyPct(U08 pct)     // OLD: void Set_Empty_110_percent(void)
+{
+	lMsAnl.empty = (MnMSR_GetEmpty() * (pct/10)) / 10;
+}
+
+// OLD: void TW_Set(void)
+void ANZ_SetTw(void)	// Time Window
+{
+	U08 i;
+	U32 max_idx = 0;
+	U32 max_wdt = 0;
+	U16 max_val = 0;
+	U32 tmp_wdt = 0;
+	U16 signal  = MEM_ReadWord(MEM_MRAM, M_ADDR_ECHO_START);
+	U08 tw_rng  = MnMSR_GetTwRng();
+
+	if(signal == 0)
+		return;
+
+	if(!MnEGN_GetFgTwMod())
+	{	// First Echo TW Mode
+		if((signal + tw_rng) < lMsAnl.empty)		lMsAnl.tm_wd_hi = signal + tw_rng;
+		else										lMsAnl.tm_wd_hi = lMsAnl.empty;
+
+		if(signal > tw_rng)			lMsAnl.tm_wd_lo = signal - tw_rng;
+		else						lMsAnl.tm_wd_lo = signal;
+
+		lMsAnl.dist_mod = signal;
+	}
+	else
+	{	// Maximum Echo TW Mode
+		for(i=0; i<32; i+=2) 
+		{
+			tmp_wdt = MEM_ReadWord(MEM_MRAM, M_ADDR_ECHO_END + i);
+			
+			if (tmp_wdt > max_wdt)
+			{
+				max_wdt = tmp_wdt;
+				max_idx = M_ADDR_ECHO_START + i;
+			}
+		}
+
+		max_val = MEM_ReadWord(MEM_MRAM, max_idx);
+
+		// TW High Level Set
+		if((max_val + tw_rng) < lMsAnl.empty)		lMsAnl.tm_wd_hi = max_val + tw_rng;
+		else										lMsAnl.tm_wd_hi = lMsAnl.empty;
+		// TW Low Level Set
+		if(max_val > tw_rng)		lMsAnl.tm_wd_lo = max_val - tw_rng;
+		else						lMsAnl.tm_wd_lo = max_val;
+
+		lMsAnl.dist_mod = max_val;
+	}
+
+	lMsAnl.fTim_win = TRUE;
+	lMsAnl.fEco_trk = TRUE;
+}
+
+void MsANL_Proc1Sec(void)
+{
+
+	if(lMsAnl.fEco_dly)
+	{
+		if(++lMsAnl.cEco_wt < 30)
+			return;
+	}
+	else 
+	{
+		lMsAnl.cEco_wt = 0;
+		return;
+	}
+
+
+
+	lMsAnl.cEco_wt = 0;
+	lMsAnl.fEco_dly = FALSE;
+	lMsAnl.cErr_eco0 = 0;
+}
+
+void MsANL_CheckErr(void) 	
+{
+
+	if(!lMsAnl.fEco_chk)
+		lMsAnl.cErr_eco0++;
+
+	if(gDp.f_err_tprt)
+	{
+		lMsAnl.err_stat = MsANL_ERR_TPRT;
+		lMsAnl.fErr = TRUE;
+		return;
+	}
+
+
+	if(lMsAnl.cErr_eco0 > MnOUT_GetEchoDly())
+	{
+		
+		lMsAnl.err_stat = MsANL_ERR_ECHO;
+		lMsAnl.fErr = TRUE;
+		if(lMsAnl.fEco_chk)
+			lMsAnl.fEco_dly = TRUE;
+		return;
+	}
+	
+	if(lMsAnl.cErr_eco0 > (MnMSR_GetIntv()+3))
+	{
+		if(lMsAnl.fEco_chk)
+		{
+			lMsAnl.fEco_dly = TRUE;
+			return;
+		}
+	}
+
+	lMsAnl.err_stat = MsANL_ERR_NONE;
+	lMsAnl.fErr = FALSE;
+}
+
+void ANZ_ChkEcho_Level(void)
+{
+    int i;
+	#if 1
+    for(i=MnMSR_GetDead(); i<lMsAnl.empty; i++) 
+    {
+        if(gAd_data[i] > MnEGN_GetTrhdMin())
+            lMsAnl.fEco_chk = TRUE;
+    }
+	#else
+    for(i=MSR_NUM_ECHO_CHK_START; i<lMsAnl.empty; i++) 
+    {
+        if(gAd_data[i] > MnEGN_GetTrhdMin())
+            lMsAnl.fEco_chk = TRUE;
+    }
+	#endif
+}
+
+void ANZ_CalcTrshd(void)      // Threshold
+{
+	U16 i;
+	F32 aux0;
+	F32 temp;
+	U16 start, end;
+	U16 min = 255;
+	U16 max = 0;
+	U16 range = 0;
+	U16 dist = 0;
+	U16 calc = 0;
+	U32 empty  = MnMSR_GetEmpty();
+	U16 dead   = MnMSR_GetDead();
+	U08 tw_rng = MnMSR_GetTwRng();
+	U08 ftest  = MnMSR_GetFgTest();
+	U16 trhd_gab = MnEGN_GetTrhdGab();
+	U08 trhd_low = MnEGN_GetTrhdLow();
+	U08 th_st_rg = MnEGN_GetThStRng();
+
+	if(lMsAnl.fEco_chk == TRUE)
+		lMsAnl.cEcho++;
+
+	if(th_st_rg == 0)
+		empty = lMsAnl.empty;
+	else
+	{
+		temp  = 1 - (th_st_rg * 0.01);
+		empty = MnMSR_GetEmpty() * temp;
+	}
+
+	if(!MnEGN_GetFgThMod()) 
+	{
+		start = dead;
+		end   = lMsAnl.dist_mod + MnEGN_GetTrhdRng();
+	} 
+	else 
+	{
+        dist = lMsAnl.dist_mod;
+        temp = MnMSR_GetEmpty() / 100;
+        calc = temp * (U16)MnEGN_GetThTwRng();
+        range = tw_rng + calc;
+        start = dist - range;
+        end   = dist + range;
+	}
+	
+	if(ftest)
+		start = dead;
+
+	if((start < dead) || (start > lMsAnl.empty))
+		start = dead;
+
+	if(end > lMsAnl.empty)
+		end = lMsAnl.empty;
+
+	if(lMsAnl.fTim_win && !ftest)
+	{
+		for(i=start; i<end; i++) 
+		{
+			if(gAd_data[i] > max)     max = gAd_data[i];
+			if(gAd_data[i] < min)     min = gAd_data[i];
+		}
+	} 
+    else 
+    {
+        for(i=dead; i<empty; i++) 
+        {
+        	if(gAd_data[i] > max)     max = gAd_data[i];
+        	if(gAd_data[i] < min)     min = gAd_data[i];
+        }
+    }
+    aux0 = MnMSR_GetTrhdPer();
+
+	if(MnEGN_GetFgDzMod())
+	{
+		if((lMsAnl.dist_mod - dead) < 15)
+			min = 22;
+	}
+
+	if(min > 229)     // 255*90% = 229.5
+	{
+		aux0 = (max * aux0) / 100.0;
+		lMsAnl.trhd_pct = aux0;
+	} 
+	else if ((max - min) < trhd_gab)
+	{
+		if ((255 - min) < trhd_gab) 
+		{
+			aux0 = (max * aux0) / 100.0;
+			lMsAnl.trhd_pct = aux0;
+		} 
+		else 
+			lMsAnl.trhd_pct = min + trhd_gab;
+	} 
+	else 
+	{
+		aux0 = ((max - min) * aux0) / 100.0;
+		lMsAnl.trhd_pct = min + aux0;
+	}
+
+	if(lMsAnl.trhd_pct < trhd_low)
+		lMsAnl.trhd_pct = trhd_low;
+
+	if(MnMSR_GetTrhdMod() == MnMSR_TRHD_MOD_AUTO)		lMsAnl.trhd_pct = lMsAnl.trhd_pct;
+	else												lMsAnl.trhd_pct = MnMSR_GetTrhdFix();
+}
+
+void ANZ_CalcDamp(void) 
+{
+	U32 i;
+	U16 num;
+	U32 sum;
+	U32 addr_s;
+	U32 addr_e;
+	U32 addr_n;
+
+	switch(MnMSR_GetDamp())
+	{																// 	OLD
+		case MnMSR_DAMP_I01_T0001:		num = 1;		break;		//  1 sec	   1
+		case MnMSR_DAMP_I02_T0010:		num = 10;		break;		// 30 sec	  30
+		case MnMSR_DAMP_I03_T0020:		num = 20;		break;		//  1 min	  60
+		case MnMSR_DAMP_I04_T0040:		num = 40;		break;		//  2 min	 120	
+		case MnMSR_DAMP_I05_T0100:		num = 100;		break;		//  5 min    300
+		case MnMSR_DAMP_I06_T0200:		num = 200;		break;		// 10 min    600
+		case MnMSR_DAMP_I07_T0600:		num = 600;		break;		// 30 min   1800
+		case MnMSR_DAMP_I08_T1200:		num = 1200;		break;		// 60 min   3600
+	}
+
+	lMsAnl.damp_num++;
+
+	addr_s = M_ADDR_DAMP_START;
+	addr_e = M_ADDR_DAMP_END;
+
+	for(i=addr_s+2; i<=addr_e; i+=2)
+	{
+		MEM_WriteWord(MEM_MRAM, i - 2, MEM_ReadWord(MEM_MRAM, i));
+		MDB_PrcMain();
+	}
+	MDB_PrcMain();
+	MEM_WriteWord(MEM_MRAM, addr_e, lMsAnl.dist_mod);
+
+	MDB_PrcMain();
+
+	if(lMsAnl.damp_num >= num) 
+	{
+		lMsAnl.damp_num = num;
+		sum = 0;
+		
+		for(i=(addr_e - ((num - 1) * 2)); i<=addr_e; i += 2) 
+		{
+			sum += MEM_ReadWord(MEM_MRAM, i);
+			MDB_PrcMain();
+		}
+		lMsAnl.dista_mt = sum / lMsAnl.damp_num;
+	} 
+	else
+	{
+		addr_n = addr_e;
+		sum = 0;
+		
+		for(i=0; i<lMsAnl.damp_num; i++)
+		{
+			sum += MEM_ReadWord(MEM_MRAM, addr_n);
+			addr_n -= 2;
+			MDB_PrcMain();
+		}
+		
+		lMsAnl.dista_mt = sum / lMsAnl.damp_num;
+	}
+}
+
+void MsANL_CalcLevel(void) 
+{
+	F32 feet = 0;
+	U16 empty  = MnMSR_GetEmpty();
+	U16 dead   = MnMSR_GetDead();
+	S16 offset = MnMSR_GetOffs();
+
+	if(MnMSR_GetOper() == MnMSR_OPER_LEVEL)		lMsAnl.dista_mt -= offset;
+	else										lMsAnl.dista_mt += offset;
+
+	if(lMsAnl.dista_mt < dead)
+		lMsAnl.dista_mt = dead;
+	
+	if(lMsAnl.dista_mt > empty)
+	{
+		lMsAnl.fMty_ovr = TRUE;
+		lMsAnl.dista_mt = empty;
+	} 
+	else
+		lMsAnl.fMty_ovr = FALSE;
+	
+	lMsAnl.level_mt = empty - lMsAnl.dista_mt;
+
+	if(MnMSR_GetUnit() == MnMSR_UNIT_FEET) 
+	{
+		feet = (lMsAnl.dista_mt * MSR_CALC_M2F_CONST) + 0.5;
+		lMsAnl.dista_ft = feet;
+
+		feet = (lMsAnl.level_mt * MSR_CALC_M2F_CONST) + 0.5;
+		lMsAnl.level_ft = feet;
+	}
+}
+
+void MsANL_TrackingSignal(void) 
+{
+	U16 i;
+	U16 tmp1;			// OLD: unsigned int dummy_1_UI_L;
+	U32 addr_stt = M_ADDR_ECHO_START;
+	U08 tw_rng = MnMSR_GetTwRng();
+
+	for(i=0; i<MsANL_SIG_NUM; i++) 
+	{
+		tmp1 = i * 2;
+		if((MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) < lMsAnl.tm_wd_hi) &&
+		   (MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) > lMsAnl.tm_wd_lo)) 
+		{
+			lMsAnl.dist_mod = MEM_ReadWord(MEM_MRAM, addr_stt + tmp1);
+
+			if ((MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) + tw_rng) < (lMsAnl.empty))
+				lMsAnl.tm_wd_hi = MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) + tw_rng;
+			else
+				lMsAnl.tm_wd_hi = lMsAnl.empty;
+
+			if (MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) > tw_rng)
+				lMsAnl.tm_wd_lo = MEM_ReadWord(MEM_MRAM, addr_stt + tmp1) - tw_rng;
+			else
+				lMsAnl.tm_wd_lo = 10;
+
+			i = MsANL_SIG_NUM;
+			lMsAnl.fEco_trk = TRUE;
+		}
+	}
+	MDB_PrcMain();
+
+	if	(lMsAnl.fEco_trk)	lMsAnl.cErr_tw = 0;
+	else					lMsAnl.cErr_tw++;
+
+	if(lMsAnl.cErr_tw > MnMSR_GetTwDly()) 
+	{
+		lMsAnl.fTim_win = FALSE;
+		lMsAnl.cErr_tw  = 0;
+		lMsAnl.damp_num = 0;
+
+		MEAS_ResetFlag();
+	}
+}
+
+void MsANL_ProcSignal(void) 
+{
+	U16 i;
+	U32 num = 0;		// OLD: unsigned long Cnt_Sig_num_UL_L;
+	U32 cnt = 0;
+	U16 w_sig = 0;		// OLD: unsigned int Width_sig_UI_L;
+	U08 f_lvl = 0;		// OLD: unsigned char Flag_level_condition_UC_L;
+	U32 c_width = 0;	// OLD: unsigned long Cnt_Index_width_UL_L;
+	U32 stt = M_ADDR_ECHO_START;
+	U32 end = M_ADDR_ECHO_END;
+	F32 veloc = MEAS_GetVeloc();
+
+	// Analysis Frequency
+	MEM_Reset_Status();
+	
+	for(i=0; i<MsANL_SIG_NUM; i++) 
+	{
+		MDB_PrcMain();
+		MEM_WriteWord(MEM_MRAM, stt+cnt, 0);
+		MEM_WriteWord(MEM_MRAM, end+cnt, 0);
+		cnt += 2;
+	}
+
+	for(i=MnMSR_GetDead(); i<ADC_DATA_MAX; i++)		// Threshold over Index, Width save
+	{
+		MDB_PrcMain();
+		if(f_lvl == FALSE)
+		{
+			if(gAd_data[i] > lMsAnl.trhd_pct) 
+			{
+				f_lvl = TRUE;
+				MEM_WriteWord(MEM_MRAM, stt+num, i);
+
+				c_width++;
+			}
+		}
+		else 
+		{
+			if(gAd_data[i] > lMsAnl.trhd_pct)
+				c_width++;
+			else
+			{
+				w_sig = ((c_width * 2 * 10000) / veloc);
+
+				if(w_sig > (MnMSR_GetAsf() + 20)) 
+				{
+					MEM_WriteWord(MEM_MRAM, end + num, w_sig);
+					num += 2;
+				} 
+				else 
+					MEM_WriteWord(MEM_MRAM, stt + num, 0);
+
+				f_lvl = FALSE;
+				c_width = 0;
+
+				if(num > (MsANL_SIG_NUM - 1) * 2) 
+				{
+					i   = ADC_DATA_MAX;
+					num = (MsANL_SIG_NUM - 1) * 2;
+				}
+			}
+		}
+
+		if(f_lvl == FALSE && i > lMsAnl.empty)
+			i = ADC_DATA_MAX;
+	}
+	MDB_PrcMain();
+
+	if(f_lvl == TRUE)
+	{
+		w_sig = ((c_width * 2 * 10000) / veloc);
+
+		if(w_sig > (MnMSR_GetAsf() + 20))		MEM_WriteWord(MEM_MRAM, end+num, w_sig);
+		else									MEM_WriteWord(MEM_MRAM, stt+num, 0);
+	}
+
+	lMsAnl.dist_1st = MEM_ReadWord(MEM_MRAM, stt);
+
+	if(MEM_ReadWord(MEM_MRAM, stt) != 0)
+		lMsAnl.fEco_dtt = TRUE;
+}
+
+
+//------------------------------------------------------------------------------------------------------------------------------
+//  EOF
+//------------------------------------------------------------------------------------------------------------------------------
+

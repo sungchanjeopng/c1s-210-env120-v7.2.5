@@ -1,0 +1,370 @@
+C51 COMPILER V9.55   RTC_DS1302                                                            04/29/2026 17:22:50 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE RTC_DS1302
+OBJECT MODULE PLACED IN .\Objects\rtc_ds1302.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\bsp\rtc_ds1302.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_
+                    -Wess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Li
+                    -stings\rtc_ds1302.lst) TABS(2) OBJECT(.\Objects\rtc_ds1302.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------
+   2          //
+   3          //  Copyright (C) 2020, WESS-Global Inc., All Rights Reserved.
+   4          //
+   5          //  The information contained herein is confidential property of
+   6          //  WESS-Global Inc. The use, copying, transfer or disclosure of
+   7          //  such information is prohibited except by express written agreement
+   8          //  with WESS-Global Co.,LTD
+   9          //
+  10          //  $Id: templet_format.c 1 2020-07-13 12:00:00Z eddie $
+  11          //  $Date: 2020-07-13 12:00:00 +0900 
+  12          //  $Author: eddie $
+  13          //  $Rev: 1.0 $
+  14          //
+  15          //--------------------------------------------------------------------
+  16          
+  17          
+  18          //--------------------------------------------------------------------
+  19          //  Includes
+  20          //--------------------------------------------------------------------
+  21          // lib
+  22          #include "compiler_defs.h"
+  23          #include "C8051F120_defs.h"
+  24          // sys
+  25          #include "sys_def.h"
+  26          // bsp
+  27          #include "dly_main.h"
+  28          #include "bsp_main.h"
+  29          #include "spi_main.h"
+  30          #include "mem_main.h"
+  31          #include "lcd_main.h"
+  32          #include "lcd_data.h"
+  33          #include "btn_main.h"
+  34          #include "gpio_main.h"
+  35          // app
+  36          #include "app_main.h"
+  37          #include "rtc_ds1302.h"
+  38          // disp
+  39          #include "disp_main.h"
+  40          #include "disp_string.h"
+  41          // font
+  42          #include "font_def.h"
+  43          
+  44          
+  45          //--------------------------------------------------------------------
+  46          //  Local Macros
+  47          //--------------------------------------------------------------------
+  48          
+  49          
+  50          //--------------------------------------------------------------------
+  51          //  Local Type definitions
+  52          //--------------------------------------------------------------------
+  53          
+C51 COMPILER V9.55   RTC_DS1302                                                            04/29/2026 17:22:50 PAGE 2   
+
+  54          
+  55          //--------------------------------------------------------------------
+  56          //  Global variables
+  57          //--------------------------------------------------------------------
+  58          GV_RTC gRt;
+  59          
+  60          
+  61          //--------------------------------------------------------------------
+  62          //  Local variables
+  63          //--------------------------------------------------------------------
+  64          
+  65          
+  66          //--------------------------------------------------------------------
+  67          // Funtion Definitions
+  68          //--------------------------------------------------------------------
+  69          // OLD: void ds1302_delay(void)
+  70          void RtcProc_WaitDly(void)
+  71          {
+  72   1          U16 i;
+  73   1      
+  74   1          for(i=0; i<1; i++){}
+  75   1      }
+  76          
+  77          
+  78          // OLD: void write_ds1302_byte(unsigned char cmd)
+  79          void RtcProc_WriteByte(U08 cmd)
+  80          {
+  81   1          U08 i;
+  82   1          U08 old = SFRPAGE;
+  83   1      
+  84   1          SFRPAGE = CONFIG_PAGE;
+  85   1      
+  86   1          for(i=0; i<=7; i++)
+  87   1          {
+  88   2              if(cmd & 0x01)      SBIT_SPI_MOSI = 1;
+  89   2              else                SBIT_SPI_MOSI = 0;
+  90   2      
+  91   2              cmd = cmd >> 1;
+  92   2      
+  93   2              SBIT_SPI_CLK = 1;
+  94   2              RtcProc_WaitDly();
+  95   2              SBIT_SPI_CLK = 0;
+  96   2          }
+  97   1      
+  98   1          SFRPAGE = old;
+  99   1      }
+ 100          
+ 101          // OLD: unsigned char read_ds1302(unsigned char cmd)
+ 102          U08 RtcProc_ReadData(U08 cmd)
+ 103          {
+ 104   1          U08 i;
+ 105   1          U08 value = 0;
+ 106   1          U08 old = SFRPAGE;
+ 107   1      
+ 108   1          SFRPAGE = CONFIG_PAGE;
+ 109   1      
+ 110   1          SBIT_RTC_CS = 1;
+ 111   1          RtcProc_WaitDly();
+ 112   1      
+ 113   1          RtcProc_WriteByte(cmd);
+ 114   1          RtcProc_WaitDly();
+ 115   1      
+C51 COMPILER V9.55   RTC_DS1302                                                            04/29/2026 17:22:50 PAGE 3   
+
+ 116   1          P0MDOUT = 0x05;
+ 117   1      
+ 118   1          for(i=0; i<=7; i++)
+ 119   1          {
+ 120   2          if(SBIT_SPI_MOSI)   value |= 0x80;
+ 121   2          if(i != 7)      value = value >> 1;
+ 122   2      
+ 123   2          SBIT_SPI_CLK = 1;
+ 124   2          RtcProc_WaitDly();
+ 125   2          SBIT_SPI_CLK = 0;
+ 126   2          }
+ 127   1      
+ 128   1          SBIT_RTC_CS = 0;
+ 129   1          RtcProc_WaitDly();
+ 130   1      
+ 131   1          P0MDOUT = 0xF5;
+ 132   1      
+ 133   1          SFRPAGE = old;
+ 134   1      
+ 135   1          return value;
+ 136   1      }
+ 137          
+ 138          // OLD: void write_ds1302(unsigned char cmd, unsigned char value)
+ 139          void RtcProc_WriteData(U08 cmd, U08 value)
+ 140          {
+ 141   1          U08 old = SFRPAGE;
+ 142   1      
+ 143   1          SFRPAGE = CONFIG_PAGE;
+ 144   1      
+ 145   1          SBIT_RTC_CS = 1;
+ 146   1          RtcProc_WaitDly();
+ 147   1      
+ 148   1          RtcProc_WriteByte(cmd);
+ 149   1          RtcProc_WriteByte(value);
+ 150   1      
+ 151   1          SBIT_RTC_CS = 0;
+ 152   1          RtcProc_WaitDly();
+ 153   1      
+ 154   1          SFRPAGE = old;
+ 155   1      }
+ 156          
+ 157          // Old: rtc_get_datetime()
+ 158          void RTC_GetTime(void)
+ 159          {
+ 160   1        U08 old = SFRPAGE;
+ 161   1      
+ 162   1        SPI_ResetFunc();
+ 163   1        SFRPAGE = CONFIG_PAGE;
+ 164   1      
+ 165   1        gRt.sec  = RtcProc_ReadData(0x81);
+ 166   1        gRt.min  = RtcProc_ReadData(0x83);
+ 167   1        gRt.hour = RtcProc_ReadData(0x85);
+ 168   1        gRt.date = RtcProc_ReadData(0x87);
+ 169   1        gRt.dd   = RtcProc_ReadData(0x8b);
+ 170   1        gRt.mm   = RtcProc_ReadData(0x89);
+ 171   1        gRt.yy   = RtcProc_ReadData(0x8d);
+ 172   1      
+ 173   1        gRt.sec  = (gRt.sec >>4)*10 + (gRt.sec &0x0f);
+ 174   1        gRt.min  = (gRt.min >>4)*10 + (gRt.min &0x0f);
+ 175   1        gRt.hour = (gRt.hour>>4)*10 + (gRt.hour&0x0f);
+ 176   1        gRt.date = (gRt.date>>4)*10 + (gRt.date&0x0f);
+ 177   1        gRt.dd   = (gRt.dd  >>4)*10 + (gRt.dd  &0x0f);
+C51 COMPILER V9.55   RTC_DS1302                                                            04/29/2026 17:22:50 PAGE 4   
+
+ 178   1        gRt.mm   = (gRt.mm  >>4)*10 + (gRt.mm  &0x0f);
+ 179   1        gRt.yy   = (gRt.yy  >>4)*10 + (gRt.yy  &0x0f);
+ 180   1      
+ 181   1        SBIT_SPI_MOSI = GIO_SET_LO;
+ 182   1      
+ 183   1        SFRPAGE = old;
+ 184   1      
+ 185   1        SPI_SetFunc();
+ 186   1      }
+ 187          
+ 188          // OLD: void rtc_set_datetime(unsigned char Time_Min_UC_L,unsigned char Time_Hour_UC_L,unsigned char Time_
+             -Date_UC_L, unsigned char Time_Month_UC_L,unsigned char Time_Day_UC_L,unsigned char Time_Year_UC_L)
+ 189          void RTC_SetTime(U08 min, U08 hour, U08 date, U08 mm, U08 dd, U08 yy)
+ 190          {
+ 191   1          U08 dat;
+ 192   1      
+ 193   1          SPI_ResetFunc();
+ 194   1      
+ 195   1          // sec
+ 196   1          RtcProc_WriteData(0x80, 0x00);
+ 197   1      
+ 198   1          // min
+ 199   1          dat = min;
+ 200   1          dat /= 10;
+ 201   1          min %= 10;
+ 202   1          min = (dat<<4) | min;
+ 203   1          RtcProc_WriteData(0x82, min);
+ 204   1      
+ 205   1          // hour
+ 206   1          dat = hour;
+ 207   1          dat /= 10;
+ 208   1          hour %= 10;
+ 209   1          hour = (dat<<4) | hour;
+ 210   1          RtcProc_WriteData(0x84, hour);
+ 211   1      
+ 212   1          // date
+ 213   1          dat = date;
+ 214   1          dat /=10;
+ 215   1          date %=10;
+ 216   1          date = (dat<<4) | date;
+ 217   1          RtcProc_WriteData(0x86, date);
+ 218   1      
+ 219   1          // month
+ 220   1          dat = mm;
+ 221   1          dat /=10;
+ 222   1          mm %=10;
+ 223   1          mm = (dat<<4) | mm;
+ 224   1          RtcProc_WriteData(0x88, mm);
+ 225   1      
+ 226   1          // day
+ 227   1          dat = dd;
+ 228   1          dat /= 10;
+ 229   1          dd %= 10;
+ 230   1          dd = (dat<<4) | dd;
+ 231   1          RtcProc_WriteData(0x8a, dd);
+ 232   1      
+ 233   1          // yy
+ 234   1          dat = yy;
+ 235   1          dat /= 10;
+ 236   1          yy %= 10;
+ 237   1          yy = (dat<<4) | yy;
+ 238   1          RtcProc_WriteData(0x8c, yy);
+C51 COMPILER V9.55   RTC_DS1302                                                            04/29/2026 17:22:50 PAGE 5   
+
+ 239   1      
+ 240   1          SPI_SetFunc();
+ 241   1      }
+ 242          
+ 243          // OLD: unsigned char Time_adj(unsigned char Para_UC_L, unsigned char Y_column_UC_L, unsigned char row_UC_
+             -L, unsigned char Sel_UC_L)
+ 244          U08 RTC_AdjTime(U08 para, U08 column, U08 row, U08 sel)
+ 245          {
+ 246   1          U16 cnt;
+ 247   1          S08 aux = para;
+ 248   1        U08 p_str[APP_STR_LENGTH] = {0, };
+ 249   1      
+ 250   1        do
+ 251   1          {
+ 252   2          DpSTR_LineUpd(FT_EN_08x16, 0, column, row, "  ");
+ 253   2      
+ 254   2          if(_SBIT_BTN_SET != BTN_STT_PRESS)
+ 255   2              {
+ 256   3            cnt = 0;
+ 257   3      
+ 258   3            while(!BTN_ChkPush() && (cnt < 200))
+ 259   3                  {
+ 260   4              cnt++;
+ 261   4              DLY_RunMsec(1);
+ 262   4            }
+ 263   3          }
+ 264   2      
+ 265   2          do
+ 266   2              {
+ 267   3            if(_SBIT_BTN_UP   == BTN_STT_PRESS)    aux++;
+ 268   3            if(_SBIT_BTN_DOWN == BTN_STT_PRESS)    aux--;
+ 269   3      
+ 270   3            switch(sel)
+ 271   3                  {
+ 272   4                      case RTC_SET_IDX_YY:
+ 273   4                          if     (aux > 50)       aux = 0;
+ 274   4                          else if(aux < 0)        aux = 50;
+ 275   4      
+ 276   4                APP_Num2Str(aux, p_str, 2, 0, TRUE);
+ 277   4                DpSTR_LineUpd(FT_EN_08x16, FALSE,  column, row, p_str);
+ 278   4                          break;
+ 279   4      
+ 280   4                      case RTC_SET_IDX_MM:
+ 281   4                          if     (aux > 12)       aux = 1;
+ 282   4                          else if(aux < 1)        aux = 12;
+ 283   4      
+ 284   4                APP_Num2Str(aux, p_str, 2, 0, TRUE);
+ 285   4                DpSTR_LineUpd(FT_EN_08x16, FALSE,  column, row, p_str);
+ 286   4                          break;
+ 287   4      
+ 288   4                      case RTC_SET_IDX_DAY:
+ 289   4                          if     (aux > 31)       aux = 1;
+ 290   4                          else if(aux < 1)        aux = 31;
+ 291   4                APP_Num2Str(aux, p_str, 2, 0, TRUE);
+ 292   4                DpSTR_LineUpd(FT_EN_08x16, FALSE,  column, row, p_str);
+ 293   4                          break;
+ 294   4      
+ 295   4                      case RTC_SET_IDX_H24:
+ 296   4                          if     (aux > 23)       aux = 0;
+ 297   4                          else if(aux < 0)        aux = 23;
+ 298   4      
+ 299   4                APP_Num2Str(aux, p_str, 2, 0, TRUE);
+C51 COMPILER V9.55   RTC_DS1302                                                            04/29/2026 17:22:50 PAGE 6   
+
+ 300   4                DpSTR_LineUpd(FT_EN_08x16, FALSE,  column, row, p_str);
+ 301   4                          break;
+ 302   4      
+ 303   4                      case RTC_SET_IDX_MIN:
+ 304   4                          if     (aux > 59)       aux = 00;
+ 305   4                          else if(aux < 0)        aux = 59;
+ 306   4      
+ 307   4                APP_Num2Str(aux, p_str, 2, 0, TRUE);
+ 308   4                DpSTR_LineUpd(FT_EN_08x16, FALSE,  column, row, p_str);
+ 309   4                          break;
+ 310   4            }
+ 311   3      
+ 312   3            if(_SBIT_BTN_SET != BTN_STT_PRESS)
+ 313   3              BTN_DelayMsec(BTN_WAIT_UD);
+ 314   3          } while (_SBIT_BTN_UP == BTN_STT_PRESS || _SBIT_BTN_DOWN == BTN_STT_PRESS);
+ 315   2      
+ 316   2          if(_SBIT_BTN_SET != BTN_STT_PRESS)
+ 317   2              {
+ 318   3            cnt = 0;
+ 319   3            while(!BTN_ChkPush() && cnt < 200)
+ 320   3                  {
+ 321   4              cnt++;
+ 322   4              DLY_RunMsec(1);
+ 323   4            }
+ 324   3          }
+ 325   2        } while(_SBIT_BTN_SET);
+ 326   1      
+ 327   1        para = aux;
+ 328   1      
+ 329   1        return para;
+ 330   1      }
+ 331          
+ 332          // EOF
+ 333          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1054    ----
+   CONSTANT SIZE    =     19    ----
+   XDATA SIZE       =      7      30
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

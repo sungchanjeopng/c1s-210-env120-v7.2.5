@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Release Note - c1s-210</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            margin: 40px;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+        h1 {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .copyright {
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #333;
+            padding: 6px 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #4a4a4a;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .no { width: 30px; text-align: center; }
+        .date { width: 80px; text-align: center; }
+        .writer { width: 50px; text-align: center; }
+        .version { width: 70px; text-align: center; }
+        .type { width: 55px; text-align: center; }
+        .explanation { width: auto; }
+        .sub-item {
+            padding-left: 15px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        @media print {
+            body { margin: 20px; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Release Note - c1s-210</h1>
+    <p class="copyright">Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th class="no">No</th>
+                <th class="date">Date</th>
+                <th class="writer">Writer</th>
+                <th class="version">Version</th>
+                <th class="type">Type</th>
+                <th class="explanation">Explanation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="no">1</td>
+                <td class="date">2020-11-26</td>
+                <td class="writer">Eddie</td>
+                <td class="version">v7.0.4</td>
+                <td class="type">Release</td>
+                <td>최초 배포</td>
+            </tr>
+            <tr>
+                <td class="no">2</td>
+                <td class="date">2020-12-09</td>
+                <td class="writer">Eddie</td>
+                <td class="version">v7.0.5</td>
+                <td class="type">Release</td>
+                <td>
+                    - 시스템 메뉴 변수, 구조체 분리 (#1)<br>
+                    - 농도계와 코드 스타일 공용화 (#1)<br>
+                    - 로깅 메뉴 영문 표시 오류 수정<br>
+                    - 중국어/일본어 코드 구분<br>
+                    - 로깅 메뉴/표시간격: 키 입력 오류 수정
+                </td>
+            </tr>
+            <tr>
+                <td class="no"></td>
+                <td class="date"></td>
+                <td class="writer">Eric</td>
+                <td class="version"></td>
+                <td class="type"></td>
+                <td>- RF 모듈 기능 확인</td>
+            </tr>
+            <tr>
+                <td class="no">3</td>
+                <td class="date">2021-02-17</td>
+                <td class="writer">Eddie</td>
+                <td class="version">v7.0.6</td>
+                <td class="type">Release</td>
+                <td>
+                    - 시스템 메뉴 변수, 구조체 분리 (#2)<br>
+                    - 농도계와 코드 스타일 공용화 (#2)<br>
+                    - 숨은 메뉴 진입 방법 변경: 농도계와 동일 - 좌우키 동시 3초 (서비스 메뉴)<br>
+                    - 측정 주기, 공장 초기화 값 변경: 1초 -> 3초<br>
+                    - 댐핑, 계산법 변경: 시간 -> 횟수
+                </td>
+            </tr>
+            <tr>
+                <td class="no">4</td>
+                <td class="date">2021-04-05</td>
+                <td class="writer">Eric</td>
+                <td class="version">v7.0.7</td>
+                <td class="type">Tag</td>
+                <td>- RF 모듈 설정 변경 - WRF-200M 적용 (기존 WR100 지원 종료)</td>
+            </tr>
+            <tr>
+                <td class="no">5</td>
+                <td class="date">2021-04-23</td>
+                <td class="writer">Eric</td>
+                <td class="version">v7.0.8</td>
+                <td class="type">Release</td>
+                <td>
+                    - 신호 필터 항목 추가 (6 -> 11)<br>
+                    - 신호 처리 타이밍 오류 개선 (v7.0.6 오류)
+                </td>
+            </tr>
+            <tr>
+                <td class="no">6</td>
+                <td class="date">2021-05-31</td>
+                <td class="writer">Eric</td>
+                <td class="version">v7.0.9</td>
+                <td class="type">Release</td>
+                <td>
+                    - 로깅 어드레스 오류 개선 (전원 ON/OFF 시, 삭제)<br>
+                    - 신규 RF 모듈 적용 및 관련 코드 보완 (기존 모듈 지원 종료)<br>
+                    - RF 채널 설정 범위 변경 (1~99 -> 1~4) - 메뉴얼 기준
+                </td>
+            </tr>
+            <tr>
+                <td class="no">7</td>
+                <td class="date">2021-06-08</td>
+                <td class="writer">Eric</td>
+                <td class="version">v7.0.10</td>
+                <td class="type">Release</td>
+                <td>- Smooth Num 옵션 추가 (숨은 메뉴) - 설정 범위 0~10, 기능 해제: 0, 기본값: 2</td>
+            </tr>
+            <tr>
+                <td class="no">8</td>
+                <td class="date">2021-07-23</td>
+                <td class="writer">Eric</td>
+                <td class="version">v7.0.11</td>
+                <td class="type">Tag</td>
+                <td>
+                    - 신호 필터 항목 수 조정: 11 -> 6 (6: 커스텀, 숨은 메뉴에서 설정 가능)<br>
+                    - 커스텀 TVG 설정 기능 추가 (숨은 메뉴): 0 ~ 2000 (수신감도 1로 고정)<br>
+                    - 단위 변경에 따른, 표시 오류 개선 (Feet 선택 시, 출력 전류 표시 오류)
+                </td>
+            </tr>
+            <tr>
+                <td class="no">9</td>
+                <td class="date">2021-08-30</td>
+                <td class="writer">Eric</td>
+                <td class="version">v7.0.12</td>
+                <td class="type">Tag</td>
+                <td>- 신호 필터 항목 수 조정: 6 -> 7 (6: 기울기 조정, 7: 커스텀)</td>
+            </tr>
+            <tr>
+                <td class="no">10</td>
+                <td class="date">2021-11-08</td>
+                <td class="writer">Eddie</td>
+                <td class="version">v7.1.0</td>
+                <td class="type">Tag</td>
+                <td>
+                    - 소스 디렉토리 구조 개선 및 파일명 정리<br>
+                    - 함수 및 변수 리네이밍 (가독성 향상)<br>
+                    - 코드 최적화 (용량 확보) / 코드 객체화 (SBM-310D 개발 시, 포팅 용이)<br>
+                    - 신규 메뉴 트리 적용<br>
+                    - Factory 메뉴 섹션 추가 (진입방법: 4mA 출력, 좌우 롱버튼)
+                </td>
+            </tr>
+            <tr>
+                <td class="no"></td>
+                <td class="date"></td>
+                <td class="writer">Ted</td>
+                <td class="version"></td>
+                <td class="type"></td>
+                <td>- Max. Distance 선택 메뉴 추가: 10 / 20m (@ Factory)</td>
+            </tr>
+            <tr>
+                <td class="no">11</td>
+                <td class="date">2021-11-10</td>
+                <td class="writer">Eddie</td>
+                <td class="version">v7.1.1</td>
+                <td class="type">Tag</td>
+                <td>
+                    - 표시 개선 및 코드 최적화 (@Factory)<br>
+                    - 바이너리 파일 옵션 추가 (중&일 -> 한&중&일)<br>
+                    - Threshold 옵션, Exit 키 적용<br>
+                    - 메뉴 트리 문서와 디스플레이 동기화 (영문)<br>
+                    - 기타 표시 오류 수정 (영문)
+                </td>
+            </tr>
+            <tr>
+                <td class="no">12</td>
+                <td class="date">2021-11-10</td>
+                <td class="writer">Eddie</td>
+                <td class="version">v7.1.2</td>
+                <td class="type">Tag</td>
+                <td>
+                    - Display API 구조 개선<br>
+                    - BIN 파일 및 프로젝트명 변경: sdm-101s -> slm-101s<br>
+                    - 메뉴 트리 문서와 디스플레이 동기화 (국문)<br>
+                    - 기타 표시 오류 수정 (국문)
+                </td>
+            </tr>
+            <tr>
+                <td class="no"></td>
+                <td class="date">2022-01-20</td>
+                <td class="writer">Eric</td>
+                <td class="version"></td>
+                <td class="type">Release</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td class="no">13</td>
+                <td class="date">2022-03-03</td>
+                <td class="writer">Tom</td>
+                <td class="version">v7.1.3</td>
+                <td class="type">Tag</td>
+                <td>
+                    - Offset 값 표시 오류 수정 (설정값 화면)<br>
+                    - Delete 표시 오류 수정 (데이터 메뉴)<br>
+                    - Threshold MIN 값 표시 오류 수정 (숨김 메뉴)<br>
+                    - Passcode 진입 시, 이전 화면 진입 및 자릿수 변경 개선 (숫자형 화면)<br>
+                    - R1 Act/Stop 설정 오류 수정 (릴레이 메뉴)<br>
+                    - Display Term 설정 오류 수정 (데이터 메뉴)
+                </td>
+            </tr>
+            <tr>
+                <td class="no">14</td>
+                <td class="date">2022-04-14</td>
+                <td class="writer">Tom</td>
+                <td class="version">v7.1.4</td>
+                <td class="type">Release</td>
+                <td>
+                    - SPECIAL 메뉴 이름 변경 (SPECIAL -> ENGINEER)<br>
+                    - TVG 커스텀 기능 개선 (ENGINEER 메뉴)<br>
+                    <span class="sub-item">- Enable 추가 (YES/NO)</span><br>
+                    <span class="sub-item">- 기존 Curve 불러오기 기능 추가 (진입 방법: PROG Key)</span><br>
+                    <span class="sub-item">- 전체 Curve Gain 리셋 기능 진입 방법 변경 (PROG Key -> LEFT+RIGHT Long Key)</span><br>
+                    - Tvg Curve 기능 개선 (측정 메뉴, Quick 메뉴)<br>
+                    <span class="sub-item">- 항목 수 조정 (0~6 -> 0~5)</span><br>
+                    <span class="sub-item">- 엔지니어 메뉴의 커스텀 On 시, 커스텀만 적용 됨 (항목 조정 불가)</span><br>
+                    - 영문 표시 수정<br>
+                    <span class="sub-item">- "Tvg Custom" -> "TVG Curve" (Quick 메뉴)</span><br>
+                    <span class="sub-item">- "ASF Band" -> "ASF Value" (Measurement 메뉴)</span><br>
+                    - 연도 표시 오류(데이터 트렌드 화면)<br>
+                    - DAC 4mA / 20mA 화면 표시 개선(FACTORY)<br>
+                    - FACTORY 화면 표시 개선
+                </td>
+            </tr>
+            <tr>
+                <td class="no"></td>
+                <td class="date"></td>
+                <td class="writer">Eric</td>
+                <td class="version"></td>
+                <td class="type"></td>
+                <td>- 언어 관련 코드 정리 (메뉴 표시)</td>
+            </tr>
+            <tr>
+                <td class="no"></td>
+                <td class="date"></td>
+                <td class="writer">Tom</td>
+                <td class="version"></td>
+                <td class="type"></td>
+                <td>
+                    - 중문 표시 수정 (아래 9개 항목) 및 중문 폰트 추가<br>
+                    <span class="sub-item">- "System", "Measurement", "Output", "Data"(Menu)</span><br>
+                    <span class="sub-item">- "Menu", "Quick(Menu)"</span><br>
+                    <span class="sub-item">- "Damping", "Window Reset Time", "Demo Mode" (Measurement 메뉴)</span><br>
+                    - 국문 표시 수정 (아래 4개 항목) 및 국문 폰트 추가<br>
+                    <span class="sub-item">- "Frequency" -> "주파수", "평균보정" -> "댐핑" (Measurement 메뉴)</span><br>
+                    <span class="sub-item">- "측정농도" -> "주파수" (Quick 메뉴)</span><br>
+                    <span class="sub-item">- "Menu" -> "메뉴"</span><br>
+                    - "Language", "Time" 항목 순서 변경 (System)<br>
+                    - 에러 출력 (ER01) 오류 개선
+                </td>
+            </tr>
+            <tr>
+                <td class="no">15</td>
+                <td class="date">2022-07-18</td>
+                <td class="writer">Tom</td>
+                <td class="version">v7.1.5</td>
+                <td class="type">Release</td>
+                <td>
+                    - "Menu" 진입 후 "Screen" 화면 복귀 시 데이터 저장 불가 오류 개선<br>
+                    - "TEST" 메뉴 추가<br>
+                    <span class="sub-item">- 진입 방법: "ENGINEER" 메뉴에서 Left & Right Long Key</span><br>
+                    - "Global Counter" 기능 추가 (TEST 메뉴)<br>
+                    - "Factory Reset" 실행 후, 파형 화면 "Empty" 설정값(파형) 오류 개선<br>
+                    - "Threshold MIN" 오류 조건 개선 (ENGINEER 메뉴)<br>
+                    - "Passcode" 창에서 "Exit" 누른 후 측정 모드 복귀 시, 또는 Passcode 틀릴 시, 측정 멈춤
+                </td>
+            </tr>
+            <tr>
+                <td class="no">16</td>
+                <td class="date">2022-09-29</td>
+                <td class="writer">Tom</td>
+                <td class="version">v7.1.6</td>
+                <td class="type">Release</td>
+                <td>
+                    - "Quick Menu" 항목 추가 및 삭제<br>
+                    <span class="sub-item">- 추가: "Damping" / "Threshold" / "ASF Value" / "Measure Reset"</span><br>
+                    <span class="sub-item">- 삭제: "Empty" / "Dead Zone" / "TVG Curve"</span><br>
+                    - 영문 표시 수정<br>
+                    <span class="sub-item">- "Echo Delay" -> "Error Delay" / "Echo Output" -> "Error Output" (Output 메뉴)</span><br>
+                    - 통신 프로토콜: "Standard" 데이터 전송속도(bps) 변경<br>
+                    <span class="sub-item">- 9600 bps -> 19200 bps</span><br>
+                    - "12mA Trim" (Output 메뉴) 오류 개선<br>
+                    - "TVG Curve" 메뉴 이동: "Measurement" -> "Engineer"<br>
+                    - "Empty"(Measurement 메뉴)화면에서 Exit Key 누를 시, "Empty" 위치 표시 오류 개선<br>
+                    - 외부 메모리 "MRAM" 상태레지스터 초기화 추가<br>
+                    <span class="sub-item">- 메모리 보호로 인한 액세스 제한 시, 초기화</span><br>
+                    - 외부 메모리 "MRAM" 재할당<br>
+                    - "ADC Number" -> "Profile No." 명칭 변경 (ENGINEER 메뉴)<br>
+                    - 설정값 화면 국문, 중문 표시 구현
+                </td>
+            </tr>
+            <tr>
+                <td class="no">17</td>
+                <td class="date">2024-06-26</td>
+                <td class="writer">Tom</td>
+                <td class="version">v7.2.0</td>
+                <td class="type">Release</td>
+                <td>
+                    - 측정 단위 "Feet" 설정 시, "Empty", "DeadZone" 설정값 오류 개선<br>
+                    - "Threshold" Manual 설정 시, 기본값 변경 1.27V -> 1.20V<br>
+                    - "실시간" / "평균" 파형 화면 Y축 교정<br>
+                    - 명칭 변경 (국문,영문,중문)<br>
+                    <span class="sub-item">- Parameter: "Demo Mode" -> "Test Mode" (Measurement 메뉴 / Information 화면)</span><br>
+                    - 단위 표시 변경 #1<br>
+                    <span class="sub-item">- 옵션: Window Reset Time / Error Delay</span><br>
+                    <span class="sub-item">- 단위: sec -> Number</span><br>
+                    - 단위 표시 변경 #2<br>
+                    <span class="sub-item">- 옵션: Damping</span><br>
+                    <span class="sub-item">- 단위: Count -> Number</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="no">18</td>
+                <td class="date">2024-07-31</td>
+                <td class="writer">Tom</td>
+                <td class="version">v7.2.1.B0</td>
+                <td class="type">Tag</td>
+                <td>- RF통신 보완 - CRC코드 추가</td>
+            </tr>
+            <tr>
+                <td class="no">19</td>
+                <td class="date">2024-12-19</td>
+                <td class="writer">Tom</td>
+                <td class="version">v7.2.1</td>
+                <td class="type">Release</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td class="no">20</td>
+                <td class="date">2025-03-31</td>
+                <td class="writer">Tom</td>
+                <td class="version">v7.2.2</td>
+                <td class="type">Release</td>
+                <td>
+                    - 중문, 일문 폰트 추가<br>
+                    - 중문, 일문 옵션명 일괄 변경
+                </td>
+            </tr>
+            <tr>
+                <td class="no">21</td>
+                <td class="date">2026-01-29</td>
+                <td class="writer">Tom</td>
+                <td class="version">v7.2.3</td>
+                <td class="type">Release</td>
+                <td>- 송신 회로에서 두개의 FET 소자(IRF8313TRPBF) 스위칭 시, 휴식시간(Dead Time) 140ns 부과 (0ns -> 140ns)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p class="footer">- EOF -</p>
+</body>
+</html>

@@ -1,0 +1,211 @@
+C51 COMPILER V9.55   MENU_BOX                                                              04/29/2026 17:23:09 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MENU_BOX
+OBJECT MODULE PLACED IN .\Objects\menu_box.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE _Wess\menu\menu_box.c LARGE OPTIMIZE(8,SPEED) INCDIR(.\_src\b0_comm;.\_W
+                    -ess\_compiler;.\_Wess\app;.\_Wess\bsp;.\_Wess\menu;.\_Wess\disp;.\_Wess\measure;.\_Wess\font;.\_Wess\screen) PRINT(.\Lis
+                    -tings\menu_box.lst) TABS(2) OBJECT(.\Objects\menu_box.obj)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   2          //  Copyright (C) 2021, WESS-Global Inc., All Rights Reserved.
+   3          //
+   4          //  The information contained herein is confidential property of WESS-Global Inc. The use, copying, transf
+             -er or disclosure of
+   5          //  such information is prohibited except by express written agreement with WESS-Global Co.,LTD
+   6          //
+   7          //  $ Date: 2020-07-13 12:00:00 +0900 $
+   8          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+   9          
+  10          
+  11          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  12          //  Includes
+  13          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  14          // chipset
+  15          #include "compiler_defs.h"
+  16          #include "C8051F120_defs.h"
+  17          // sys
+  18          #include "sys_def.h"
+  19          // self
+  20          #include "menu_box.h"
+  21          // bsp
+  22          #include "bsp_main.h"
+  23          #include "gpio_main.h"
+  24          #include "lcd_main.h"
+  25          #include "lcd_data.h"
+  26          #include "dly_main.h"
+  27          #include "btn_main.h"
+  28          // font
+  29          #include "font_def.h"
+  30          // disp
+  31          #include "disp_main.h"
+  32          #include "disp_string.h"
+  33          // menu
+  34          #include "menu_system.h"
+  35          #include "menu_measure.h"
+  36          
+  37          
+  38          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  39          //  Global variables
+  40          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  41          
+  42          
+  43          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  44          //  Local variables
+  45          //--------------------------------------------------------------------------------------------------------
+C51 COMPILER V9.55   MENU_BOX                                                              04/29/2026 17:23:09 PAGE 2   
+
+             -----------------------
+  46          
+  47          
+  48          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  49          //  Local Funtions
+  50          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  51          
+  52          
+  53          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  54          //  Global APIs - Access Local Variables
+  55          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  56          // Get
+  57          // Set
+  58          
+  59          
+  60          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  61          //  Global APIs - Public
+  62          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+  63          void MnBOX_DispBox(void)
+  64          {
+  65   1        U08 old = SFRPAGE;
+  66   1      
+  67   1        SFRPAGE = CONFIG_PAGE;
+  68   1      
+  69   1        LDT_ClrBuff(MnBOX_LEFT-5, MnBOX_TOP-3, MnBOX_RIGHT+3, MnBOX_BOTTOM+3);
+  70   1        LDT_DrawBox(MnBOX_LEFT-3, MnBOX_TOP-1, MnBOX_RIGHT+1, MnBOX_BOTTOM+1);
+  71   1        LDT_DrawBox(MnBOX_LEFT-2, MnBOX_TOP,   MnBOX_RIGHT,   MnBOX_BOTTOM);
+  72   1        LDT_UpdBuff(LCD_Y_START, LCD_Y_END);
+  73   1      
+  74   1        SFRPAGE = old;
+  75   1      }
+  76          
+  77          void MnBOX_DispStr(U08 lang, U16 x0, U08 y0, U08 fSel, U08 *pStr)
+  78          {
+  79   1        LDT_ClrBuff(MnBOX_LEFT, MnBOX_TOP+2+32, MnBOX_RIGHT-2, MnBOX_BOTTOM-2);
+  80   1      
+  81   1        if  (lang == MnSYS_LANG_ENG)  DpSTR_DrawLin(FT_EN_08x16, fSel, x0, y0, pStr);
+  82   1        else              LCD_WrStrBuff(x0, y0, FT_LC_16x16, pStr, fSel, 0);
+  83   1      
+  84   1        LDT_UpdBuff(LCD_Y_START, LCD_Y_END);
+  85   1      }
+  86          
+  87          S32 MnBOX_CfgNumb(S32 num, S32 min, S32 max, U16 step, U08 place, U08 fSel, U08 *pStr)
+  88          {
+  89   1          S16 old = num;
+  90   1          U08 cnt_ud = 0;
+  91   1      
+  92   1          DpSTR_NumbUpd(MnBOX_Y03, num, max, place, fSel, pStr);
+  93   1          BTN_DelayMsec(BTN_WAIT_SET);
+  94   1      
+  95   1        while(_SBIT_BTN_SET && _SBIT_BTN_EXIT)
+  96   1        {
+  97   2          if(!_SBIT_BTN_UP || !_SBIT_BTN_DOWN)
+  98   2          {
+  99   3            if(++cnt_ud >= 30)
+ 100   3              cnt_ud = 30;
+C51 COMPILER V9.55   MENU_BOX                                                              04/29/2026 17:23:09 PAGE 3   
+
+ 101   3      
+ 102   3            num = BTN_GetValue_UpDn(num, min, max, step, cnt_ud);
+ 103   3      
+ 104   3            DpSTR_NumbUpd(MnBOX_Y03, num, max, place, fSel, pStr);
+ 105   3            BTN_DelayMsec(BTN_WAIT_UD);
+ 106   3          }
+ 107   2          else
+ 108   2            cnt_ud = 0;
+ 109   2        }
+ 110   1      
+ 111   1        if(!_SBIT_BTN_EXIT)
+ 112   1          num = old;
+ 113   1      
+ 114   1        return num;
+ 115   1      }
+ 116          
+ 117          U16 MnBOX_SelArg4(U08 lang, U16 sel, U16 x1, U08 *pS1, U16 x2, U08 *pS2, U16 x3, U08 *pS3, U16 x4, U08 *pS
+             -4, U08 num)
+ 118          {
+ 119   1        U08 aBuff[4];
+ 120   1        U08 *pData[4];
+ 121   1        U16 old = sel;
+ 122   1      
+ 123   1        aBuff[0] = x1;     pData[0] = pS1;
+ 124   1        aBuff[1] = x2;     pData[1] = pS2;
+ 125   1        aBuff[2] = x3;     pData[2] = pS3;
+ 126   1        aBuff[3] = x4;     pData[3] = pS4;
+ 127   1      
+ 128   1        MnBOX_DispStr(lang, aBuff[sel], MnBOX_Y03, F_F, pData[sel]);
+ 129   1        BTN_DelayMsec(BTN_WAIT_SET);
+ 130   1      
+ 131   1        while(_SBIT_BTN_SET && _SBIT_BTN_EXIT)
+ 132   1        {
+ 133   2            if(!_SBIT_BTN_UP || !_SBIT_BTN_DOWN)
+ 134   2            {
+ 135   3                if(!_SBIT_BTN_UP)
+ 136   3                {
+ 137   4                    if(sel >= (num - 1))    sel = 0;
+ 138   4                    else                        sel++;
+ 139   4                }
+ 140   3                if(!_SBIT_BTN_DOWN)
+ 141   3                {
+ 142   4                    if(sel <= 0)        sel = num - 1;
+ 143   4                    else                        sel--;
+ 144   4                }
+ 145   3      
+ 146   3                MnBOX_DispStr(lang, aBuff[sel], MnBOX_Y03, F_F, pData[sel]);
+ 147   3                DLY_RunMsec(BTN_WAIT_UD);
+ 148   3            }
+ 149   2        }
+ 150   1      
+ 151   1        if(!_SBIT_BTN_EXIT)
+ 152   1            sel = old;
+ 153   1      
+ 154   1        return sel;
+ 155   1      }
+ 156          
+ 157          
+ 158          
+ 159          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 160          //  EOF
+C51 COMPILER V9.55   MENU_BOX                                                              04/29/2026 17:23:09 PAGE 4   
+
+ 161          //--------------------------------------------------------------------------------------------------------
+             -----------------------
+ 162          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1011    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      73
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
