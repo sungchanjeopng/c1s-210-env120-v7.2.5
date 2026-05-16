@@ -86,7 +86,9 @@ U16 lMsr_aTvg[MnMSR_TVG_IDX_MAX][60] = {
 #define AUTO_GAIN_SAMPLE_MAX	70		// -20 ~ +50 range length
 #define AUTO_GAIN_SLOPE_RANGE	20		// Find min/max in echo position -20 ~ +20
 #define AUTO_GAIN_SEARCH_RANGE	9		// Search base gain -9 ~ +9
-#define AUTO_GAIN_VOLT_THR		106		// Valid signal threshold: 1.0V (255 = 2.4V)
+#define AUTO_GAIN_VOLT_THR		159		// Valid signal threshold: 1.5V (255 = 2.4V)
+#define AUTO_GAIN_SLOPE_THR		53		// Valid slope threshold: 0.5V (max - min)
+#define AUTO_GAIN_LEVEL_MIN		50		// Skip AutoGain when empty - echo_pos <= 0.50m
 #define AUTO_GAIN_MIN			MnMSR_AMP_MIN
 #define AUTO_GAIN_MAX			MnMSR_AMP_MAX
 
@@ -834,10 +836,19 @@ static U08 MEAS_AutoGain_Search(U16 echo_pos)
 	S16 end;
 	U08 test_gain;
 	U08 slope;
+	U08 valid_found = FALSE;
 	U08 base_gain = MnMSR_GetAmp();
+	U16 empty = MnMSR_GetEmpty();
 
 	if(echo_pos == 0)
 		echo_pos = MsANL_GetDist1st();
+
+	if(empty <= echo_pos || (empty - echo_pos) <= AUTO_GAIN_LEVEL_MIN)
+	{
+		lMsr.auto_gain = base_gain;
+		lMsr.auto_calib = base_gain;
+		return TRUE;
+	}
 
 	MEAS_AutoGain_SetRange(echo_pos);
 
@@ -858,6 +869,20 @@ static U08 MEAS_AutoGain_Search(U16 echo_pos)
 
 		slope = MEAS_AutoGain_CalcSlope();
 
+		if(lAutoGain_MaxVolt <= AUTO_GAIN_VOLT_THR)
+		{
+			MDB_PrcMain();
+			continue;
+		}
+
+		if(slope <= AUTO_GAIN_SLOPE_THR)
+		{
+			MDB_PrcMain();
+			continue;
+		}
+
+		valid_found = TRUE;
+
 		if(slope > lAutoGain_MaxSlope)
 		{
 			lAutoGain_MaxSlope = slope;
@@ -867,6 +892,9 @@ static U08 MEAS_AutoGain_Search(U16 echo_pos)
 
 		MDB_PrcMain();
 	}
+
+	if(valid_found == FALSE)
+		lMsr.auto_gain = base_gain;
 
 	lMsr.auto_calib = lMsr.auto_gain;
 	MEAS_AutoGain_LoadBestWave();
