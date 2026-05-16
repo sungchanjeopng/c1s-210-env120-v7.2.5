@@ -40,7 +40,8 @@ enum{
 	MnMSR_L15_PCD_TERM,		// Clean Term
 	MnMSR_L16_RST_MSR,		// Reset Measure
 	MnMSR_L17_RST_FTR,		// Factory Default
-	MnMSR_L18_TEST,
+	MnMSR_L18_AUTO_GAIN,	// Auto Gain
+	MnMSR_L19_TEST,
 
 	MnMSR_LST_NUMB,
 };
@@ -217,6 +218,11 @@ enum {
 	MnMSR_F_DEMO_ONN,
 };
 
+enum {
+	MnMSR_AUTO_GAIN_OFF = 0,
+	MnMSR_AUTO_GAIN_ON,
+};
+
 
 //------------------------------------------------------------------------------------------------------------------------------
 //  Type definitions
@@ -244,6 +250,7 @@ typedef struct {
 	// Page 3
 	U16 pcd_intv;		// Probe Clean Device - Interval
 	U08 pcd_term;		// Probe Clean Device - Term
+	U08 fAutoGain;		// Auto Gain Enable
 	U08 fTest;
 
 } LS_MnMSR;
@@ -303,6 +310,7 @@ extern U08 MnMSR_GetTwRng(void);
 // Page 3
 extern U16 MnMSR_GetPcdIntv(void);
 extern U08 MnMSR_GetPcdTerm(void);
+extern U08 MnMSR_GetFgAutoGain(void);
 extern U08 MnMSR_GetFgTest(void);
 
 

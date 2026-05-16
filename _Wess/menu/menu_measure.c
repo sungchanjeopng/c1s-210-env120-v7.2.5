@@ -704,6 +704,20 @@ void MnMsr_Damping(void)
 		lMnMsr.damp = old;
 }
 
+void MnMsr_AutoGain(void)
+{
+	U08 old = lMnMsr.fAutoGain;
+
+	MnBOX_DispBox();
+	MnBOX_DispStr(MnSYS_LANG_ENG, MnBOX_X06, MnBOX_Y01, F_F, "AutoGain");
+
+	lMnMsr.fAutoGain = MnBOX_SelArg4(MnSYS_LANG_ENG, lMnMsr.fAutoGain,
+								   MnBOX_X11, "OFF", MnBOX_X11, "ON", 0, "", 0, "", 2);
+
+	if(!_SBIT_BTN_EXIT)
+		lMnMsr.fAutoGain = old;
+}
+
 void MnMsr_Threshold(void)
 {
 	U16 tmp0;
@@ -1267,7 +1281,8 @@ void MsrDp_ListP3(U08* pSel)
 			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L15_PCD_TERM-13, _F_STR(FKR_SE_,	  FKR_CHEOG, FKR_SI_, FKR_GAN, 1,      1,1,1,1,1,1,1,1,1,1));
 			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L16_RST_MSR-13,	_F_STR(FKR_CHEUG, FKR_JEONG, FKR_CHO, FKR_GI_, FKR_HWA,1,1,1,1,1,1,1,1,1,1));
 			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L17_RST_FTR-13,	_F_STR(FKR_GONG,  FKR_JANG,	 FKR_CHO, FKR_GI_, FKR_HWA,1,1,1,1,1,1,1,1,1,1));
-			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L18_TEST-13, 	_F_STR(FKR_TE_,	  FKR_SEU,   FKR_TEU,1,FKR_MO_, FKR_DEU,1,1,1,1,1,1,1,1,1));
+			MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L18_AUTO_GAIN-13, "Auto Gain                      ");
+			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L19_TEST-13, 	_F_STR(FKR_TE_,	  FKR_SEU,   FKR_TEU,1,FKR_MO_, FKR_DEU,1,1,1,1,1,1,1,1,1));
 			#elif defined (_FT_LANG_CN)
 			MnLST_DispClr(1);
 															  	  // 0123456789abcdef0123456789abcde
@@ -1276,7 +1291,8 @@ void MsrDp_ListP3(U08* pSel)
 			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L15_PCD_TERM-13, _F_STR(67,  65,  51, 110,  1, 1,1,1,1,1,1,1,1,1,1));
 			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L16_RST_MSR-13,	_F_STR(66, 107,  187,  188, 106, 82,1,1,1,1,1,1,1,1,1));
 			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L17_RST_FTR-13,	_F_STR(181,  26,  12,  19,  91, 82,1,1,1,1,1,1,1,1,1));
-			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L18_TEST-13, 	_F_STR(66,  92,  60,  38,  1, 1,1,1,1,1,1,1,1,1,1));
+			MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L18_AUTO_GAIN-13, "Auto Gain                      ");
+			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L19_TEST-13, 	_F_STR(66,  92,  60,  38,  1, 1,1,1,1,1,1,1,1,1,1));
 			#elif defined (_FT_LANG_JP)
 			MnLST_DispClr(1);
 		    DpSTR_DrawLin(ft_loc, FALSE, MnMSR_X0_TITLE_KO, MnSTR_Y_HEIGHT*0, _F_STR(81, 73, 1, 1,1,1,1,1,1,1,1,1,1,1,1));
@@ -1285,7 +1301,8 @@ void MsrDp_ListP3(U08* pSel)
 			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L15_PCD_TERM-13, _F_STR(10,  36, 42,  24, 41, 11, 68, 87,  1,	 1, 1,1,1,1,1));
 			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L16_RST_MSR-13,	_F_STR(73,  61, 36,  16, 19, 22, 1, 1,  1,	 1, 1,1,1,1,1));
 			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L17_RST_FTR-13,	_F_STR(49,	69,  53,  1,   1,   1,   1,   1,	1,	 1, 1,1,1,1,1));
-			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L18_TEST-13, 	_F_STR(20,	15, 22, 32, 42, 23,   1,	1,	1,	 1, 1,1,1,1,1));
+			MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L18_AUTO_GAIN-13, "Auto Gain                      ");
+			MnLST_DispStr(ft_loc, pSel[c++], MnMSR_L19_TEST-13, 	_F_STR(20,	15, 22, 32, 42, 23,   1,	1,	1,	 1, 1,1,1,1,1));
 			#endif
 			break;
 		case MnSYS_LANG_ENG:
@@ -1295,14 +1312,18 @@ void MsrDp_ListP3(U08* pSel)
 			MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L15_PCD_TERM-13, "Clean Term                     ");
 			MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L16_RST_MSR-13,	"Measure Reset                  ");
 			MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L17_RST_FTR-13,	"Factory Reset                  ");
-			MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L18_TEST-13, 	"Test Mode                      ");	
+			MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L18_AUTO_GAIN-13, "Auto Gain                      ");
+			MnLST_DispStr(ft_eng, pSel[c++], MnMSR_L19_TEST-13, 	"Test Mode                      ");	
 			break;
 	}	
 
+	if	(lMnMsr.fAutoGain)	pStr = "ON";
+	else				pStr = "OFF";
+	DpSTR_DrawLin(ft_eng, pSel[MnMSR_L18_AUTO_GAIN-14], 180, MnSTR_Y_HEIGHT*4, pStr);
+
 	if	(lMnMsr.fTest)	pStr = "ON";
 	else				pStr = "OFF";
-	
-	DpSTR_DrawLin(ft_eng, pSel[MnMSR_L18_TEST-14], 180, MnSTR_Y_HEIGHT*4, pStr);
+	DpSTR_DrawLin(ft_eng, pSel[MnMSR_L19_TEST-14], 180, MnSTR_Y_HEIGHT*5, pStr);
 }
 
 #else
@@ -1712,6 +1733,7 @@ void MsrChk_Vari(void)
 	if(lMnMsr.pcd_intv > MnMSR_PCD_INTV_MAX) 	lMnMsr.pcd_intv = MnMSR_PCD_INTV_DFT;
 	if(lMnMsr.pcd_term < MnMSR_PCD_TERM_MIN) 	lMnMsr.pcd_term = MnMSR_PCD_TERM_DFT;
 	if(lMnMsr.pcd_term > MnMSR_PCD_TERM_MAX) 	lMnMsr.pcd_term = MnMSR_PCD_TERM_DFT;
+	if(lMnMsr.fAutoGain > TRUE)				lMnMsr.fAutoGain = FALSE;
 	if(lMnMsr.fTest > TRUE)						lMnMsr.fTest = FALSE;
 
 }
@@ -1740,6 +1762,7 @@ U08 MnMSR_GetTwRng(void)		{	return lMnMsr.tw_range;		}
 U16 MnMSR_GetPcdIntv(void)		{	return lMnMsr.pcd_intv;		}
 // Page 3
 U08 MnMSR_GetPcdTerm(void)		{	return lMnMsr.pcd_term;		}
+U08 MnMSR_GetFgAutoGain(void)	{	return lMnMsr.fAutoGain;	}
 U08 MnMSR_GetFgTest(void)		{	return lMnMsr.fTest;		}
 
 
@@ -1775,6 +1798,7 @@ void MnMSR_MemLoad(void)
 	// Page 3
 	lMnMsr.pcd_intv = FLS_Rd2Byte(F034_MSR_PCD_INTV_L);
 	lMnMsr.pcd_term = FLS_Rd1Byte(F036_MSR_PCD_TERM);
+	lMnMsr.fAutoGain = FLS_Rd1Byte(F096_MSR_AUTO_GAIN);
 	lMnMsr.fTest    = FLS_Rd1Byte(F049_MSR_F_DEMO);
 
 }
@@ -1800,6 +1824,7 @@ void MnMSR_MemSave(void)
 	// Page 3
 	FLS_Wr2Byte(F034_MSR_PCD_INTV_L, lMnMsr.pcd_intv);
 	FLS_Wr1Byte(F036_MSR_PCD_TERM,   lMnMsr.pcd_term);
+	FLS_Wr1Byte(F096_MSR_AUTO_GAIN,  lMnMsr.fAutoGain);
 	FLS_Wr1Byte(F049_MSR_F_DEMO,     lMnMsr.fTest);
 
 }
@@ -1825,6 +1850,7 @@ void MnMSR_MemFtry(void)
 	// Page 3
 	FLS_Wr2Byte(F034_MSR_PCD_INTV_L, MnMSR_PCD_INTV_DFT);
 	FLS_Wr1Byte(F036_MSR_PCD_TERM,   MnMSR_PCD_TERM_DFT);
+	FLS_Wr1Byte(F096_MSR_AUTO_GAIN,  FALSE);
 	FLS_Wr1Byte(F049_MSR_F_DEMO,	 FALSE);
 
 }
@@ -1885,7 +1911,8 @@ void MnMSR_ProcMain(void)
 				case MnMSR_L15_PCD_TERM:		MnMsr_PcdTerm();		break;
 				case MnMSR_L16_RST_MSR:			MnMsr_RstMsr();			break;
 				case MnMSR_L17_RST_FTR:			MnMsr_RstFtr();			break;
-				case MnMSR_L18_TEST:			MnMsr_TestMode();		break;
+				case MnMSR_L18_AUTO_GAIN:		MnMsr_AutoGain();		break;
+				case MnMSR_L19_TEST:			MnMsr_TestMode();		break;
 			}
 			fDp = TRUE;
 		}

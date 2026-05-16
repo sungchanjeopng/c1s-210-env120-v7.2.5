@@ -70,6 +70,9 @@
 #define  M_ADDR_DAMP_START				370001
 #define  M_ADDR_DAMP_END				377199
 
+//***** MRAM Auto Gain Best Wave *****	// Best waveform (380001 ~ 382200, ADC_DATA_MAX=2200)
+#define  M_ADDR_AUTOGAIN_BEST_START		380001
+#define  M_ADDR_AUTOGAIN_BEST_END		382200
 
 
 //--------------------------------------------------------------------

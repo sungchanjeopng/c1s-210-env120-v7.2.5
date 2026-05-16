@@ -58,6 +58,10 @@ typedef struct {
 	U08 tvg_idx;
 	U08 dly10cm_h;		// OLD: unsigned char delay_10Cm_H_UC_G;
 	U08 dly10cm_l;		// OLD: unsigned char delay_10Cm_L_UC_G;
+	// Auto Gain
+	U08 fauto_gain;		// Auto gain flag (0: off, 1: searching)
+	U08 auto_calib;		// Current candidate gain while searching
+	U08 auto_gain;		// Selected best gain
 
 } LS_MEAS;
 
@@ -81,6 +85,8 @@ extern U08 MEAS_GetCtAvrg(void);
 extern U16 MEAS_GetTvg(U08 num, U08 idx);
 extern S16 MEAS_GetSgThick(void);
 extern F32 MEAS_GetVeloc(void);
+extern U08 MEAS_AutoGain_GetValue(void);
+extern U08 MEAS_AutoGain_GetMaxSlope(void);
 // Set Local Variables
 // Operation
 extern F32  MEAS_CalcFeet2Meter(U16 feet);

@@ -81,6 +81,18 @@ U16 lMsr_aTvg[MnMSR_TVG_IDX_MAX][60] = {
 		160, 164, 168, 172, 176, 180, 184, 188, 192, 196, 200, 204, 208, 212, 216, 220, 224, 228, 232, 236,		},
 };
 
+#define AUTO_GAIN_MARGIN_LEFT	20		// Left range from echo position
+#define AUTO_GAIN_MARGIN_RIGHT	50		// Right range from echo position
+#define AUTO_GAIN_SEARCH_RANGE	9		// Search base gain -9 ~ +9
+#define AUTO_GAIN_MIN			MnMSR_AMP_MIN
+#define AUTO_GAIN_MAX			MnMSR_AMP_MAX
+
+static U08  lAutoGain_MaxSlope;
+static U08  lAutoGain_MinVolt;
+static U08  lAutoGain_MaxVolt;
+static U16  lAutoGain_RangeMin;
+static U16  lAutoGain_RangeMax;
+
 
 //------------------------------------------------------------------------------------------------------------------------------
 //  Local Funtions
@@ -475,6 +487,8 @@ S16 MEAS_GetSgThick(void)		{	return lMsr.sg_thick;		}
 U08 MEAS_GetFgAdc(void)			{	return lMsr.fAdc_full;		}
 U08 MEAS_GetCtAvrg(void)		{	return lMsr.cAvrg;			}
 F32 MEAS_GetVeloc(void)			{	return lMsr.veloc;			}
+U08 MEAS_AutoGain_GetValue(void)	{	return lMsr.auto_gain;	}
+U08 MEAS_AutoGain_GetMaxSlope(void)	{	return lAutoGain_MaxSlope;	}
 
 U16 MEAS_GetTvg(U08 num, U08 idx)
 {
@@ -498,13 +512,19 @@ void MEAS_InitVari(void)
 	lMsr.fAdc_full = FALSE;
 	lMsr.cIntv = 0;
 	lMsr.sg_thick  = 0;
+	lMsr.fauto_gain = 0;
+	lMsr.auto_calib = MnMSR_GetAmp();
+	lMsr.auto_gain  = MnMSR_GetAmp();
 }
 
 void MEAS_SetDacTvg(void)		// TVG: Time Variable Gain
 {
 	U08 tvg = MnEGN_GetTvgNumb();
-	U08 amp = MnMSR_GetAmp();
+	U08 amp;
 	U32 gain = 0;
+
+	if(lMsr.fauto_gain)	amp = lMsr.auto_calib;
+	else				amp = MnMSR_GetAmp();
 
     lMsr.tvg_idx++;
 
@@ -647,6 +667,122 @@ void MEAS_PrcEcho(void)
 	MsrCfg_EndCapture();
 }
 
+
+static void MEAS_AutoGain_SaveBestWave(void)
+{
+	U16 i;
+	for(i=0; i<ADC_DATA_MAX; i++)
+		MEM_WriteByte(MEM_MRAM, M_ADDR_AUTOGAIN_BEST_START + i, gAd_data[i]);
+}
+
+static void MEAS_AutoGain_LoadBestWave(void)
+{
+	U16 i;
+	for(i=0; i<ADC_DATA_MAX; i++)
+		gAd_data[i] = MEM_ReadByte(MEM_MRAM, M_ADDR_AUTOGAIN_BEST_START + i);
+}
+
+static void MEAS_AutoGain_SetRange(U16 echo_pos)
+{
+	U16 deadzone = MnMSR_GetDead();
+	U16 empty = MnMSR_GetEmpty();
+
+	if(echo_pos < deadzone)
+		echo_pos = deadzone;
+	if(echo_pos > empty)
+		echo_pos = empty;
+
+	if(echo_pos <= (deadzone + AUTO_GAIN_MARGIN_LEFT))
+		lAutoGain_RangeMin = deadzone;
+	else
+		lAutoGain_RangeMin = echo_pos - AUTO_GAIN_MARGIN_LEFT;
+
+	if((empty - echo_pos) < AUTO_GAIN_MARGIN_RIGHT)
+		lAutoGain_RangeMax = empty;
+	else
+		lAutoGain_RangeMax = echo_pos + AUTO_GAIN_MARGIN_RIGHT;
+
+	if(lAutoGain_RangeMax > ADC_DATA_MAX)
+		lAutoGain_RangeMax = ADC_DATA_MAX;
+	if(lAutoGain_RangeMin >= lAutoGain_RangeMax)
+		lAutoGain_RangeMin = deadzone;
+}
+
+static U08 MEAS_AutoGain_CalcSlope(void)
+{
+	U16 i;
+	U08 min_volt = 255;
+	U08 max_volt = 0;
+
+	for(i=lAutoGain_RangeMin; i<lAutoGain_RangeMax; i++)
+	{
+		if(gAd_data[i] < min_volt) min_volt = gAd_data[i];
+		if(gAd_data[i] > max_volt) max_volt = gAd_data[i];
+	}
+
+	lAutoGain_MinVolt = min_volt;
+	lAutoGain_MaxVolt = max_volt;
+
+	if(max_volt > min_volt)
+		return (max_volt - min_volt);
+
+	return 0;
+}
+
+static void MEAS_AutoGain_DoMeasure(U08 gain)
+{
+	lMsr.fauto_gain = 1;
+	lMsr.auto_calib = gain;
+	MEAS_PrcEcho();
+	lMsr.fauto_gain = 0;
+}
+
+static U08 MEAS_AutoGain_Search(U16 echo_pos)
+{
+	S16 gain;
+	S16 stt;
+	S16 end;
+	U08 test_gain;
+	U08 slope;
+	U08 base_gain = MnMSR_GetAmp();
+
+	if(echo_pos == 0)
+		echo_pos = MsANL_GetDist1st();
+
+	MEAS_AutoGain_SetRange(echo_pos);
+
+	lAutoGain_MaxSlope = 0;
+	lMsr.auto_gain = base_gain;
+	MEAS_AutoGain_SaveBestWave();
+
+	stt = (S16)base_gain - AUTO_GAIN_SEARCH_RANGE;
+	end = (S16)base_gain + AUTO_GAIN_SEARCH_RANGE;
+
+	if(stt < AUTO_GAIN_MIN) stt = AUTO_GAIN_MIN;
+	if(end > AUTO_GAIN_MAX) end = AUTO_GAIN_MAX;
+
+	for(gain=stt; gain<=end; gain++)
+	{
+		test_gain = (U08)gain;
+		MEAS_AutoGain_DoMeasure(test_gain);
+
+		slope = MEAS_AutoGain_CalcSlope();
+
+		if(slope > lAutoGain_MaxSlope)
+		{
+			lAutoGain_MaxSlope = slope;
+			lMsr.auto_gain = test_gain;
+			MEAS_AutoGain_SaveBestWave();
+		}
+
+		MDB_PrcMain();
+	}
+
+	lMsr.auto_calib = lMsr.auto_gain;
+	MEAS_AutoGain_LoadBestWave();
+	return TRUE;
+}
+
 void MEAS_PrcSub1(void) 
 {
 	if(MsANL_GetCtEcho() > lMsr.cAvrg)
@@ -656,9 +792,6 @@ void MEAS_PrcSub1(void)
 	}
 
 	MEAS_PrcEcho();
-
-	if(gTd_f_en == FALSE)
-		DSP_SetBuff(220, gAd_data, 0, MsANL_GetEmpty());
 
 	ES0 = 0;
 
@@ -672,9 +805,27 @@ void MEAS_PrcSub1(void)
 
 	if(PCD_GetFgRun()==TRUE || MsANL_GetFgEcoDly()==TRUE || MsANL_GetFgEcoChk()==FALSE)
 	{
+		if(gTd_f_en == FALSE)
+			DSP_SetBuff(220, gAd_data, 0, MsANL_GetEmpty());
 		ADC_AvrgRaw();
 		return;
 	}
+
+	if(MnMSR_GetFgAutoGain())
+	{
+		MEAS_AutoGain_Search(MsANL_GetDistMod());
+
+		ES0 = 0;
+		ANZ_ChkEcho_Level();
+		if(MnOUT_GetProtocol() == MnOUT_PROT_MDBS)
+			ES0 = 1;
+		SFRPAGE = UART0_PAGE;
+		RI0 = 0;
+	}
+
+	if(gTd_f_en == FALSE)
+		DSP_SetBuff(220, gAd_data, 0, MsANL_GetEmpty());
+
 	ADC_WriteRaw();
 	//MDB_PrcMain();
 	ADC_AvrgRaw();
